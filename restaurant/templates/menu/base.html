@@ -1,0 +1,129 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Taste Villa</title>
+
+    <link rel="stylesheet" href="{% static 'menu/css/frontend.css' %}">
+    <link rel="stylesheet" href="{% static 'menu/css/menu.css' %}">
+    <link rel="stylesheet" href="{% static 'menu/css/home.css' %}">
+    <link rel="stylesheet" href="{% static 'menu/css/notification.css' %}">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="{% static 'menu/css/footer.css' %}">
+    <link rel="stylesheet" href="{% static 'profile/profile.css'%}">
+<script src="{% static 'menu/js/profile.js' %}"></script>
+
+    
+
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+</head>
+
+<body>
+
+<!-- ================= HEADER ================= -->
+<header class="header">
+    <div class="logo">Taste Villa</div>
+
+        <nav class="nav">
+             <a href="{% url 'my_orders' %}">
+                📦 Your Orders
+            </a>
+            <a href="{% url 'home' %}">Home</a>
+            <a href="{% url 'menu_page' %}">Menu</a>
+            <a href="{% url 'about' %}">About Us</a>
+            <a href="{% url 'contact' %}">Contact Us</a>
+           
+            <a href="{% url 'my_wishlist' %}">❤️</a>
+
+         
+    <a href="{% url 'customer_notifications' %}" class="notification-bell">
+    🔔
+    {% if notification_count > 0 %}
+        <span class="badge">{{ notification_count }}</span>
+    {% endif %}
+</a>
+{% if user.is_authenticated %}
+
+<div class="nav-profile">
+    <a href="{% url 'profile' %}">
+       
+            <img src="{% static 'default-avatar.png' %}" class="nav-profile-img">
+        
+    </a>
+</div>
+
+<a href="{% url 'customer_logout' %}" class="logout-icon">
+    <i class="fa-solid fa-right-from-bracket"></i>
+</a>
+
+{% else %}
+<a href="{% url 'customer_login' %}" class="login-text">Login</a>
+{% endif %}
+
+
+
+
+        </nav>
+    </header>
+
+
+        </nav>
+    </header>
+
+
+        </nav>
+    </header>
+
+</div>
+
+
+    </nav>
+</header>
+
+<!-- ================= PAGE CONTENT ================= -->
+<main class="content">
+    {% block content %}{% endblock %}
+</main>
+
+<!-- ✅ PROFILE JS -->
+<script src="{% static 'menu/js/profile.js' %}"></script>
+</body>
+</html>
+
+<!-- ================= FOOTER ================= -->
+<footer id="site-footer">
+
+    <div class="footer-container">
+
+        <div class="footer-column">
+            <h4>Contact Us</h4>
+            <p>📍 Leela Restaurant, Dehgam Road, Ahmedabad</p>
+            <p>📞 +91 9876543210</p>
+            <p>✉️ leelarestaurant.official@gmail.com</p>
+        </div>
+
+        <div class="footer-column">
+            <h4>Useful Links</h4>
+            <a href="/">Home</a>
+            <a href="/menu/">Menu</a>
+            <a href="/about/">About</a>
+            <a href="/contact/">Contact</a>
+        </div>
+
+    </div>
+
+    <div class="footer-bottom">
+        <span>© 2026 Taste Villa | All rights reserved</span>
+
+        <div class="footer-social">
+            <a href="#"><img src="{% static 'menu/icons/fb.svg' %}"></a>
+            <a href="#"><img src="{% static 'menu/icons/insta.svg' %}"></a>
+            <a href="#"><img src="{% static 'menu/icons/wp.svg' %}"></a>
+        </div>
+    </div>
+</footer>
+
+</body>
+</html>

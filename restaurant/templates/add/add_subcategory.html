@@ -1,0 +1,97 @@
+{% extends 'adminpanel/base.html' %}
+{% load static %}
+{% block content %}
+
+    <title>Add Subcategory</title>
+    <link rel="stylesheet" href="{% static 'adminpanel/css/category.css' %}">
+
+
+<div class="container">
+
+    <!-- LEFT SIDE : TABLE -->
+    <div class="left">
+        <u><h3>Added Subcategories</h3></u><br>
+
+          <!-- SEARCH BAR -->
+    <div class="search-container">
+        <input type="text" id="subcategorySearch" placeholder="🔍 Search subcategory...">
+    </div>
+
+        <table>
+            <tr>
+                <th>Subcategory Name</th>
+                <th>Category</th>
+                <th>Action</th>
+            </tr>
+
+            {% for sub in subcategories %}
+            <tr>
+                <td>{{ sub.subcategory_name }}</td>
+                <td>{{ sub.food_item_cat.category_name }}</td>
+                <td>
+                    <a href="{% url 'update_subcategory' sub.id %}">✏️</a>
+                    <a href="{% url 'delete_subcategory_item' sub.id %}"
+                       onclick="return confirm('Are you sure you want to delete subcategory?')">🗑️</a>
+                </td>
+            </tr>
+            {% empty %}
+            <tr>
+                <td colspan="3">No subcategory added</td>
+            </tr>
+            {% endfor %}
+        </table>
+    </div>
+
+    <!-- RIGHT SIDE : FORM -->
+    <div class="right">
+        <u><h3>Add Subcategory</h3></u><br>
+
+      
+        <form method="post">
+            {% csrf_token %}
+
+            <label>Select Category</label>
+            <select name="category_id" required>
+                <option value="">-- Select Category --</option>
+                {% for cat in categories %}
+                    <option value="{{ cat.id }}">{{ cat.category_name }}</option>
+                {% endfor %}
+            </select><br><br>
+
+            <label>Subcategory Name</label>
+            <input type="text" name="subcategory_name"
+                   placeholder="Subcategory name" required>
+
+            <button type="submit">Add Subcategory</button>
+        </form>
+    </div>
+
+</div>
+<a href="{% url 'add_fooditem' %}" style="display:inline-flex;align-items:center;gap:5px;margin-top:20px;padding:8px 14px;background-color:#28343b;color:#fff;text-decoration:none;font-weight:500;border-radius:5px;transition:0.3s;">⬅ Add FoodItem</a>
+
+
+<script>
+    const searchInput = document.getElementById('subcategorySearch');
+    const table = document.querySelector('.left table');
+    const rows = table.getElementsByTagName('tr');
+
+    searchInput.addEventListener('keyup', function() {
+        const filter = searchInput.value.toLowerCase();
+
+        for (let i = 1; i < rows.length; i++) {
+            const subName = rows[i].getElementsByTagName('td')[0];
+            const catName = rows[i].getElementsByTagName('td')[1];
+
+            if (
+                subName.textContent.toLowerCase().includes(filter) ||
+                catName.textContent.toLowerCase().includes(filter)
+            ){
+                rows[i].style.display = "";
+            } else {
+                rows[i].style.display = "none";
+            }
+        }
+    });
+</script>
+
+{% endblock %}

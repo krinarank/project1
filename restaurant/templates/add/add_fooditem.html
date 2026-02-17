@@ -1,0 +1,144 @@
+{% extends 'adminpanel/base.html' %}
+{% load static %}
+{% block content %}
+
+<title>Add Food Item</title>
+<link rel="stylesheet" href="{% static 'adminpanel/css/fooditem.css' %}">
+
+<div class="container">
+
+    <!-- LEFT : ADD FORM -->
+    <div class="left">
+        <u><h3>Add Food Item</h3></u>
+
+        <!-- {% for message in messages %}
+            <div class="message {{ message.tags }}">{{ message }}</div>
+        {% endfor %} -->
+
+        <form method="post">
+            {% csrf_token %}
+
+            <label>Category</label>
+            <select name="category_id" required>
+                <option value="">-- Select Category --</option>
+                {% for cat in categories %}
+                    <option value="{{ cat.id }}">{{ cat.category_name }}</option>
+                {% endfor %}
+            </select>
+
+            <label>Subcategory</label>
+            <select name="subcategory_id" required>
+                <option value="">-- Select Subcategory --</option>
+                {% for sub in subcategories %}
+                    <option value="{{ sub.id }}">{{ sub.food_item_cat.category_name }} → {{ sub.subcategory_name }}</option>
+                {% endfor %}
+            </select>
+
+            <label>Food Name</label>
+            <input type="text" name="name" required pattern="[A-Za-z0-9 ]+" title="Enter valid food name">
+
+            <label>Price</label>
+            <input type="number" step="0.01" name="price" required>
+
+            <label>Calories</label>
+            <input type="number" name="calories" required>
+
+            <!-- <label>Has Variant</label>
+            <input type="checkbox" id="hasVariant" name="has_variant"> -->
+
+            <!-- VARIANT SECTION
+            <div id="variantSection" style="display:none;">
+                <label>Variants</label>
+                <table id="variantTable">
+                    <tr>
+                        <th>Variant Name</th>
+                        <th>Price</th>
+                    </tr>
+                    <tr>
+                        <td><input type="text" name="variant_name[]" pattern="[A-Za-z ]+" title="Only text"></td>
+                        <td><input type="number" step="0.01" name="variant_price[]"></td>
+                    </tr>
+                </table>
+                <button type="button" onclick="addVariantRow()">+ Add More Variant</button>
+            </div> -->
+
+            <label>Available</label>
+            <input type="checkbox" name="is_available" checked>
+
+           
+            <button type="submit">Add Food Item</button>
+        </form>
+    </div>
+
+    <!-- RIGHT : TABLE -->
+    <div class="right">
+        <u><h3>Existing Food Items</h3></u>
+
+        <div class="search-container">
+            <input type="text" id="foodSearch" placeholder="🔍 Search food item...">
+        </div>
+
+        <table>
+            <tr>
+                <th>Name</th>
+                <th>Category</th>
+                <th>Subcategory</th>
+                <th>Price</th>
+                <th>Calories</th>
+                <!-- <th>Variant</th> -->
+                
+                
+                <th>Action</th>
+            </tr>
+            {% for item in fooditems %}
+            <tr>
+                <td>{{ item.name }}</td>
+                <td>{{ item.sub_cat.food_item_cat.category_name }}</td>
+                <td>{{ item.sub_cat.subcategory_name }}</td>
+                <td>{{ item.price }}</td>
+                <td>{{ item.calories }}</td>
+                <!-- <td>{{ item.has_variant|yesno:"Yes,No" }}</td>
+                <td>{{ item.is_available|yesno:"Yes,No" }}</td> -->
+                
+                <td>
+                    <a href="{% url 'update_fooditem' item.id %}">✏️</a>
+                    <a href="{% url 'delete_fooditem' item.id %}" onclick="return confirm('Are you sure?')">🗑️</a>
+                </td>
+            </tr>
+            {% endfor %}
+        </table>
+    </div>
+
+</div>
+
+<a href="{% url 'dashboard' %}">⬅ Back</a>
+
+<script>
+// document.getElementById("hasVariant").addEventListener("change", function(){
+//     document.getElementById("variantSection").style.display =
+//         this.checked ? "block" : "none";
+// });
+
+// function addVariantRow(){
+//     let table = document.getElementById("variantTable");
+//     let row = table.insertRow();
+//     row.innerHTML = `
+//         <td><input type="text" name="variant_name[]" pattern="[A-Za-z ]+"></td>
+//         <td><input type="number" step="0.01" name="variant_price[]"></td>
+//     `;
+// }
+
+/* SEARCH */
+const searchInput = document.getElementById('foodSearch');
+const tableRows = document.querySelectorAll('.right table tr');
+
+searchInput.addEventListener('keyup', function() {
+    const filter = searchInput.value.toLowerCase();
+    tableRows.forEach((row, index) => {
+        if(index===0) return;
+        row.style.display = row.innerText.toLowerCase().includes(filter) ? "" : "none";
+    });
+});
+</script>
+
+{% endblock %}

@@ -1,0 +1,28 @@
+<table class="table table-bordered">
+<thead>
+<tr>
+    <th>Order ID</th>
+    <th>Customer</th>
+    <th>Items</th>
+    <th>Total</th>
+    <th>Date</th>
+</tr>
+</thead>
+<tbody>
+{% for order in orders %}
+<tr>
+    <td>{{ order.id }}</td>
+    <td>{{ order.user.username }}</td>
+    <td>
+        {% for item in order.order_details.all %}
+            {{ item.food_item.name }} ({{ item.qty }})<br>
+        {% endfor %}
+    </td>
+    <td>{{ order.total_amount }}</td>
+    <td>{{ order.order_date }}</td>
+</tr>
+{% empty %}
+<tr><td colspan="5" class="text-center">No Delivered Orders</td></tr>
+{% endfor %}
+</tbody>
+</table>

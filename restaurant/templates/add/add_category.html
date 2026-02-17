@@ -1,0 +1,73 @@
+{% extends 'adminpanel/base.html' %}
+{% load static %}
+
+{% block content %}
+<link rel="stylesheet" href="{% static 'adminpanel/css/category.css' %}">
+<link rel="stylesheet" href="{% static 'adminpanel/css/dashboard.css' %}">
+   
+<div class="container">
+ 
+    <!-- TABLE (LEFT SIDE) -->
+    <div class="left">
+        
+        <u><h3>Added Categories</h3></u>
+
+                    <!-- MOVE SEARCH BAR HERE -->
+    <div class="search-container" style="margin-bottom: 15px;">
+        <input type="text" id="categorySearch" placeholder="🔍 Search categories...">
+    </div>
+
+        <table>
+            <tr>
+                <th>Category Name</th>
+                <th>Action</th>
+            </tr>
+
+            {% for cat in categories %}
+            <tr>
+                <td>{{ cat.category_name }}</td>
+                <td>
+                    <a href="{% url 'update_category' cat.id %}">✏️</a>
+                    <a href="{% url 'delete_category_item' cat.id %}"
+                       onclick="return confirm('Delete?')">🗑️</a>
+                </td>
+            </tr>
+            {% empty %}
+            <tr>
+                <td colspan="2">No category added</td>
+            </tr>
+            {% endfor %}
+        </table>
+    </div>
+
+    <!-- FORM (RIGHT SIDE) -->
+    <div class="right">
+        <u><h3>Add Category</h3></u><br>
+
+        <form method="post">
+            {% csrf_token %}
+            <input type="text" name="category_name" placeholder="Category name" required>
+            <button type="submit">Add Category</button>
+        </form>
+    </div>
+
+</div>
+
+<a href="{% url 'dashboard' %}">⬅ Back to dashboard</a>
+
+
+<!-- JS SEARCH -->
+<script>
+    const searchInput = document.getElementById('categorySearch');
+    const table = document.querySelector('.left table');
+    const rows = table.getElementsByTagName('tr');
+
+    searchInput.addEventListener('keyup', function() {
+        const filter = searchInput.value.toLowerCase();
+        for (let i = 1; i < rows.length; i++) { // skip header
+            const cell = rows[i].getElementsByTagName('td')[0]; // only category name
+            rows[i].style.display = cell.textContent.toLowerCase().includes(filter) ? "" : "none";
+        }
+    });
+</script>
+{% endblock %}

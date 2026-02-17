@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html>
+<head>
+<style>
+body{font-family:Helvetica;font-size:11px}
+table{width:100%;border-collapse:collapse}
+th,td{border:1px solid black;padding:5px}
+th{background:#333;color:white}
+h2{text-align:center}
+</style>
+</head>
+<body>
+
+<h2>Cancellation Report</h2>
+<p>From {{ from_date }} To {{ to_date }}</p>
+
+<table>
+<tr>
+<th>ID</th><th>Customer</th><th>Total</th><th>Date</th>
+</tr>
+
+{% for order in orders %}
+<tr>
+<td>{{ order.id }}</td>
+<td>{{ order.user.username }}</td>
+<td>{{ order.total_amount }}</td>
+<td>{{ order.order_date }}</td>
+</tr>
+{% endfor %}
+
+</table>
+</body>
+</html>

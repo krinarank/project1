@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <style>
+
+        body {
+            font-family: Helvetica;
+            font-size: 11px;
+            margin: 40px;
+        }
+
+        h2 {
+            text-align: center;
+            font-size: 18px;
+            margin-bottom: 5px;
+        }
+
+        .date {
+            text-align: center;
+            font-size: 10px;
+            margin-bottom: 15px;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            table-layout: fixed;   /* ⭐ MOST IMPORTANT (stops overlapping) */
+        }
+
+        th, td {
+            border: 1px solid black;
+            padding: 5px;
+            word-wrap: break-word;   /* ⭐ break long text */
+            overflow-wrap: break-word;
+        }
+
+        th {
+            background-color: #444;
+            color: white;
+            font-size: 11px;
+        }
+
+        td {
+            font-size: 10px;
+        }
+
+        /* column widths — VERY IMPORTANT */
+        .id { width:5%; }
+        .username { width:15%; }
+        .name { width:18%; }
+        .contact { width:12%; }
+        .email { width:22%; }
+        .gender { width:8%; }
+        .datecol { width:20%; }
+
+        .footer {
+            position: fixed;
+            bottom: -20px;
+            text-align: center;
+            font-size: 9px;
+            color: grey;
+        }
+
+    </style>
+</head>
+
+<body>
+
+<h2>Customer Report</h2>
+<div class="date">
+From: {{ from_date|default:"All" }} &nbsp;&nbsp; To: {{ to_date|default:"All" }}
+</div>
+
+<table>
+    <thead>
+        <tr>
+            <th class="id">ID</th>
+            <th class="username">Username</th>
+            <th class="name">Name</th>
+            <th class="contact">Contact</th>
+            <th class="email">Email</th>
+            <th class="gender">Gender</th>
+            <th class="datecol">Created</th>
+        </tr>
+    </thead>
+
+    <tbody>
+        {% for c in customers %}
+        <tr>
+            <td>{{ c.id }}</td>
+            <td>{{ c.username }}</td>
+            <td>{{ c.firstname }} {{ c.lastname }}</td>
+            <td>{{ c.contactno }}</td>
+            <td>{{ c.email }}</td>
+            <td>{{ c.gender }}</td>
+            <td>{{ c.creationdate|date:"Y-m-d H:i" }}</td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+
+<div class="footer">
+Generated on {{ date|date:"Y-m-d H:i" }} | Page <pdf:pagenumber>
+</div>
+
+</body>
+</html>

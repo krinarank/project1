@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>Invoice #{{ order.id }}</title>
+    <style>
+        body { 
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
+            margin: 0; 
+            padding: 0; 
+            color: #333; 
+        }
+        .container { width: 95%; margin: 0 auto; padding: 20px; }
+
+        /* HEADER */
+        header { margin-bottom: 20px; }
+        .company { font-size: 28px; font-weight: bold; text-align: center; }
+        .company-info { font-size: 14px; text-align: right; margin-top: 5px; }
+
+        /* INVOICE DETAILS */
+        .invoice-details { margin-top: 10px; font-size: 14px; display: flex; justify-content: space-between; }
+        .invoice-details div { line-height: 1.5; }
+
+        .bill-to { margin-top: 15px; text-align: left; font-size: 14px; }
+
+        /* TABLE */
+        table { width: 100%; border-collapse: collapse; margin-top: 20px; font-size: 14px; }
+        th, td { border: 1px solid #ccc; padding: 10px; }
+        th { background-color: #f7f7f7; text-align: center; }
+        td.right { text-align: right; }
+        td.center { text-align: center; }
+
+        /* FOOTER */
+        .footer { margin-top: 60px; text-align: center; font-size: 14px; color: #555; }
+
+        /* TOTALS TABLE */
+        .totals-table { width: 40%; margin-top: 20px; float: right; border-collapse: collapse; font-size: 14px; }
+        .totals-table td { border: none; padding: 5px 10px; }
+        .totals-table td.label { text-align: left; }
+        .totals-table td.value { text-align: right; }
+        .totals-table .grand-total td { border-top: 2px solid #000; font-weight: bold; padding-top: 8px; }
+
+        /* PAYMENT INFO */
+        .payment-info { clear: both; margin-top: 20px; font-size: 14px; }
+        .payment-info div { margin-bottom: 5px; }
+    </style>
+</head>
+<body>
+<div class="container">
+
+    <!-- HEADER -->
+    <header>
+        <div class="company">
+            Taste Villa
+        </div>
+        <div class="company-info">
+            Leela Restaurant,<br>
+            Dehgam Road, Ahmedabad-382330<br>
+            Phone: +91-9876543210<br>
+            Email: leelarestaurant.official@gmail.com
+        </div>
+        <hr style=" border-bottom: 7px solid #000; margin-top: 10px;">
+    </header>
+
+    <!-- INVOICE DETAILS -->
+    <div class="invoice-details">
+        <div>
+            <strong>Invoice #: </strong>{{ order.id }}<br>
+            <strong>Order ID: </strong>{{ order.id }}<br>
+            <strong>Date: </strong>{{ order.date|date:"d-m-Y" }}
+        </div>
+    </div>
+
+    <!-- BILL TO -->
+    <div class="bill-to">
+        <strong>Bill To:</strong><br>
+        {{ customer_name }}<br>
+        {{ order.delivery_address }}<br>
+        Email: {{ customer_email }}<br>
+        Phone: {{ customer_contact }}
+    </div>
+
+    <!-- ORDER ITEMS TABLE -->
+    <table>
+        <thead>
+            <tr>
+                <th>Item</th>
+                <th>Qty</th>
+                <th>Unit Price</th>
+                <th>Total</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for item in order_items %}
+            <tr>
+                <td>{{ item.food_item.name }}</td>
+                <td class="center">{{ item.qty }}</td>
+                <td class="right">{{ item.price|floatformat:2 }}</td>
+                <td class="right">{{ item.total_amount|floatformat:2 }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+
+    <!-- TOTALS TABLE -->
+    <table class="totals-table">
+        <tbody>
+            <tr>
+                <td class="label">Subtotal:</td>
+                <td class="value">{{ original_total|floatformat:2 }}</td>
+            </tr>
+
+            <tr>
+                <td class="label">GST (5%):</td>
+                <td class="value">{{ tax|floatformat:2 }}</td>
+            </tr>
+            <tr>
+                <td class="label">Delivery Charges:</td>
+                <td class="value">{{ delivery_charge|floatformat:2 }}</td>
+            </tr>
+            <tr class="grand-total">
+                <td class="label">Total:</td>
+                <td class="value">{{ grand_total|floatformat:2 }}</td>
+            </tr>
+        </tbody>
+    </table>
+
+
+    <!-- FOOTER -->
+    <div class="footer">
+        Thank you!
+    </div>
+
+</div>
+</body>
+</html>

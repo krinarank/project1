@@ -1,0 +1,20 @@
+<h2>Item Sales Report</h2>
+<p>From {{ from_date }} To {{ to_date }}</p>
+
+<table border="1" cellspacing="0" cellpadding="4">
+<tr>
+<th>Food Item</th>
+<th>Total Orders</th>
+<th>Qty Sold</th>
+<th>Revenue</th>
+</tr>
+
+{% for i in items %}
+<tr>
+<td>{{ i.food_item__name }}</td>
+<td>{{ i.total_orders }}</td>
+<td>{{ i.total_qty }}</td>
+<td>{{ i.revenue }}</td>
+</tr>
+{% endfor %}
+</table>

@@ -1,0 +1,21 @@
+<table class="table table-bordered">
+<thead>
+<tr>
+<th>Food Item</th>
+<th>Total Orders</th>
+<th>Qty Sold</th>
+<th>Revenue</th>
+</tr>
+</thead>
+
+<tbody>
+{% for i in items %}
+<tr>
+<td>{{ i.food_item__name }}</td>
+<td>{{ i.total_orders }}</td>
+<td>{{ i.total_qty }}</td>
+<td>₹ {{ i.revenue }}</td>
+</tr>
+{% endfor %}
+</tbody>
+</table>

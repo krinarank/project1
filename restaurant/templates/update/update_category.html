@@ -1,0 +1,29 @@
+{% extends 'adminpanel/base.html' %}
+{% load static %}
+{% block content %}
+
+    <title>Update Category</title>
+    <link rel="stylesheet" href="{% static 'adminpanel/css/update_category.css' %}">
+
+    <div class="container">
+        <div class="card">
+            <h2>Update Category</h2>
+            <!-- Messages -->
+         {% if request.GET.success %}
+<p class="success-msg">Category Updated Successfully!</p>
+{% endif %}
+
+
+            <form method="POST">
+                {% csrf_token %}
+                <label for="category_name">Category Name</label>
+                <input type="text" id="category_name" name="category_name" value="{{ category.category_name }}" required>
+
+                <button type="submit">Update</button><br><br>
+                <a href="{% url 'add_category' %}" class="back-link">← Back to Category Page</a>
+
+            </form>
+        </div>
+    </div>
+
+{% endblock %}

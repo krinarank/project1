@@ -1,0 +1,168 @@
+{% extends 'adminpanel/base.html' %}
+{% load static %}
+
+{% block content %}
+
+<link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+<link rel="stylesheet" href="{% static 'purchase/css/ingredient.css' %}">
+
+<div class="ingredient-container">
+
+    <!-- 1️⃣ LEFT : ADD INGREDIENT FORM -->
+    <div class="ingredient-form">
+        <h3>Add Ingredient</h3>
+
+        <form method="post">
+            {% csrf_token %}
+
+            <!-- Ingredient Name -->
+            <input type="text" name="name" placeholder="Ingredient Name" required pattern="[A-Za-z\s]{2,100}" title="Enter valid ingredient name (letters only)">
+
+            <!-- Unit -->
+            <input type="text" name="unit_of_measure" placeholder="Unit (kg, liter, pcs)" required pattern="[A-Za-z\s]{1,20}" title="Enter valid unit (letters only)">
+
+            <!-- Description -->
+            <textarea name="description" placeholder="Description" required minlength="5" maxlength="200" title="Enter description (5-200 characters)"></textarea>
+
+            <button type="submit" class="btn">Add Ingredient</button>
+        </form>
+    </div>
+
+    <!-- 2️⃣ RIGHT : INGREDIENT TABLE WITH SEARCH -->
+    <div class="ingredient-table">
+
+        <!-- SEARCH BAR -->
+        <div class="search-container" style="margin-bottom: 15px;">
+            <input type="text" id="ingredientSearch" placeholder="🔍 Search ingredient...">
+        </div>
+
+        <h3>All Ingredients</h3>
+
+        <table>
+            <tr>
+                <th>Name</th>
+                <th>Unit</th>
+                <th>Price</th>
+                <th>Qty</th>
+                <th>Last Updated</th>
+                <th>Actions</th>
+            </tr>
+
+            {% for i in ingredients %}
+            <tr>
+                <td>{{ i.name }}</td>
+                <td>{{ i.unit_of_measure }}</td>
+                <td>₹ {{ i.price_per_unit }}</td>
+                <td>{{ i.available_qty }}</td>
+                <td>{{ i.last_updated }}</td>
+                <td class="actions">
+                    <a href="{% url 'edit_ingredient' i.id %}" class="icon-edit">
+                        <span class="material-icons">edit</span>
+                    </a>
+                    <a href="{% url 'delete_ingredient' i.id %}" class="icon-delete" onclick="return confirm('Are you sure?')">
+                        <span class="material-icons">delete</span>
+                    </a>
+                </td>
+            </tr>
+            {% empty %}
+            <tr>
+                <td colspan="6" style="text-align:center;">No ingredients found</td>
+            </tr>
+            {% endfor %}
+        </table>
+    </div>
+
+</div>
+
+<!-- BACK LINK -->
+<a href="{% url 'dashboard' %}" style="display:inline-flex;align-items:center;gap:5px;margin-top:20px;padding:8px 14px;background-color:#28343b;color:#fff;text-decoration:none;font-weight:500;border-radius:5px;transition:0.3s;">⬅ Back to Dashboard</a>
+
+<!-- JS SEARCH FOR INGREDIENTS -->
+<script>
+const productSelect = document.getElementById('productSelect');
+const newProductInput = document.getElementById('newProductInput');
+const qtyProducedInput = document.querySelector('input[name="quantity_produced"]');
+
+productSelect.addEventListener('change', function() {
+    const value = this.value;
+
+    if (value === '__new__') {
+        // New product selected
+        newProductInput.style.display = 'block';
+        newProductInput.required = true;
+        newProductInput.value = '';
+        qtyProducedInput.value = '';   // <-- New: keep blank
+       
+        const firstRow = document.querySelector('#ingredient-table .usage-row:not(.template-row)');
+        firstRow.querySelectorAll('select,input').forEach(i => i.value = '');
+
+        document.querySelectorAll('#ingredient-table .usage-row:not(.template-row)').forEach((row, idx) => {
+            if (idx > 0) row.remove();
+        });
+        return;
+    } else {
+        newProductInput.style.display = 'none';
+        newProductInput.required = false;
+        newProductInput.value = value;
+    }
+
+    if (!value) return;
+
+    // Existing product: fetch last recipe
+    fetch(`/purchase/get-last-recipe/?product_name=${value}`)
+    .then(res => res.json())
+    .then(data => {
+        const table = document.getElementById('ingredient-table');
+
+        document.querySelectorAll('#ingredient-table .usage-row:not(.template-row)').forEach((row, idx) => {
+            if (idx > 0) row.remove();
+        });
+
+        qtyProducedInput.value = data.quantity || '';  // <-- fill last quantity
+
+        if (!data.items || data.items.length === 0) return;
+
+        const firstRow = document.querySelector('#ingredient-table .usage-row:not(.template-row)');
+
+        // First ingredient
+        const firstItem = data.items[0];
+        setTimeout(() => {
+            firstRow.querySelector('select').value = firstItem.ingredient_id;
+            firstRow.querySelector('input[name="qty_used[]"]').value = firstItem.qty;
+            firstRow.querySelector('input[name="unit[]"]').value = firstItem.unit;
+        }, 50);
+
+        // Extra ingredients
+        for (let i = 1; i < data.items.length; i++) {
+            const item = data.items[i];
+            const template = document.querySelector('.template-row');
+            let row = template.cloneNode(true);
+            row.style.display = '';
+            row.classList.remove('template-row');
+            table.appendChild(row);
+
+            setTimeout(() => {
+                row.querySelector('select').value = item.ingredient_id;
+                row.querySelector('input[name="qty_used[]"]').value = item.qty;
+                row.querySelector('input[name="unit[]"]').value = item.unit;
+            }, 50);
+        }
+    });
+});
+
+
+function prepareOrder(prepared_id, order_qty) {
+    fetch(`/yourapp/preparing/${prepared_id}/${order_qty}/`)
+    .then(res => res.json())
+    .then(data => {
+        if(data.success){
+            alert('Order prepared! Remaining qty: ' + data.new_qty_produced);
+            // Update table UI here if needed
+        } else {
+            alert(data.error);
+        }
+    });
+}
+</script>
+
+{% endblock %}

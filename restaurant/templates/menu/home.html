@@ -1,0 +1,100 @@
+{% extends 'menu/base.html' %}
+{% load static %}
+
+{% block content %}
+
+<!-- ===== HERO SECTION ===== -->
+<div class="home-hero-section">
+    <div class="home-hero-overlay">
+        <h1>Welcome to <span>Taste Villa</span></h1>
+        <p>Delicious food made with love & freshness</p>
+
+        <div class="home-boxes">
+            <div class="home-box">🍽 Quality Food</div>
+            <div class="home-box">🚚 Food Delivery</div>
+            <div class="home-box">💳 Easy Payment</div>
+        </div>
+    </div>
+</div>
+
+<!-- ===== ABOUT SECTION (IMAGE + CONTENT) ===== -->
+<section class="home-about-section">
+    <div class="home-about-container">
+
+        <!-- Left Images -->
+        <div class="home-about-images">
+            <img src="{% static 'menu/images/f5.jpeg' %}" class="home-main-img">
+
+            <div class="home-small-card">
+                <img src="{% static 'menu/images/f6.jpeg' %}" class="home-small-img">
+            </div>
+        </div>
+
+        <!-- Right Content -->
+        <div class="home-about-content">
+            <h2>Fresh Home Food <br> At Your Door Step</h2>
+
+            <p>
+                We believe that everyone deserves delicious, wholesome food
+                without spending hours cooking. Our service brings fresh,
+                hygienic and authentic home-style meals directly to you.
+            </p>
+
+            <div class="home-about-points">
+                <div>
+                    <h4>Our Mission</h4>
+                    <p>Deliver healthy and tasty meals daily.</p>
+                </div>
+
+                <div>
+                    <h4>Our Vision</h4>
+                    <p>Become Ahmedabad’s most trusted food brand.</p>
+                </div>
+
+                <div>
+                    <h4>Our Value</h4>
+                    <p>Quality ingredients & customer satisfaction.</p>
+                </div>
+            </div>
+        </div>
+
+    </div>
+</section>
+
+<!-- ===== SERVICES SECTION ===== -->
+<div class="home-service-section container my-5">
+    <h1 class="text-center mb-4">Our Services</h1>
+
+    <div class="row justify-content-center">
+
+        <!-- Service 1 -->
+        <div class="col-md-4 mb-3">
+            <div class="home-service-card text-center">
+                <img src="{% static 'menu/images/f1.jpeg' %}" alt="Food Ordering">
+                <h4 class="mt-3">Food Ordering</h4>
+                <p>Choose your favorite dishes from our menu and place your order online easily and securely.</p>
+            </div>
+        </div>
+
+        <!-- Service 2 -->
+        <div class="col-md-4 mb-3">
+            <div class="home-service-card text-center">
+                <img src="{% static 'menu/images/f2.jpeg' %}" alt="Fast Food">
+                <h4 class="mt-3">Quality Food</h4>
+                <p>We serve high-quality food made from fresh ingredients to ensure the best taste and satisfaction in every bite.</p>
+            </div>
+        </div>
+
+        <!-- Service 3 -->
+        <div class="col-md-4 mb-3">
+            <div class="home-service-card text-center">
+                <img src="{% static 'menu/images/f3.jpeg' %}" alt="Bakery">
+                <h4 class="mt-3">Easy Payment</h4>
+                <p>Pay your way! Choose from online payments, debit/credit cards, UPI, or cash on delivery for maximum convenience.</p>
+            </div>
+        </div>
+
+    </div>
+</div>
+
+{% endblock %}

@@ -1,0 +1,18 @@
+<h2>Payment Method Report</h2>
+<p>From {{ from_date }} To {{ to_date }}</p>
+
+<table border="1" cellspacing="0" cellpadding="4">
+<tr>
+<th>Method</th>
+<th>Total Orders</th>
+<th>Total Amount</th>
+</tr>
+
+{% for p in payments %}
+<tr>
+<td>{{ p.payment__method }}</td>
+<td>{{ p.total_orders }}</td>
+<td>{{ p.total_amount }}</td>
+</tr>
+{% endfor %}
+</table>

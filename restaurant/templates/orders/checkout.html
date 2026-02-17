@@ -1,0 +1,241 @@
+{% extends 'menu/base.html' %}
+{% load static %}
+
+{% block content %}
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'orders/checkout.css' %}">
+<style>
+.ck-input-error { border: 1.5px solid red !important; }
+.ck-error { color: red; font-size: 0.85em; margin-bottom: 5px; display: block; }
+.ck-place-btn[disabled] { opacity: 0.6; cursor: not-allowed; }
+</style>
+{% endblock %}
+
+<div class="ck-wrapper">
+    <!-- LEFT: Customer Details -->
+    <div class="ck-card ck-left">
+        <h2 class="ck-title">Customer Details</h2>
+
+        <form id="checkoutForm" method="post" action="{% url 'place_order' %}">
+            {% csrf_token %}
+
+            <!-- AUTO-FILL -->
+            <input class="ck-input" id="name" type="text" name="name" placeholder="Full Name" required
+                   value="{{ customer.firstname }} {{ customer.lastname }}">
+            <small class="ck-error" id="nameError"></small>
+
+            <input class="ck-input" id="email" type="email" name="email" placeholder="Email" required
+                   value="{{ customer.email }}">
+            <small class="ck-error" id="emailError"></small>
+
+            <input class="ck-input" id="phone" type="tel" name="phone" placeholder="Phone Number" maxlength="10" required
+                   value="{{ customer.contactno }}">
+            <small class="ck-error" id="phoneError"></small>
+
+            <!-- MANUAL FILL -->
+            <textarea class="ck-input" id="address" name="address" placeholder="Delivery Address" rows="3" required></textarea>
+            <small class="ck-error" id="addressError"></small>
+
+            <input class="ck-input" id="city" type="text" name="city" placeholder="City" required>
+            <small class="ck-error" id="cityError"></small>
+
+            <input class="ck-input" id="state" type="text" name="state" placeholder="State" required>
+            <small class="ck-error" id="stateError"></small>
+
+            <input class="ck-input" id="pincode" type="text" name="pincode" placeholder="Pincode" maxlength="6" required>
+            <small class="ck-error" id="pincodeError"></small>
+
+            <select class="ck-input" id="area_id" name="area_id" required>
+                <option value="">Select Delivery Area</option>
+                {% for area in areas %}
+                <option value="{{ area.id }}">{{ area.name }}</option>
+                {% endfor %}
+            </select>
+            <small class="ck-error" id="areaError"></small>
+        </form>
+    </div>
+
+    <!-- RIGHT: Order Summary + Payment -->
+    <div class="ck-card ck-right">
+        <h2 class="ck-title">Order Summary</h2>
+
+        <div class="ck-summary"><span>Food Item Total</span><span>₹ {{ original_total|floatformat:2 }}</span></div>
+        {% if total_discount > 0 %}
+        <div class="ck-summary" style="color:green;">
+            <span>Discount You Saved</span>
+            <span>- ₹ {{ total_discount|floatformat:2 }}</span>
+        </div>
+        {% endif %}
+        <div class="ck-summary"><span>Subtotal</span><span>₹ {{ item_total|floatformat:2 }}</span></div>
+        <div class="ck-summary"><span>GST (5%)</span><span>₹ {{ tax|floatformat:2 }}</span></div>
+        <div class="ck-summary"><span>Delivery Charges</span><span>₹ {{ delivery_charge|floatformat:2 }}</span></div>
+        <hr>
+        <div class="ck-summary"><span>Total (incl. tax & delivery)</span><span>₹ {{ grand_total|floatformat:2 }}</span></div>
+
+        <div class="ck-payments">
+            <h4 class="pay-heading">Payment Method</h4>
+            <div class="pay-methods">
+                <label class="pay-card">
+                    <input type="radio" name="payment_method" value="COD" checked>
+                    <div class="pay-content"><span class="radio-dot"></span><span class="pay-text">Cash on Delivery</span></div>
+                </label>
+                <label class="pay-card">
+                    <input type="radio" id="upiBtn" name="payment_method" value="UPI">
+                    <div class="pay-content"><span class="radio-dot"></span><span class="pay-text">UPI</span></div>
+                </label>
+            </div>
+        </div>
+
+        <button type="button" id="placeOrderBtn" class="ck-place-btn" disabled>
+            PLACE ORDER
+        </button>
+    </div>
+</div>
+
+<script src="https://checkout.razorpay.com/v1/checkout.js"></script>
+
+<script>
+document.addEventListener("DOMContentLoaded", function(){
+    const form = document.getElementById("checkoutForm");
+    const placeBtn = document.getElementById("placeOrderBtn");
+    const upiBtn = document.getElementById("upiBtn");
+
+    const fields = {
+        name: document.getElementById("name"),
+        email: document.getElementById("email"),
+        phone: document.getElementById("phone"),
+        address: document.getElementById("address"),
+        city: document.getElementById("city"),
+        state: document.getElementById("state"),
+        pincode: document.getElementById("pincode"),
+        area_id: document.getElementById("area_id")
+    };
+
+    const errors = {
+        name: document.getElementById("nameError"),
+        email: document.getElementById("emailError"),
+        phone: document.getElementById("phoneError"),
+        address: document.getElementById("addressError"),
+        city: document.getElementById("cityError"),
+        state: document.getElementById("stateError"),
+        pincode: document.getElementById("pincodeError"),
+        area_id: document.getElementById("areaError")
+    };
+
+    const regex = {
+        name: /^[A-Za-z\s]+$/,
+        email: /^[^\s@]+@[^\s@]+\.[^\s@]+$/,
+        phone: /^\d{10}$/,
+        pincode: /^\d{6}$/
+    };
+
+    function validateField(name){
+        let value = fields[name].value.trim();
+        let valid = true;
+        switch(name){
+            case "name": case "city": case "state":
+                if(!regex.name.test(value)){ valid=false; errors[name].innerText="Only letters allowed"; }
+                else errors[name].innerText=""; break;
+            case "email":
+                if(!regex.email.test(value)){ valid=false; errors[name].innerText="Enter valid email"; }
+                else errors[name].innerText=""; break;
+            case "phone":
+                if(!regex.phone.test(value)){ valid=false; errors[name].innerText="Phone must be 10 digits"; }
+                else errors[name].innerText=""; break;
+            case "pincode":
+                if(!regex.pincode.test(value)){ valid=false; errors[name].innerText="Pincode must be 6 digits"; }
+                else errors[name].innerText=""; break;
+            case "address":
+                if(!value){ valid=false; errors[name].innerText="Address required"; }
+                else errors[name].innerText=""; break;
+            case "area_id":
+                if(!value){ valid=false; errors[name].innerText="Select area"; }
+                else errors[name].innerText=""; break;
+        }
+        if(!valid) fields[name].classList.add("ck-input-error");
+        else fields[name].classList.remove("ck-input-error");
+        return valid;
+    }
+
+    function validateForm(){
+        let valid = true;
+        Object.keys(fields).forEach(f=>{
+            if(!validateField(f)) valid=false;
+        });
+        placeBtn.disabled = !valid;
+        return valid;
+    }
+
+    Object.keys(fields).forEach(f=>{
+        fields[f].addEventListener("input", validateForm);
+        fields[f].addEventListener("change", validateForm);
+    });
+
+    // ================= COD
+    placeBtn.addEventListener("click", function(){
+        if(!validateForm()){ alert("Please fix errors before placing order"); return; }
+        const paymentMethod = document.querySelector("input[name='payment_method']:checked").value;
+        if(paymentMethod==="COD"){
+            form.submit();
+        }
+    });
+
+    // ================= UPI → Razorpay
+    upiBtn.addEventListener("click", function(){
+        if(!validateForm()){ alert("Please fill all details before proceeding with UPI"); return; }
+
+        fetch("{% url 'create_razorpay_order' %}",{
+            method:"POST",
+            headers:{
+                "X-CSRFToken":"{{ csrf_token }}",
+                "Content-Type":"application/x-www-form-urlencoded"
+            },
+            body:"amount={{ grand_total }}"
+        })
+        .then(res=>res.json())
+        .then(data=>{
+            var options = {
+                key: data.key,
+                order_id: data.order_id,
+                currency:"INR",
+                name:"Leela Restaurant",
+                description:"Food Order Payment",
+                handler: function(response){
+                    fetch("{% url 'place_order' %}",{
+                        method:"POST",
+                        headers:{
+                            "X-CSRFToken":"{{ csrf_token }}",
+                            "Content-Type":"application/x-www-form-urlencoded",
+                            "X-Requested-With":"XMLHttpRequest"
+                        },
+                        body:new URLSearchParams({
+                            payment_method:"UPI",
+                            razorpay_payment_id: response.razorpay_payment_id,
+                            name: fields.name.value,
+                            email: fields.email.value,
+                            phone: fields.phone.value,
+                            address: fields.address.value,
+                            city: fields.city.value,
+                            state: fields.state.value,
+                            pincode: fields.pincode.value,
+                            area_id: fields.area_id.value,
+                            final_subtotal:"{{ item_total }}",
+                            final_tax:"{{ tax }}",
+                            final_delivery:"{{ delivery_charge }}",
+                            final_grand_total:"{{ grand_total }}",
+                            final_discount:"{{ total_discount }}"
+                        })
+                    })
+                    .then(res=>res.json())
+                    .then(data=>{
+                        window.location.href="/orders/order-success/"+data.order_id+"/";
+                    });
+                }
+            };
+            new Razorpay(options).open();
+        });
+    });
+
+});
+</script>
+{% endblock %}

@@ -1,0 +1,43 @@
+{% extends 'adminpanel/base.html' %}
+{% load static %}
+
+{% block content %}
+<link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+<link rel="stylesheet" href="{% static 'purchase/css/ingredient.css' %}">
+
+<div class="ingredient-container">
+
+    <div class="ingredient-form">
+        <h3>Edit Ingredient</h3>
+
+        <form method="post">
+            {% csrf_token %}
+
+            <!-- Ingredient Name -->
+            <input type="text" name="name" value="{{ ingredient.name }}" required
+                pattern="[A-Za-z\s]{2,100}"
+                title="Enter valid ingredient name (letters only, 2-100 characters)">
+
+            <!-- Unit of Measure -->
+            <input type="text" name="unit_of_measure" value="{{ ingredient.unit_of_measure }}" required
+                pattern="[A-Za-z\s]{1,20}"
+                title="Enter valid unit (letters only, max 20 characters)">
+
+            <!-- Price per Unit (readonly) -->
+            <input type="number" name="price_per_unit" value="{{ ingredient.price_per_unit }}" readonly>
+
+            <!-- Available Quantity (readonly) -->
+            <input type="number" name="available_qty" value="{{ ingredient.available_qty }}" readonly>
+
+            <!-- Description -->
+            <textarea name="description" required minlength="5" maxlength="200"
+                title="Enter description (5-200 characters)">{{ ingredient.description }}</textarea>
+
+            <button type="submit" class="btn">Update Ingredient</button>
+        </form>
+
+    
+    </div>
+
+</div>
+{% endblock %}

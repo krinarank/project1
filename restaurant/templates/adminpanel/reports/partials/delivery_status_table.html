@@ -1,0 +1,80 @@
+{% extends "adminpanel/base.html" %}
+{% block content %}
+
+<div class="container-fluid mt-4">
+
+    <div class="card shadow">
+        <div class="card-header bg-dark text-white">
+            <h4>Delivery Status Report</h4>
+        </div>
+
+        <div class="card-body">
+
+            <a href="{% url 'delivery_status_pdf' %}" class="btn btn-danger mb-3">
+                Download PDF
+            </a>
+
+            <div class="table-responsive">
+                <table class="table table-bordered table-striped table-hover">
+                    <thead class="table-dark">
+                        <tr>
+                            <th>Order ID</th>
+                            <th>Customer</th>
+                            <th>Delivery Person</th>
+                            <th>Status</th>
+                            <th>Assigned Date</th>
+                            <th>Delivered Date</th>
+                        </tr>
+                    </thead>
+
+                    <tbody>
+                        {% for order in orders %}
+                        <tr>
+                            <td>#{{ order.id }}</td>
+                            <td>{{ order.user.name }}</td>
+                            <td>
+                                {% if order.delivery_person %}
+                                    {{ order.delivery_person.user.name }}
+                                {% else %}
+                                    Not Assigned
+                                {% endif %}
+                            </td>
+
+                            <td>
+                                {% if order.status == "Delivered" %}
+                                    <span class="badge bg-success">Delivered</span>
+                                {% elif order.status == "Out for Delivery" %}
+                                    <span class="badge bg-warning text-dark">Out for Delivery</span>
+                                {% elif order.status == "Preparing" %}
+                                    <span class="badge bg-info text-dark">Preparing</span>
+                                {% else %}
+                                    <span class="badge bg-secondary">{{ order.status }}</span>
+                                {% endif %}
+                            </td>
+
+                            <td>{{ order.assigned_at|date:"d M Y H:i" }}</td>
+                            <td>
+                                {% if order.delivered_at %}
+                                    {{ order.delivered_at|date:"d M Y H:i" }}
+                                {% else %}
+                                    -
+                                {% endif %}
+                            </td>
+
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="6" class="text-center">No Records Found</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+
+                </table>
+            </div>
+
+        </div>
+    </div>
+
+</div>
+
+{% endblock %}

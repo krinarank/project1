@@ -1,0 +1,95 @@
+{% extends 'adminpanel/base.html' %}
+{% block content %}
+
+<h2 style="margin-bottom: 20px;">Ahmedabad Area-wise Orders Treemap</h2>
+
+<div id="treemap" style="width: 100%; height: 600px;"></div>
+
+{{ labels|json_script:"labels-data" }}
+{{ values|json_script:"values-data" }}
+{{ ids|json_script:"ids-data" }}
+{{ area_order_details|json_script:"details-data" }}
+
+<script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+
+<script>
+var labels = JSON.parse(document.getElementById('labels-data').textContent);
+var values = JSON.parse(document.getElementById('values-data').textContent);
+var ids = JSON.parse(document.getElementById('ids-data').textContent);
+var details = JSON.parse(document.getElementById('details-data').textContent);
+
+// Prepare customdata for each area
+var customdata = ids.map(id => details[id]);
+
+// Professional color palette (no gradient)
+var neoColors = ['#FF3F4F','#FF9F1C','#2EC4B6','#E71D36','#011627','#FFBF69','#6A0572','#FF6B6B','#4CC9F0','#8338EC'];
+var colors = labels.map((_, i) => neoColors[i % neoColors.length]);
+
+var data = [{
+    type: "treemap",
+    labels: labels,
+    parents: Array(labels.length).fill(""),
+    values: values,
+    customdata: customdata,
+    hovertemplate: "<b>%{label}</b><br>Total Orders: %{value}<extra></extra>",
+    textinfo: "label",
+    textposition: "middle center",
+    marker: { colors: colors, line: { width: 2, color: 'white' } } // applied professional colors
+}];
+
+var layout = {
+    margin: { t: 50, l: 25, r: 25, b: 25 },
+    font: { family: 'Arial, sans-serif', size: 14 },
+    title: "Area-wise Orders Treemap",
+    uniformtext: { minsize: 12, mode: 'show' },
+    paper_bgcolor:'#f9f9f9'
+};
+
+Plotly.newPlot('treemap', data, layout);
+
+var treemap = document.getElementById('treemap');
+var expandedBoxes = {};
+var initialTexts = labels.map(label => label);
+
+// Initialize treemap text
+Plotly.restyle('treemap', {
+    text: [initialTexts],
+    texttemplate: [Array(labels.length).fill("%{text}")],
+    textposition: ["middle center"],
+    textfont: [{size: 20, family: 'Arial'}]
+});
+
+// Click event for expand/collapse with table
+treemap.on('plotly_click', function(eventData){
+    var point = eventData.points[0];
+    var idx = point.pointNumber;
+    var areaOrders = point.customdata;
+
+    if(expandedBoxes[idx]) {
+        // Collapse box → show only area name
+        initialTexts[idx] = point.label;
+        expandedBoxes[idx] = false;
+    } else {
+        // Expand box → show area name + orders in table
+        var ordersText = `<b>${point.label}</b><br><br>`;
+        if(areaOrders.length === 0){
+            ordersText += "No orders in this area.";
+        } else {
+            // Table-like formatting
+            ordersText += "<b>ID   Customer              Amount</b><br>";
+            ordersText += "----------------------------------------------<br>";
+            areaOrders.forEach(o => {
+                let customer = o.customer_name.padEnd(22, ' ');
+                let amount = o.total_amount.toString().padStart(6, ' ');
+                ordersText += `${o.id.toString().padStart(2,' ')} | ${customer} | ₹${amount}<br>`;
+            });
+        }
+        initialTexts[idx] = ordersText;
+        expandedBoxes[idx] = true;
+    }
+
+    Plotly.restyle('treemap', { text: [initialTexts] });
+});
+</script>
+
+{% endblock %}

@@ -1,0 +1,223 @@
+/* ============ CHECKOUT V2 (CLEAN & BALANCED) ============ */
+
+.ck-wrapper {
+    max-width: 1100px;
+    margin: 40px auto;
+    display: grid;
+    grid-template-columns: 1fr 1fr; /* ✅ SAME WIDTH */
+    gap: 30px;
+    font-family: 'Segoe UI', sans-serif;
+}
+
+/* ========== CARDS ========== */
+.ck-card {
+    background: #ffffff;
+    padding: 28px;
+    border-radius: 18px;
+    box-shadow: 0 12px 30px rgba(0,0,0,0.08);
+}
+
+/* ========== TITLE ========== */
+.ck-title {
+    font-size: 22px;
+    margin-bottom: 20px;
+    border-bottom: 2px solid #f0f0f0;
+    padding-bottom: 10px;
+    color: #222;
+}
+
+/* ========== INPUTS ========== */
+.ck-input,
+.ck-card select,
+.ck-card textarea {
+    width: 100%;
+    padding: 14px;
+    margin-bottom: 14px;
+    border-radius: 12px;
+    border: 1px solid #ddd;
+    font-size: 14px;
+    transition: 0.3s;
+}
+
+.ck-input:focus,
+.ck-card select:focus,
+.ck-card textarea:focus {
+    outline: none;
+    border-color: #00c853;
+    box-shadow: 0 0 0 3px rgba(0,200,83,0.2);
+}
+
+/* ========== SUMMARY ========== */
+.ck-summary {
+    background: #fafafa;
+    padding: 22px;
+    border-radius: 16px;
+}
+
+.ck-row {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 12px;
+    font-size: 15px;
+}
+
+.ck-total {
+    display: flex;
+    justify-content: space-between;
+    font-size: 18px;
+    font-weight: 700;
+    margin-top: 14px;
+}
+
+/* ========== PAYMENT BUTTONS ========== */
+.ck-payments {
+    display: flex;
+    gap: 14px;
+    margin: 22px 0;
+}
+
+.ck-btn {
+    flex: 1;
+    padding: 14px;
+    border-radius: 14px;
+    font-weight: 700;
+    cursor: pointer;
+    border: 2px solid transparent;
+    transition: 0.3s;
+}
+
+/* COD – STRONG ORANGE */
+.ck-cod {
+    background: #fff;
+    border-color: #ff9800;
+    color: #ff9800;
+}
+
+.ck-cod:hover {
+    background: #ff9800;
+    color: #ffffff;
+}
+
+/* UPI – PREMIUM */
+.ck-upi {
+    background: linear-gradient(135deg, #6a11cb, #2575fc);
+    color: #ffffff;
+}
+
+.ck-upi:hover {
+    transform: translateY(-2px);
+}
+
+/* ========== PLACE ORDER – FULL GREEN ========== */
+.ck-place-btn {
+    width: 100%;
+    padding: 18px;
+    background: linear-gradient(135deg, #00c853, #009e42);
+    color: #ffffff;
+    border: none;
+    border-radius: 16px;
+    font-size: 17px;
+    font-weight: 800;
+    cursor: pointer;
+    transition: 0.3s;
+}
+
+.ck-place-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 12px 28px rgba(0,200,83,0.45);
+}
+
+/* ========== MOBILE ========== */
+@media (max-width: 900px) {
+    .ck-wrapper {
+        grid-template-columns: 1fr;
+    }
+}
+
+
+/* ===== PAYMENT METHOD V3 ===== */
+
+.pay-heading {
+    margin-top: 24px;
+    margin-bottom: 12px;
+    font-size: 16px;
+    font-weight: 600;
+    color: #111;
+}
+
+.pay-methods {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+/* hide default radio */
+.pay-card input {
+    display: none;
+}
+
+/* card */
+.pay-card {
+    border: 1.6px solid #e5e7eb;
+    border-radius: 14px;
+    padding: 14px 16px;
+    cursor: pointer;
+    background: #fff;
+    transition: all 0.25s ease;
+}
+
+/* content */
+.pay-content {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+}
+
+/* radio circle */
+.radio-dot {
+    width: 18px;
+    height: 18px;
+    border-radius: 50%;
+    border: 2px solid #bdbdbd;
+    position: relative;
+}
+
+/* radio inner */
+.radio-dot::after {
+    content: "";
+    width: 10px;
+    height: 10px;
+    background: #16a34a;
+    border-radius: 50%;
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%) scale(0);
+    transition: 0.2s ease;
+}
+
+/* text */
+.pay-text {
+    font-size: 15px;
+    font-weight: 500;
+    color: #111;
+}
+
+/* hover */
+.pay-card:hover {
+    border-color: #c7c7c7;
+}
+
+/* selected */
+.pay-card:has(input:checked) {
+    border-color: #16a34a;
+    background: #f0fdf4;
+}
+
+.pay-card:has(input:checked) .radio-dot {
+    border-color: #16a34a;
+}
+
+.pay-card:has(input:checked) .radio-dot::after {
+    transform: translate(-50%, -50%) scale(1);
+}

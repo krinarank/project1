@@ -1,0 +1,236 @@
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    font-family: Arial, sans-serif;
+}
+
+body {
+    background: #fff;
+}
+
+/* =======================
+   MAIN DASHBOARD LAYOUT
+======================= */
+.dashboard {
+    display: flex;
+    min-height: 100vh;
+}
+
+/* =======================
+   LEFT SIDEBAR
+======================= */
+.dashboard-left {
+    width: 250px;
+    min-width: 250px;
+    background: #2c3e50;
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+}
+
+.dashboard-left h2 {
+    color: #fff;
+    margin-bottom: 20px;
+}
+
+.dashboard-left a {
+    display: block;
+    width: 100%;
+    color: #e4e4e4;
+    text-decoration: none;
+    padding: 8px 10px;
+    margin-bottom: 6px;
+    border-radius: 4px;
+}
+
+.dashboard-left a:hover {
+    background: #3f5f7f;
+}
+
+/* SUBMENU */
+.submenu {
+    display: none;
+    padding-left: 15px;
+}
+
+.submenu a {
+    display: block;
+    width: 100%;
+}
+
+/* LOGOUT */
+.logout {
+    margin-top: auto;
+}
+
+.logout-btn {
+    background: red;
+    color: white;
+    text-align: center;
+}
+
+/* =======================
+   RIGHT SIDE
+======================= */
+.dashboard-right {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+}
+
+/* =======================
+   HEADER (FIXED AREA)
+======================= */
+.dashboard-header {
+    background: #2c3e50;
+    color: white;
+    padding: 15px 30px;
+
+    display: flex;
+    align-items: center;
+}
+
+/* 🔥 FORCE RIGHT ALIGN */
+.header-right {
+    margin-left: auto;
+    display: flex;
+    align-items: center;
+    gap: 20px;
+}
+
+/* ICON */
+.header-icon {
+    position: relative;
+    font-size: 22px;
+    color: white;
+    text-decoration: none;
+    flex-shrink: 0;
+}
+
+/* BADGE */
+.badge {
+    position: absolute;
+    top: -6px;
+    right: -8px;
+    background: red;
+    color: white;
+    font-size: 11px;
+    padding: 3px 6px;
+    border-radius: 50%;
+}
+
+/* ADMIN NAME */
+.admin-name {
+    font-weight: bold;
+    white-space: nowrap;
+}
+
+/* =======================
+   CONTENT
+======================= */
+.dashboard-content {
+    padding: 30px;
+}
+
+/* CARDS */
+.dashboard-cards {
+    display: flex;
+    gap: 20px;
+    flex-wrap: wrap;
+}
+
+.admin-stat-card {
+    background: #1e1e1e;
+    padding: 25px;
+    width: 260px;
+    border-radius: 14px;
+    text-align: center;
+    box-shadow: 0 10px 25px rgba(0,0,0,0.3);
+}
+
+.admin-stat-card h4 {
+    color: #aaa;
+    font-size: 14px;
+}
+
+.admin-stat-card h2 {
+    font-size: 34px;
+    color: #ff4d00;
+    margin-top: 10px;
+}
+
+.inquiry-stats {
+    margin-top: 10px;
+}
+
+.stat-item {
+    display: flex;
+    justify-content: space-between;
+    color: #fff;
+    margin-top: 8px;
+}
+
+.stat-number {
+    color: #ff4d00;
+    font-weight: bold;
+}
+
+/* FORMS */
+.dashboard-right form input,
+.dashboard-right form button {
+    width: 100%;
+    padding: 8px;
+    margin-bottom: 10px;
+}
+
+/* TABLE */
+.dashboard-right table {
+    border-collapse: collapse;
+    width: 100%;
+}
+
+.dashboard-right table th,
+.dashboard-right table td {
+    padding: 10px;
+    text-align: left;
+}
+
+/* =======================
+   KILL ALL OLD SHIT 😤
+======================= */
+.header-right,
+.header-icon {
+    float: none !important;
+    left: auto !important;
+    right: auto !important;
+}
+
+
+.messages-wrapper {
+    margin-bottom: 15px;
+}
+
+
+.alert {
+    padding: 10px 15px;
+    border-radius: 5px;
+    margin-bottom: 10px;
+    font-size: 14px;
+    position: relative;
+}
+
+.alert.success { background-color: #d4edda; color: #155724; }
+.alert.error   { background-color: #f8d7da; color: #721c24; }
+.alert.warning { background-color: #fff3cd; color: #856404; }
+
+/* Optional: style close button */
+.alert button {
+    position: absolute;
+    top: 5px;
+    right: 10px;
+    cursor: pointer;
+    font-weight: bold;
+
+}
+

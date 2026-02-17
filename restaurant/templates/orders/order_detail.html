@@ -1,0 +1,405 @@
+{% extends 'menu/base.html' %}
+{% load static %}
+
+{% block content %}
+<link rel="stylesheet" href="{% static 'orders/css/combin_orders.css' %}">
+
+<div class="container py-4">
+
+    <!-- ================= ORDER HEADER ================= -->
+    <h2>Order #{{ order.id }} Details</h2>
+    <!-- ================= ORDER STATUS TRACKER ================= -->
+<h3>Order Status</h3>
+<ul class="progressbar">
+    {% for step in steps %}
+        <li class="{% if forloop.counter0 <= current_index %}active{% endif %}">
+            {{ step|title }}
+        </li>
+    {% endfor %}
+</ul>
+
+<style>
+.progressbar {
+  display: flex;
+  justify-content: space-between;
+  list-style-type: none;
+  padding: 0;
+  margin: 20px 0;
+}
+
+.progressbar li {
+  position: relative;
+  text-align: center;
+  flex: 1;
+  color: gray;
+}
+
+.progressbar li:before {
+  content: '';
+  width: 30px;
+  height: 30px;
+  border: 2px solid gray;
+  display: block;
+  margin: 0 auto 10px auto;
+  border-radius: 50%;
+  background-color: white;
+  z-index: 1;
+  position: relative;
+}
+
+.progressbar li.active {
+  color: green;
+}
+
+.progressbar li.active:before {
+  border-color: green;
+  background-color: green;
+}
+
+.progressbar li:after {
+  content: '';
+  position: absolute;
+  width: 100%;
+  height: 4px;
+  background-color: gray;
+  top: 15px; /* line now passes BELOW the circle */
+  left: -50%;
+  z-index: 0;
+}
+
+.progressbar li:first-child:after {
+  content: none;
+}
+
+.progressbar li.active + li:after {
+  background-color: green;
+}
+
+</style>
+<style>
+.star-rating {
+    display: flex;
+    flex-direction: row-reverse;
+    justify-content: flex-start;
+    font-size: 2rem;
+}
+
+.star-rating input {
+    display: none;
+}
+
+.star-rating label {
+    color: #ccc;
+    cursor: pointer;
+    padding: 0 5px;
+}
+
+.star-rating label:hover,
+.star-rating label:hover ~ label {
+    color: gold;
+}
+
+.star-rating input:checked ~ label {
+    color: gold;
+}
+
+</style>
+    <p><strong>Status:</strong> {{ order.order_status }}</p>
+
+{% if order.order_status|upper == 'DELIVERED' %}
+
+    {% if feedback %}
+        <div class="alert alert-success mt-3">
+            <h5>⭐ Your Feedback</h5>
+            <p><strong>Rating:</strong>
+    {% for i in "12345" %}
+        {% if forloop.counter <= feedback.rating %}
+            <span style="color:gold; font-size:1.5rem;">★</span>
+        {% endif %}
+    {% endfor %}
+</p>
+
+            <p><strong>Feedback:</strong> {{ feedback.feedback_text }}</p>
+        </div>
+    {% else %}
+        <div class="card mt-3">
+            <div class="card-header bg-dark text-white">
+                Give Feedback
+            </div>
+            <div class="card-body">
+                <form method="POST">
+                    {% csrf_token %}
+
+                    <div class="mb-3">
+    <label class="form-label">Rating</label>
+    <div class="star-rating">
+    <input type="radio" id="star5" name="rating" value="5">
+    <label for="star5">★</label>
+
+    <input type="radio" id="star4" name="rating" value="4">
+    <label for="star4">★</label>
+
+    <input type="radio" id="star3" name="rating" value="3">
+    <label for="star3">★</label>
+
+    <input type="radio" id="star2" name="rating" value="2">
+    <label for="star2">★</label>
+
+    <input type="radio" id="star1" name="rating" value="1">
+    <label for="star1">★</label>
+</div>
+
+</div>
+
+
+                    <div class="mb-3">
+                        <label>Feedback</label>
+                        <textarea name="feedback_text"
+                                  class="form-control" rows="3" required></textarea>
+                    </div>
+
+                    <button type="submit" class="btn btn-success">
+                        Submit Feedback
+                    </button>
+                </form>
+            </div>
+        </div>
+    {% endif %}
+
+{% endif %}
+
+    <p><strong>Date:</strong> {{ order.order_date|date:"d M Y H:i" }}</p>
+    <p><strong>Delivery Address:</strong> {{ order.delivery_address }}</p>
+    <!-- ===aa krisha ae add karelu===== -->
+<!-- Order Status & Cancel Button -->
+<!-- ================= ORDER STATUS & CANCEL BUTTON ================= -->
+<div class="order-status-section" style="margin-top:20px; display:flex; justify-content:space-between; align-items:center;">
+    <!-- Left: Status Text -->
+    <p style="margin:0;"><strong>Status:</strong> <span id="status-{{ order.id }}">{{ order.order_status }}</span></p>
+
+    <!-- Right: Cancel Button -->
+    {% if order.order_status in 'PLACED,CONFIRMED' %}
+    <button id="cancel-btn-{{ order.id }}" 
+            class="btn btn-cancel" 
+            data-order-id="{{ order.id }}">
+        Cancel Order
+    </button>
+{% elif order.order_status == 'PREPARING' %}
+    <button class="btn btn-disabled btn-preparing" disabled>
+       Cancel Order
+    </button>
+{% else %}
+    <button class="btn btn-disabled" disabled>
+        Cancelled
+    </button>
+{% endif %}
+
+</div>
+<script>
+document.addEventListener("DOMContentLoaded", function() {
+    const cancelBtn = document.querySelector('.btn-cancel');
+    if(cancelBtn){
+        cancelBtn.addEventListener('click', function() {
+            const orderId = this.dataset.orderId;
+            if(confirm("Are you sure you want to cancel this order?")){
+                fetch(`/orders/cancel/${orderId}/`, {
+                    method: 'POST',
+                    headers: {
+                        'X-CSRFToken': getCookie('csrftoken'),
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({})
+                })
+                .then(res => res.json())
+                .then(data => {
+                    alert(data.message);
+                    if(data.success){
+                        cancelBtn.disabled = true;
+                        cancelBtn.classList.remove('btn-cancel');
+                        cancelBtn.classList.add('btn-disabled');
+                        cancelBtn.innerText = 'Cancelled';
+                        const statusElem = document.querySelector(`#status-${orderId}`);
+                        if(statusElem) statusElem.innerText = 'CANCELLED';
+                    }
+                })
+                .catch(err => console.error("Error:", err));
+            }
+        });
+    }
+});
+
+// CSRF helper
+function getCookie(name) {
+    let cookieValue = null;
+    if(document.cookie && document.cookie !== '') {
+        const cookies = document.cookie.split(';');
+        for(let i=0;i<cookies.length;i++){
+            const cookie = cookies[i].trim();
+            if(cookie.substring(0,name.length+1) === (name+'=')){
+                cookieValue = decodeURIComponent(cookie.substring(name.length+1));
+                break;
+            }
+        }
+    }
+    return cookieValue;
+}
+</script>
+
+
+<style>
+/* Disabled red button for preparing orders */
+button.btn-preparing.btn-disabled,
+.btn-preparing:disabled {
+    background-color: #dc3545 !important; /* red background */
+    color: white !important;              /* text white */
+    border: 1px solid #dc3545 !important; /* red border */
+    cursor: not-allowed;
+    opacity: 0.9;  /* slightly transparent to indicate disabled */
+}
+
+/* Base button */
+.btn {
+    padding: 8px 18px;
+    font-size: 14px;
+    border-radius: 6px;
+    border: none;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+/* Cancel button (active) */
+.btn-cancel {
+    background-color: #dc3545;
+    color: white;
+    border: 1px solid #dc3545;
+}
+.btn-cancel:hover {
+    background-color: #c82333;
+    border-color: #c82333;
+}
+
+/* Disabled button */
+.btn-disabled, 
+.btn:disabled {
+    background-color: #6c757d !important;
+    color: white !important;
+    cursor: not-allowed;
+    border: 1px solid #6c757d;
+    opacity: 0.8;
+}
+
+/* Secondary button (like Back) */
+.btn-secondary {
+    background-color: #6c757d;
+    color: white;
+    border: 1px solid #6c757d;
+}
+.btn-secondary:hover {
+    background-color: #5a6268;
+    border-color: #545b62;
+}
+</style>
+
+<!-- =========================ahiya sudhi================== -->
+
+    <!-- ================= ORDER ITEMS ================= -->
+    <div class="order-items" style="margin-top:20px;">
+        {% for item in order_items %}
+        <div class="order-item-card"
+             style="border:1px solid #eee; padding:12px; margin-bottom:12px;
+                    display:flex; align-items:center; border-radius:8px;">
+
+            <!-- IMAGE -->
+            <div style="width:80px; height:80px; margin-right:15px;">
+                {% with item.food_item.images.first as img %}
+                    {% if img %}
+                        <img src="{{ img.img_url.url }}"
+                             alt="{{ item.food_item.name }}"
+                             style="width:100%; height:100%; object-fit:cover; border-radius:6px;">
+                    {% else %}
+                        <img src="{% static 'images/no-food.png' %}"
+                             style="width:100%; height:100%; object-fit:cover; border-radius:6px;">
+                    {% endif %}
+                {% endwith %}
+            </div>
+
+            <!-- INFO -->
+            <div>
+                <p><strong>{{ item.food_item.name }}</strong></p>
+                <p>Qty: {{ item.qty }}</p>
+
+                <!-- ORIGINAL PRICE -->
+                <p style="font-size:14px; color:#777;">
+                    Original: ₹{{ item.food_item.price|floatformat:2 }}
+                </p>
+
+                <!-- DISCOUNTED PRICE -->
+                <p style="font-size:15px;">
+                    Price after discount:
+                    <strong>₹{{ item.discounted_price|floatformat:2 }}</strong>
+                </p>
+
+                <!-- ITEM SAVING -->
+                {% if item.item_discount > 0 %}
+                <p style="font-size:13px; color:green;">
+                    You saved ₹{{ item.item_discount|floatformat:2 }}
+                </p>
+                {% endif %}
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+
+    <!-- ================= ORDER SUMMARY (CHECKOUT STYLE) ================= -->
+    <div class="order-summary"
+         style="margin-top:25px; border-top:1px solid #ddd; padding-top:15px; max-width:420px;">
+
+        <p style="display:flex; justify-content:space-between;">
+            <span><strong>Food Item Total</strong></span>
+            <span>₹ {{ original_total|floatformat:2 }}</span>
+        </p>
+
+        {% if total_discount > 0 %}
+        <p style="display:flex; justify-content:space-between; color:green;">
+            <span><strong>Discount You Saved</strong></span>
+            <span>- ₹ {{ total_discount|floatformat:2 }}</span>
+        </p>
+        {% endif %}
+
+        <p style="display:flex; justify-content:space-between;">
+            <span><strong>Subtotal</strong></span>
+            <span>₹ {{ item_total|floatformat:2 }}</span>
+        </p>
+
+        <p style="display:flex; justify-content:space-between;">
+            <span><strong>GST (5%)</strong></span>
+            <span>₹ {{ tax|floatformat:2 }}</span>
+        </p>
+
+        <p style="display:flex; justify-content:space-between;">
+            <span><strong>Delivery Charges</strong></span>
+            <span>₹ {{ delivery_charge|floatformat:2 }}</span>
+        </p>
+
+        <hr>
+
+        <p style="display:flex; justify-content:space-between; font-size:18px;">
+            <span><strong>Total Payable</strong></span>
+            <span><strong>₹ {{ grand_total|floatformat:2 }}</strong></span>
+        </p>
+    </div>
+
+
+    <!-- ================= BACK BUTTON ================= -->
+    <div style="margin-top:25px;">
+        <a href="{% url 'my_orders' %}" class="btn btn-secondary">
+            Back to Orders
+        </a>
+         <a href="{% url 'download_invoice' order.id %}" class="btn btn-secondary">
+            Download Invoice
+        </a>
+    </div>
+
+    
+
+{% endblock %}

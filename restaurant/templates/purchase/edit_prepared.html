@@ -1,0 +1,93 @@
+{% extends 'adminpanel/base.html' %}
+{% load static %}
+
+{% block content %}
+
+<link rel="stylesheet" href="{% static 'purchase/css/purchase.css' %}">
+
+<div class="purchase-container">
+  <div class="purchase-form">
+    <h3>Edit Prepared Item</h3>
+    <form method="POST">
+      {% csrf_token %}
+
+      <label>Product Name:</label>
+      <input type="text" name="product_name" id="product_name"
+             value="{{ prepared_item.product_name }}" required
+             pattern="[A-Za-z\s]{2,50}" title="Enter valid product name (letters only, 2-50 characters)">
+
+      <label>Production Date:</label>
+      <input type="date" name="production_date" id="production_date"
+             value="{{ prepared_item.production_date|date:'Y-m-d' }}" required>
+
+      <label>Quantity Produced:</label>
+      <input type="number" name="quantity_produced" min="1"
+             value="{{ prepared_item.quantity_produced }}" required>
+
+      <h4>Ingredient Usage</h4>
+      <table id="ingredient-table" border="1" cellpadding="5" cellspacing="0">
+        <tr>
+          <th>Ingredient</th>
+          <th>Qty Used</th>
+          <th>Unit</th>
+          <th>Action</th>
+        </tr>
+        {% for usage in item_usages %}
+        <tr class="usage-row">
+          <td>
+            <select name="raw[]" required>
+              <option value="">Select Ingredient</option>
+              {% for ing in ingredients %}
+              <option value="{{ ing.id }}" {% if usage.raw.id == ing.id %}selected{% endif %}>
+                {{ ing.name }} (Stock: {{ ing.available_qty }})
+              </option>
+              {% endfor %}
+            </select>
+          </td>
+          <td><input type="number" name="qty_used[]" step="0.01" min="0.01"
+                     value="{{ usage.qty_used }}" required></td>
+          <td><input type="text" name="unit[]" value="{{ usage.unit }}" placeholder="kg, pcs, liter" required></td>
+          <td><button type="button" class="btn-small remove-row">❌</button></td>
+        </tr>
+        {% endfor %}
+      </table>
+
+      <button type="button" class="btn" id="add-row">➕ Add Row</button>
+      <button type="submit" class="btn" style="margin-top:10px;">Update Prepared Item</button>
+    </form>
+  </div>
+</div>
+
+<script>
+// Add new ingredient row
+document.getElementById('add-row').addEventListener('click', function() {
+  const table = document.getElementById('ingredient-table').getElementsByTagName('tbody')[0] || document.getElementById('ingredient-table');
+  const newRow = table.rows[1].cloneNode(true);
+  newRow.querySelectorAll('select,input').forEach(i => i.value = '');
+  table.appendChild(newRow);
+});
+
+// Remove ingredient row
+document.addEventListener('click', function(e) {
+  if (e.target && e.target.classList.contains('remove-row')) {
+    const rows = document.querySelectorAll('#ingredient-table .usage-row');
+    if (rows.length > 1) e.target.closest('tr').remove();
+  }
+});
+
+// Set max date as today so future dates are disabled
+const today = new Date();
+const yyyy = today.getFullYear();
+const mm = String(today.getMonth() + 1).padStart(2,'0');
+const dd = String(today.getDate()).padStart(2,'0');
+const currentDate = `${yyyy}-${mm}-${dd}`;
+
+// Get the date input field
+const dateInput = document.getElementById('production_date');
+
+// Set max to current date
+dateInput.max = currentDate;
+// Value from database remains (past dates selectable)
+</script>
+
+{% endblock %}
