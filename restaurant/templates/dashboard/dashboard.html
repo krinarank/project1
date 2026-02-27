@@ -1,6 +1,13 @@
 {% extends "adminpanel/base.html" %}
 {% block content %}
-
+ 
+<!-- AHI NICHHE AA ADD KAR -->
+ 
+<div class="lowstock-topbar">
+    <button class="lowstock-btn" onclick="openLowStockModal()">
+        ⚠ View Low Stock
+    </button>
+</div>
 <div class="dashboard-cards">
 
     <div class="admin-stat-card">
@@ -49,7 +56,35 @@
     <!-- <h4>📊 Revenue (Last 7 Days)</h4> -->
     <canvas id="revenueChart"></canvas>
 </div>
+<div id="lowStockModal" class="lowstock-modal">
+    <div class="lowstock-content">
 
+        <div class="modal-header">
+            <h3>Low Stock Ingredients</h3>
+            <button class="close-btn" onclick="closeLowStockModal()">×</button>
+        </div>
+
+        <div class="modal-body">
+            {% for ing in low_stock_ingredients %}
+            <div class="ingredient-row">
+                <div class="ingredient-left">
+                    <span class="ingredient-name">{{ ing.name }}</span>
+                    <span class="low-label">{{ ing.unit_of_measure }}</span>
+                </div>
+
+                <div class="ingredient-qty">
+                    {{ ing.available_qty }}
+                </div>
+            </div>
+            {% empty %}
+            <div class="empty-state">
+                ✅ All ingredients are in stock
+            </div>
+            {% endfor %}
+        </div>
+
+    </div>
+</div>
 {% endblock %}
 
 {% block extra_js %}
@@ -236,6 +271,16 @@ if (orderCanvas && orderDailyLabels.length > 0) {
     });
 }
 </script>
+<script>
+function openLowStockModal() {
+    document.body.classList.add("modal-open");
+    document.getElementById("lowStockModal").style.display = "flex";
+}
 
+function closeLowStockModal() {
+    document.body.classList.remove("modal-open");
+    document.getElementById("lowStockModal").style.display = "none";
+}
+</script>
 
 {% endblock %}

@@ -104,7 +104,7 @@
 }
 
 </style>
-    <p><strong>Status:</strong> {{ order.order_status }}</p>
+    <!-- <p><strong>Status:</strong> {{ order.order_status }}</p> -->
 
 {% if order.order_status|upper == 'DELIVERED' %}
 
@@ -172,7 +172,6 @@
     <p><strong>Delivery Address:</strong> {{ order.delivery_address }}</p>
     <!-- ===aa krisha ae add karelu===== -->
 <!-- Order Status & Cancel Button -->
-<!-- ================= ORDER STATUS & CANCEL BUTTON ================= -->
 <!-- ================= ORDER STATUS & CANCEL BUTTON ================= -->
 <div class="order-status-section"
      style="margin-top:20px; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap;">
@@ -300,6 +299,7 @@ function getCookie(name) {
 }
 
 </script>
+
 
 
 <style>
