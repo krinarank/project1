@@ -17,12 +17,17 @@
         <input type="text" id="subcategorySearch" placeholder="🔍 Search subcategory...">
     </div>
 
-        <table>
+        <div style="max-height:300px; overflow-y:auto; border:1px solid #ddd; border-radius:8px;">
+
+        <table style="width:100%; border-collapse:collapse;">
+            
+            <thead style="position:sticky; top:0; background:#212529; color:white; z-index:10;">
             <tr>
                 <th>Subcategory Name</th>
                 <th>Category</th>
                 <th>Action</th>
             </tr>
+            </thead>
 
             {% for sub in subcategories %}
             <tr>
@@ -40,6 +45,7 @@
             </tr>
             {% endfor %}
         </table>
+        </div>
     </div>
 
     <!-- RIGHT SIDE : FORM -->

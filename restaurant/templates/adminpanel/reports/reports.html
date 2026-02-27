@@ -1,214 +1,240 @@
-{% extends "adminpanel/base.html" %}
-{% block content %}
+    {% extends "adminpanel/base.html" %}
+    {% block content %}
 
-<style>
+    <style>
 
-.report-card{
-    background:#fff;
-    border-radius:12px;
-    padding:18px;
-    box-shadow:0 2px 10px rgba(0,0,0,.06);
-    position:relative;
-}
-
-/* corner filters */
-.quick-corner{
-    position:absolute;
-    top:14px;
-    right:18px;
-}
-
-.quick-corner .btn{
-    padding:4px 10px;
-    font-size:13px;
-}
-
-/* filter row */
-.filter-row{
-    display:flex;
-    align-items:center;
-    gap:10px;
-    flex-wrap:wrap;
-}
-
-/* smaller date boxes */
-.date-box{
-    width:150px;
-    height:34px;
-    padding:4px 8px;
-    font-size:14px;
-}
-
-.report-select{
-    width:200px;
-}
-
-@media(max-width:768px){
-    .filter-row{
-        flex-direction:column;
-        align-items:flex-start;
+    .report-card{
+        background:#fff;
+        border-radius:12px;
+        padding:18px;
+        box-shadow:0 2px 10px rgba(0,0,0,.06);
+        position:relative;
     }
+
+    /* corner filters */
     .quick-corner{
-        position:static;
-        margin-bottom:10px;
+        position:absolute;
+        top:14px;
+        right:18px;
     }
-}
 
-</style>
+    .quick-corner .btn{
+        padding:4px 10px;
+        font-size:13px;
+    }
 
-<div class="container-fluid mt-3">
+    /* filter row */
+    .filter-row{
+        display:flex;
+        align-items:center;
+        gap:10px;
+        flex-wrap:wrap;
+    }
 
-```
-<div class="report-card">
+    /* smaller date boxes */
+    .date-box{
+        width:150px;
+        height:34px;
+        padding:4px 8px;
+        font-size:14px;
+    }
 
-    <!-- CORNER QUICK FILTER -->
-    <div class="quick-corner btn-group">
-        <button class="btn btn-outline-secondary quick" data-type="today">Today</button>
-        <button class="btn btn-outline-secondary quick" data-type="week">Week</button>
-        <button class="btn btn-outline-secondary quick" data-type="month">Month</button>
-    </div>
+    .report-select{
+        width:200px;
+    }
 
-    <!-- FILTER LINE -->
-    <div class="mb-3">
+    @media(max-width:768px){
+        .filter-row{
+            flex-direction:column;
+            align-items:flex-start;
+        }
+        .quick-corner{
+            position:static;
+            margin-bottom:10px;
+        }
+    }
 
-    <!-- REPORT SELECTOR -->
-    <div class="mb-2">
-        <select id="reportSelector" class="form-select report-select">
-            <option value="customer_report">Customers</option>
-            <option value="order_report">Orders</option>
-            <option value="sales_report">Sales</option>
-            <option value="item_report">Items</option>
-            <option value="payment_report">Payments</option>
-            <option value="order_history_report">Order History</option>
-<option value="cancellation_report">Cancellation Report</option>
-<!-- <option value="delivery_status_report">Delivery Status</option>
-<option value="past_delivery_report">Past Delivery Detail</option>
-<option value="assign_order_report">Assign Order Report</option> -->
+    </style>
 
-        </select>
-    </div>
+    <div class="container-fluid mt-3">
 
-    <!-- DATES UNDER SELECTOR -->
-    <div class="d-flex align-items-center gap-2 flex-wrap">
-
-        <label class="mb-0">From</label>
-        <input type="date" id="fromDate" class="form-control date-box">
-
-        <label class="mb-0">To</label>
-        <input type="date" id="toDate" class="form-control date-box">
-
-        <button id="showBtn" class="btn btn-primary">Show</button>
-        <button id="downloadPdfBtn" class="btn btn-danger">PDF</button>
-
-    </div>
-
+ 
+    <div style="display:flex; justify-content:flex-end; margin-bottom:10px;">
+    <input type="text" id="reportSearch"
+           placeholder="🔍 Search report..."
+           style="width:250px; padding:6px; border-radius:6px; border:1px solid #ccc;">
 </div>
+    <div class="report-card">
 
-    <hr>
-
-    <div id="reportContent">
-        <div class="text-center text-muted py-5">
-            Select filters and click <b>Show</b> to generate report
+        <!-- CORNER QUICK FILTER -->
+        <div class="quick-corner btn-group">
+            <button class="btn btn-outline-secondary quick" data-type="today">Today</button>
+            <button class="btn btn-outline-secondary quick" data-type="week">Week</button>
+            <button class="btn btn-outline-secondary quick" data-type="month">Month</button>
         </div>
+
+        <!-- FILTER LINE -->
+        <div class="mb-3">
+
+        <!-- REPORT SELECTOR -->
+        <div class="mb-2">
+            <select id="reportSelector" class="form-select report-select">
+                <option value="customer_report">Customers</option>
+                <option value="order_report">Orders</option>
+                <option value="sales_report">Sales</option>
+                <option value="item_report">Items</option>
+                <option value="payment_report">Payments</option>
+                <option value="order_history_report">Order History</option>
+    <option value="cancellation_report">Cancellation Report</option>
+    <!-- <option value="delivery_status_report">Delivery Status</option>
+    <option value="past_delivery_report">Past Delivery Detail</option>
+    <option value="assign_order_report">Assign Order Report</option> -->
+
+            </select>
+        </div>
+
+        <!-- DATES UNDER SELECTOR -->
+        <div class="d-flex align-items-center gap-2 flex-wrap">
+
+            <label class="mb-0">From</label>
+            <input type="date" id="fromDate" class="form-control date-box">
+
+            <label class="mb-0">To</label>
+            <input type="date" id="toDate" class="form-control date-box">
+
+            <button id="showBtn" class="btn btn-primary">Show</button>
+            <button id="downloadPdfBtn" class="btn btn-danger">PDF</button>
+
+        </div>
+
+    </div>
+
+        <hr>
+
+        <div id="reportContent"
+     style="max-height:400px; overflow-y:auto; border:1px solid #ddd; border-radius:8px;">
+
+    <div class="text-center text-muted py-5">
+        
+        Select filters and click <b>Show</b> to generate report
     </div>
 
 </div>
-```
 
-</div>
+    </div>
+  
 
-<script>
+    </div>
 
-document.addEventListener("DOMContentLoaded", function(){
+    <script>
 
-    let today = new Date().toISOString().split("T")[0];
-    document.getElementById("fromDate").max = today;
-    document.getElementById("toDate").max = today;
+    document.addEventListener("DOMContentLoaded", function(){
 
-    // QUICK BUTTONS
-    document.querySelectorAll(".quick").forEach(btn=>{
-        btn.addEventListener("click",function(){
+        let today = new Date().toISOString().split("T")[0];
+        document.getElementById("fromDate").max = today;
+        document.getElementById("toDate").max = today;
 
-            let type=this.dataset.type;
-            let today=new Date();
-            let fromDate="",toDate="";
+        // QUICK BUTTONS
+        document.querySelectorAll(".quick").forEach(btn=>{
+            btn.addEventListener("click",function(){
 
-            if(type==="today"){
-                fromDate=today.toISOString().split("T")[0];
-                toDate=fromDate;
-            }
+                let type=this.dataset.type;
+                let today=new Date();
+                let fromDate="",toDate="";
 
-            if(type==="week"){
-                let first=new Date(today.setDate(today.getDate()-today.getDay()));
-                let last=new Date();
-                fromDate=first.toISOString().split("T")[0];
-                toDate=last.toISOString().split("T")[0];
-            }
+                if(type==="today"){
+                    fromDate=today.toISOString().split("T")[0];
+                    toDate=fromDate;
+                }
 
-            if(type==="month"){
-                let first=new Date(today.getFullYear(),today.getMonth(),1);
-                let last=new Date();
-                fromDate=first.toISOString().split("T")[0];
-                toDate=last.toISOString().split("T")[0];
-            }
+                if(type==="week"){
+                    let first=new Date(today.setDate(today.getDate()-today.getDay()));
+                    let last=new Date();
+                    fromDate=first.toISOString().split("T")[0];
+                    toDate=last.toISOString().split("T")[0];
+                }
 
-            document.getElementById("fromDate").value=fromDate;
-            document.getElementById("toDate").value=toDate;
+                if(type==="month"){
+                    let first=new Date(today.getFullYear(),today.getMonth(),1);
+                    let last=new Date();
+                    fromDate=first.toISOString().split("T")[0];
+                    toDate=last.toISOString().split("T")[0];
+                }
 
+                document.getElementById("fromDate").value=fromDate;
+                document.getElementById("toDate").value=toDate;
+
+            });
         });
+
+    });
+
+
+    // SHOW REPORT
+    document.getElementById("showBtn").addEventListener("click", function(){
+
+        let report = document.getElementById("reportSelector").value;
+        let fromDate = document.getElementById("fromDate").value;
+        let toDate = document.getElementById("toDate").value;
+
+        if(!fromDate || !toDate){
+            alert("Select dates");
+            return;
+        }
+
+        if(fromDate > toDate){
+            alert("Invalid date range");
+            return;
+        }
+
+        fetch(`/dashboard/reports/load/${report}/?from_date=${fromDate}&to_date=${toDate}`)
+        .then(res=>res.text())
+        .then(data=>{
+            document.getElementById("reportContent").innerHTML=data;
+        });
+
+    });
+
+
+    // PDF
+    document.getElementById("downloadPdfBtn").addEventListener("click", function(){
+
+        let report = document.getElementById("reportSelector").value;
+        let fromDate = document.getElementById("fromDate").value;
+        let toDate = document.getElementById("toDate").value;
+
+        if(!fromDate || !toDate){
+            alert("Select dates");
+            return;
+        }
+
+        if(fromDate > toDate){
+            alert("Invalid date range");
+            return;
+        }
+
+        let type = report.split("_")[0];
+        window.open(`/dashboard/reports/pdf/${type}/?from_date=${fromDate}&to_date=${toDate}`);
+
+    });
+
+    </script>
+<script>
+document.getElementById("reportSearch").addEventListener("keyup", function () {
+
+    let filter = this.value.toLowerCase();
+
+    let rows = document.querySelectorAll("#reportContent table tbody tr");
+
+    rows.forEach(row => {
+
+        if (row.querySelector("td[colspan]")) return;
+
+        let text = row.innerText.toLowerCase();
+        row.style.display = text.includes(filter) ? "" : "none";
+
     });
 
 });
-
-
-// SHOW REPORT
-document.getElementById("showBtn").addEventListener("click", function(){
-
-    let report = document.getElementById("reportSelector").value;
-    let fromDate = document.getElementById("fromDate").value;
-    let toDate = document.getElementById("toDate").value;
-
-    if(!fromDate || !toDate){
-        alert("Select dates");
-        return;
-    }
-
-    if(fromDate > toDate){
-        alert("Invalid date range");
-        return;
-    }
-
-    fetch(`/dashboard/reports/load/${report}/?from_date=${fromDate}&to_date=${toDate}`)
-    .then(res=>res.text())
-    .then(data=>{
-        document.getElementById("reportContent").innerHTML=data;
-    });
-
-});
-
-
-// PDF
-document.getElementById("downloadPdfBtn").addEventListener("click", function(){
-
-    let report = document.getElementById("reportSelector").value;
-    let fromDate = document.getElementById("fromDate").value;
-    let toDate = document.getElementById("toDate").value;
-
-    if(!fromDate || !toDate){
-        alert("Select dates");
-        return;
-    }
-
-    if(fromDate > toDate){
-        alert("Invalid date range");
-        return;
-    }
-
-    let type = report.split("_")[0];
-    window.open(`/dashboard/reports/pdf/${type}/?from_date=${fromDate}&to_date=${toDate}`);
-
-});
-
 </script>
-
-{% endblock %}
+    {% endblock %}
