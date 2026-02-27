@@ -4,458 +4,570 @@
 {% block content %}
 <link rel="stylesheet" href="{% static 'orders/css/combin_orders.css' %}">
 
-<div class="container py-4">
+<style>
+    /* ================= PAGE BACKGROUND ================= */
+    body {
+        background: #f4f6f9;
+    }
 
-    <!-- ================= ORDER HEADER ================= -->
+    /* ================= MAIN WRAPPER ================= */
+    .order-wrapper {
+        max-width: 950px;
+        margin: 40px auto;
+        background: #ffffff;
+        padding: 35px;
+        border-radius: 18px;
+        box-shadow: 0 15px 40px rgba(0, 0, 0, 0.06);
+    }
+
+    /* ================= HEADINGS ================= */
+    h2 {
+        font-weight: 700;
+        margin-bottom: 5px;
+    }
+
+    h3 {
+        margin-top: 30px;
+        font-weight: 600;
+    }
+
+    /* ================= PROGRESS BAR ================= */
+    .progressbar {
+        display: flex;
+        justify-content: space-between;
+        margin: 40px 0;
+        padding: 0;
+        list-style: none;
+        position: relative;
+    }
+
+    .progressbar li {
+        position: relative;
+        flex: 1;
+        text-align: center;
+        font-size: 13px;
+        color: #999;
+        z-index: 1;
+    }
+
+    .progressbar li::before {
+        content: "";
+        width: 32px;
+        height: 32px;
+        border-radius: 50%;
+        background: #d1d5db;
+        display: block;
+        margin: 0 auto 8px;
+        transition: 0.3s;
+    }
+
+    .progressbar li.active {
+        color: #16a34a;
+        font-weight: 600;
+    }
+
+    .progressbar li.active::before {
+        background: #16a34a;
+    }
+
+    .progressbar li:not(:last-child)::after {
+        content: "";
+        position: absolute;
+        top: 16px;
+        left: 50%;
+        width: 100%;
+        height: 4px;
+        background: #e5e7eb;
+        z-index: -1;
+        transform: translateX(0%);
+    }
+
+    .progressbar li.active:not(:last-child)::after {
+        background: #16a34a;
+    }
+
+    /* ================= FEEDBACK ================= */
+    .feedback-box {
+        background: #ecfdf5;
+        border-left: 5px solid #22c55e;
+        padding: 15px 20px;
+        border-radius: 12px;
+        margin-top: 20px;
+    }
+
+    /* ================= BUTTONS ================= */
+    .btn {
+        padding: 8px 18px;
+        font-size: 14px;
+        border-radius: 8px;
+        border: none;
+        transition: 0.2s;
+        cursor: pointer;
+    }
+
+    .btn-cancel {
+        background: #dc3545;
+        color: white;
+        border: 1px solid #dc3545;
+    }
+
+    .btn-cancel:hover {
+        background: #c82333;
+        border-color: #c82333;
+    }
+
+    .btn-disabled {
+        background: #6c757d !important;
+        color: white !important;
+        cursor: not-allowed;
+        border: 1px solid #6c757d;
+    }
+
+    .btn-secondary {
+        background-color: #6c757d;
+        color: white;
+        border: 1px solid #6c757d;
+        margin-right: 10px;
+    }
+
+    .btn-secondary:hover {
+        background-color: #5a6268;
+        border-color: #545b62;
+    }
+
+    /* ================= ORDER ITEMS ================= */
+    .order-item-card {
+        display: flex;
+        gap: 18px;
+        align-items: center;
+        background: #fafafa;
+        padding: 18px;
+        border-radius: 14px;
+        margin-bottom: 20px;
+        border: 1px solid #f0f0f0;
+        transition: 0.2s;
+    }
+
+    .order-item-card:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 10px 25px rgba(0, 0, 0, 0.05);
+    }
+
+    .order-item-card img {
+        width: 90px;
+        height: 90px;
+        object-fit: cover;
+        border-radius: 12px;
+    }
+
+    /* ================= SUMMARY & CANCEL ================= */
+    .summary-cancel-wrapper {
+        display: flex;
+        justify-content: space-between;
+        gap: 20px;
+        margin-top: 30px;
+        flex-wrap: wrap;
+    }
+
+    .order-summary {
+        padding: 25px;
+        border-radius: 16px;
+        background: #f9fafb;
+        border: 1px solid #e5e7eb;
+        min-width: 300px;
+        flex: 0 0 60%;
+        max-width: 450px;
+
+    }
+
+    .cancel-order-box {
+        min-width: 200px;
+        flex: 1;
+    }
+
+    /* ================= STAR RATING ================= */
+    .star-rating {
+        display: flex;
+        flex-direction: row-reverse;
+        justify-content: flex-start;
+        font-size: 2rem;
+    }
+
+    .star-rating input {
+        display: none;
+    }
+
+    .star-rating label {
+        color: #ccc;
+        cursor: pointer;
+        padding: 0 5px;
+    }
+
+    .star-rating label:hover,
+    .star-rating label:hover~label {
+        color: gold;
+    }
+
+    .star-rating input:checked~label {
+        color: gold;
+    }
+</style>
+
+<div class="order-wrapper">
+
     <h2>Order #{{ order.id }} Details</h2>
-    <!-- ================= ORDER STATUS TRACKER ================= -->
-<h3>Order Status</h3>
-<ul class="progressbar">
-    {% for step in steps %}
+
+    <h3>Order Status</h3>
+    <ul class="progressbar">
+        {% for step in steps %}
         <li class="{% if forloop.counter0 <= current_index %}active{% endif %}">
             {{ step|title }}
         </li>
-    {% endfor %}
-</ul>
+        {% endfor %}
+    </ul>
 
-<style>
-.progressbar {
-  display: flex;
-  justify-content: space-between;
-  list-style-type: none;
-  padding: 0;
-  margin: 20px 0;
-}
-
-.progressbar li {
-  position: relative;
-  text-align: center;
-  flex: 1;
-  color: gray;
-}
-
-.progressbar li:before {
-  content: '';
-  width: 30px;
-  height: 30px;
-  border: 2px solid gray;
-  display: block;
-  margin: 0 auto 10px auto;
-  border-radius: 50%;
-  background-color: white;
-  z-index: 1;
-  position: relative;
-}
-
-.progressbar li.active {
-  color: green;
-}
-
-.progressbar li.active:before {
-  border-color: green;
-  background-color: green;
-}
-
-.progressbar li:after {
-  content: '';
-  position: absolute;
-  width: 100%;
-  height: 4px;
-  background-color: gray;
-  top: 15px; /* line now passes BELOW the circle */
-  left: -50%;
-  z-index: 0;
-}
-
-.progressbar li:first-child:after {
-  content: none;
-}
-
-.progressbar li.active + li:after {
-  background-color: green;
-}
-
-</style>
-<style>
-.star-rating {
-    display: flex;
-    flex-direction: row-reverse;
-    justify-content: flex-start;
-    font-size: 2rem;
-}
-
-.star-rating input {
-    display: none;
-}
-
-.star-rating label {
-    color: #ccc;
-    cursor: pointer;
-    padding: 0 5px;
-}
-
-.star-rating label:hover,
-.star-rating label:hover ~ label {
-    color: gold;
-}
-
-.star-rating input:checked ~ label {
-    color: gold;
-}
-
-</style>
-    <!-- <p><strong>Status:</strong> {{ order.order_status }}</p> -->
-
-{% if order.order_status|upper == 'DELIVERED' %}
-
+    {% if order.order_status|upper == 'DELIVERED' %}
     {% if feedback %}
-        <div class="alert alert-success mt-3">
-            <h5>⭐ Your Feedback</h5>
-            <p><strong>Rating:</strong>
-    {% for i in "12345" %}
-        {% if forloop.counter <= feedback.rating %}
-            <span style="color:gold; font-size:1.5rem;">★</span>
-        {% endif %}
-    {% endfor %}
-</p>
-
-            <p><strong>Feedback:</strong> {{ feedback.feedback_text }}</p>
-        </div>
+    <div class="feedback-box">
+        <h5>⭐ Your Feedback</h5>
+        <p><strong>Rating:</strong>
+            {% for i in "12345" %}
+            {% if forloop.counter <= feedback.rating %} <span style="color:gold;">★</span>{% endif %}
+                {% endfor %}
+        </p>
+        <p><strong>Feedback:</strong> {{ feedback.feedback_text }}</p>
+    </div>
     {% else %}
-        <div class="card mt-3">
-            <div class="card-header bg-dark text-white">
-                Give Feedback
+    <div class="feedback-box">
+        <h5>Give Feedback</h5>
+        <form method="POST">
+            {% csrf_token %}
+            <div class="star-rating">
+                {% for i in "54321" %}
+                <input type="radio" id="star{{ i }}" name="rating" value="{{ i }}">
+                <label for="star{{ i }}">★</label>
+                {% endfor %}
             </div>
-            <div class="card-body">
-                <form method="POST">
-                    {% csrf_token %}
-
-                    <div class="mb-3">
-    <label class="form-label">Rating</label>
-    <div class="star-rating">
-    <input type="radio" id="star5" name="rating" value="5">
-    <label for="star5">★</label>
-
-    <input type="radio" id="star4" name="rating" value="4">
-    <label for="star4">★</label>
-
-    <input type="radio" id="star3" name="rating" value="3">
-    <label for="star3">★</label>
-
-    <input type="radio" id="star2" name="rating" value="2">
-    <label for="star2">★</label>
-
-    <input type="radio" id="star1" name="rating" value="1">
-    <label for="star1">★</label>
-</div>
-
-</div>
-
-
-                    <div class="mb-3">
-                        <label>Feedback</label>
-                        <textarea name="feedback_text"
-                                  class="form-control" rows="3" required></textarea>
-                    </div>
-
-                    <button type="submit" class="btn btn-success">
-                        Submit Feedback
-                    </button>
-                </form>
-            </div>
-        </div>
+            <textarea name="feedback_text" rows="3" class="form-control mt-2" placeholder="Enter your feedback"
+                required></textarea>
+            <button type="submit" class="btn btn-cancel mt-2">Submit Feedback</button>
+        </form>
+    </div>
     {% endif %}
-
-{% endif %}
+    {% endif %}
 
     <p><strong>Date:</strong> {{ order.order_date|date:"d M Y H:i" }}</p>
     <p><strong>Delivery Address:</strong> {{ order.delivery_address }}</p>
-    <!-- ===aa krisha ae add karelu===== -->
-<!-- Order Status & Cancel Button -->
-<!-- ================= ORDER STATUS & CANCEL BUTTON ================= -->
-<div class="order-status-section"
-     style="margin-top:20px; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap;">
-
-    <!-- Left: Status -->
-    <p style="margin:0;">
-        <strong>Status:</strong>
-        <span id="status-{{ order.id }}">
-            {{ order.order_status }}
-        </span>
-    </p>
-
-    <!-- Right Side -->
-    <div>
-
-    {% if order.order_status == "PLACED" or order.order_status == "CONFIRMED" %}
-
-        <!-- Cancel Button -->
-        <button type="button"
-            id="cancel-btn-{{ order.id }}"
-            class="btn btn-cancel"
-            onclick="showCancelBox('{{ order.id }}')">
-            Cancel Order
-        </button>
-
-        <!-- Hidden Reason Box -->
-        <div id="cancel-box-{{ order.id }}"
-             style="display:none; margin-top:10px; background:#f5f5f5; padding:10px; border-radius:6px;">
-
-            <textarea id="reason-{{ order.id }}"
-                      placeholder="Enter cancellation reason"
-                      style="width:100%; margin-bottom:8px;"></textarea>
-
-            <button type="button"
-                    class="btn btn-danger"
-                    onclick="submitCancel('{{ order.id }}')">
-                Confirm Cancel
-            </button>
-
-            <div id="cancel-message-{{ order.id }}"
-                 style="margin-top:8px; font-size:14px;"></div>
-
-        </div>
-
-    {% elif order.order_status == "PREPARING" %}
-        <button class="btn btn-disabled" disabled>
-            Cancel Order
-        </button>
-
-    {% else %}
-        <button class="btn btn-disabled" disabled>
-            Cancelled
-        </button>
-    {% endif %}
-
-    </div>
-</div>
-<script>
-
-function showCancelBox(orderId){
-    const box = document.getElementById("cancel-box-" + orderId);
-    if(box){
-        box.style.display = "block";
-    }
-}
-
-function submitCancel(orderId){
-
-    const reasonField = document.getElementById("reason-" + orderId);
-    const messageBox = document.getElementById("cancel-message-" + orderId);
-    const cancelBtn = document.getElementById("cancel-btn-" + orderId);
-    const statusText = document.getElementById("status-" + orderId);
-    const cancelBox = document.getElementById("cancel-box-" + orderId);
-
-    const reason = reasonField.value;
-
-    if(reason.trim() === ""){
-        messageBox.innerHTML = "<span style='color:red;'>Cancellation reason is required!</span>";
-        return;
-    }
-
-    fetch(`/orders/cancel/${orderId}/`, {
-        method: 'POST',
-        headers: {
-            'X-CSRFToken': getCookie('csrftoken'),
-            'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({ reason: reason })
-    })
-    .then(res => res.json())
-    .then(data => {
-
-        if(data.success){
-
-            // 🔥 Instant UI Update (No Refresh Needed)
-
-            statusText.innerText = "CANCELLED";
-
-            cancelBtn.innerText = "Cancelled";
-            cancelBtn.disabled = true;
-
-            cancelBox.style.display = "none";
-            reasonField.value = "";
-
-        } else {
-            messageBox.innerHTML = "<span style='color:red;'>" + data.message + "</span>";
-        }
-
-    });
-}
-
-function getCookie(name) {
-    let cookieValue = null;
-    if (document.cookie && document.cookie !== '') {
-        const cookies = document.cookie.split(';');
-        for (let i = 0; i < cookies.length; i++) {
-            const cookie = cookies[i].trim();
-            if (cookie.substring(0, name.length + 1) === (name + '=')) {
-                cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
-                break;
-            }
-        }
-    }
-    return cookieValue;
-}
-
-</script>
-
-
-
-<style>
-/* Disabled red button for preparing orders */
-button.btn-preparing.btn-disabled,
-.btn-preparing:disabled {
-    background-color: #dc3545 !important; /* red background */
-    color: white !important;              /* text white */
-    border: 1px solid #dc3545 !important; /* red border */
-    cursor: not-allowed;
-    opacity: 0.9;  /* slightly transparent to indicate disabled */
-}
-
-/* Base button */
-.btn {
-    padding: 8px 18px;
-    font-size: 14px;
-    border-radius: 6px;
-    border: none;
-    cursor: pointer;
-    transition: all 0.2s ease;
-}
-
-/* Cancel button (active) */
-.btn-cancel {
-    background-color: #dc3545;
-    color: white;
-    border: 1px solid #dc3545;
-}
-.btn-cancel:hover {
-    background-color: #c82333;
-    border-color: #c82333;
-}
-
-/* Disabled button */
-.btn-disabled, 
-.btn:disabled {
-    background-color: #6c757d !important;
-    color: white !important;
-    cursor: not-allowed;
-    border: 1px solid #6c757d;
-    opacity: 0.8;
-}
-
-/* Secondary button (like Back) */
-.btn-secondary {
-    background-color: #6c757d;
-    color: white;
-    border: 1px solid #6c757d;
-}
-.btn-secondary:hover {
-    background-color: #5a6268;
-    border-color: #545b62;
-}
-</style>
-
-<!-- =========================ahiya sudhi================== -->
+    <p style="margin:0;"><strong>Status:</strong> <span id="status-{{ order.id }}">{{ order.order_status }}</span></p>
 
     <!-- ================= ORDER ITEMS ================= -->
-    <div class="order-items" style="margin-top:20px;">
+    <div class="order-items">
         {% for item in order_items %}
-        <div class="order-item-card"
-             style="border:1px solid #eee; padding:12px; margin-bottom:12px;
-                    display:flex; align-items:center; border-radius:8px;">
-
-            <!-- IMAGE -->
-            <div style="width:80px; height:80px; margin-right:15px;">
+        <div class="order-item-card">
+            <div>
                 {% with item.food_item.images.first as img %}
-                    {% if img %}
-                        <img src="{{ img.img_url.url }}"
-                             alt="{{ item.food_item.name }}"
-                             style="width:100%; height:100%; object-fit:cover; border-radius:6px;">
-                    {% else %}
-                        <img src="{% static 'images/no-food.png' %}"
-                             style="width:100%; height:100%; object-fit:cover; border-radius:6px;">
-                    {% endif %}
+                {% if img %}
+                <img src="{{ img.img_url.url }}" alt="{{ item.food_item.name }}">
+                {% else %}
+                <img src="{% static 'images/no-food.png' %}" alt="No Image">
+                {% endif %}
                 {% endwith %}
             </div>
-
-            <!-- INFO -->
             <div>
                 <p><strong>{{ item.food_item.name }}</strong></p>
                 <p>Qty: {{ item.qty }}</p>
-
-                <!-- ORIGINAL PRICE -->
-                <p style="font-size:14px; color:#777;">
-                    Original: ₹{{ item.food_item.price|floatformat:2 }}
-                </p>
-
-                <!-- DISCOUNTED PRICE -->
-                <p style="font-size:15px;">
-                    Price after discount:
-                    <strong>₹{{ item.discounted_price|floatformat:2 }}</strong>
-                </p>
-
-                <!-- ITEM SAVING -->
+                <p style="font-size:14px; color:#777;">Original: ₹{{ item.food_item.price|floatformat:2 }}</p>
+                <p style="font-size:15px;">Price after discount: <strong>₹{{ item.discounted_price|floatformat:2
+                        }}</strong></p>
                 {% if item.item_discount > 0 %}
-                <p style="font-size:13px; color:green;">
-                    You saved ₹{{ item.item_discount|floatformat:2 }}
-                </p>
+                <p style="font-size:13px; color:green;">You saved ₹{{ item.item_discount|floatformat:2 }}</p>
                 {% endif %}
             </div>
         </div>
         {% endfor %}
     </div>
 
-    <!-- ================= ORDER SUMMARY (CHECKOUT STYLE) ================= -->
-    <div class="order-summary"
-         style="margin-top:25px; border-top:1px solid #ddd; padding-top:15px; max-width:420px;">
+    <!-- ================= SUMMARY + CANCEL ================= -->
+    <div class="summary-cancel-wrapper" style="display:flex; gap:20px; align-items:flex-start; flex-wrap:nowrap;">
+        <!-- ORDER SUMMARY -->
+        <div class="order-summary" style="flex:1;">
+            <div class="summary-row">
+                <span>Food Item Total</span>
+                <span>₹ {{ original_total|floatformat:2 }}</span>
+            </div>
+            {% if total_discount > 0 %}
+            <div class="summary-row" style="color:green;">
+                <span>Discount You Saved</span>
+                <span>- ₹ {{ total_discount|floatformat:2 }}</span>
+            </div>
+            {% endif %}
+            <div class="summary-row">
+                <span>Subtotal</span>
+                <span>₹ {{ item_total|floatformat:2 }}</span>
+            </div>
+            <div class="summary-row">
+                <span>GST (5%)</span>
+                <span>₹ {{ tax|floatformat:2 }}</span>
+            </div>
+            <div class="summary-row">
+                <span>Delivery Charges</span>
+                <span>₹ {{ delivery_charge|floatformat:2 }}</span>
+            </div>
+            <hr>
+            <div class="summary-row total-row">
+                <span>Total Payable</span>
+                <span>₹ {{ grand_total|floatformat:2 }}</span>
+            </div>
+        </div>
 
-        <p style="display:flex; justify-content:space-between;">
-            <span><strong>Food Item Total</strong></span>
-            <span>₹ {{ original_total|floatformat:2 }}</span>
-        </p>
-
-        {% if total_discount > 0 %}
-        <p style="display:flex; justify-content:space-between; color:green;">
-            <span><strong>Discount You Saved</strong></span>
-            <span>- ₹ {{ total_discount|floatformat:2 }}</span>
-        </p>
-        {% endif %}
-
-        <p style="display:flex; justify-content:space-between;">
-            <span><strong>Subtotal</strong></span>
-            <span>₹ {{ item_total|floatformat:2 }}</span>
-        </p>
-
-        <p style="display:flex; justify-content:space-between;">
-            <span><strong>GST (5%)</strong></span>
-            <span>₹ {{ tax|floatformat:2 }}</span>
-        </p>
-
-        <p style="display:flex; justify-content:space-between;">
-            <span><strong>Delivery Charges</strong></span>
-            <span>₹ {{ delivery_charge|floatformat:2 }}</span>
-        </p>
-
-        <hr>
-
-        <p style="display:flex; justify-content:space-between; font-size:18px;">
-            <span><strong>Total Payable</strong></span>
-            <span><strong>₹ {{ grand_total|floatformat:2 }}</strong></span>
-        </p>
     </div>
+    <!-- ================= BOTTOM BUTTONS (Back, Download, Cancel) ================= -->
+    <div
+        style="display:flex; justify-content:space-between; align-items:center; margin-top:25px; flex-wrap:wrap; gap:10px;">
+        <div>
+            <a href="{% url 'my_orders' %}" class="btn btn-secondary">Back to Orders</a>
+            <a href="{% url 'download_invoice' order.id %}" class="btn btn-secondary">Download Invoice</a>
+        </div>
 
+       
+        <!-- CANCEL ORDER (Popup style) -->
+        <!-- {% if order.order_status == "PLACED" or order.order_status == "CONFIRMED" %}
+        <div style="position:relative; display:inline-block;">
+            <button id="cancel-btn-{{ order.id }}" class="btn btn-cancel"
+                onclick="toggleCancelBox('{{ order.id }}')">Cancel Order</button>
 
-    <!-- ================= BACK BUTTON ================= -->
-    <div style="margin-top:25px;">
-        <a href="{% url 'my_orders' %}" class="btn btn-secondary">
-            Back to Orders
-        </a>
-         <a href="{% url 'download_invoice' order.id %}" class="btn btn-secondary">
-            Download Invoice
-        </a>
-    </div>
+            <div id="cancel-box-{{ order.id }}"
+                style="display:none; position:absolute; top:-160px; right:0; background:#f5f5f5; padding:15px; border-radius:8px; min-width:250px; box-shadow:0 5px 15px rgba(0,0,0,0.2); z-index:10;">
+                <label for="reason-select-{{ order.id }}">Select Cancellation Reason:</label>
+                <select id="reason-select-{{ order.id }}"
+                    style="width:100%; padding:6px; margin-top:5px; border-radius:4px; border:1px solid #ccc;"
+                    onchange="toggleOtherReason('{{ order.id }}')">
+                    <option value="">--Select Reason--</option>
+                    <option value="Found better price">Found better price</option>
+                    <option value="Change of mind">Change of mind</option>
+                    <option value="Order delayed">Order delayed</option>
+                    <option value="Other">Other</option>
+                </select> -->
 
-    
+                <!-- Only visible if Other is selected -->
+                <!-- <textarea id="other-reason-{{ order.id }}" placeholder="Enter your reason"
+                    style="display:none; width:100%; margin-top:8px; padding:6px; border-radius:4px; border:1px solid #ccc;"></textarea>
 
-{% endblock %}
+                <button type="button" class="btn btn-cancel mt-2" onclick="submitCancel('{{ order.id }}')">Confirm
+                    Cancel</button>
+                <div id="cancel-message-{{ order.id }}" style="margin-top:8px; font-size:14px;"></div>
+            </div>
+        </div>
+        {% endif %}-->
+       <div style="position:relative; display:inline-block;">
+
+    {% if order.order_status == "PLACED" or order.order_status == "CONFIRMED" %}
+        
+        <!-- ACTIVE CANCEL BUTTON -->
+        <button id="cancel-btn-{{ order.id }}" class="btn btn-cancel"
+            onclick="toggleCancelBox('{{ order.id }}')">
+            Cancel Order
+        </button>
+
+        <div id="cancel-box-{{ order.id }}"
+            style="display:none; position:absolute; top:-160px; right:0; background:#f5f5f5; padding:15px; border-radius:8px; min-width:250px; box-shadow:0 5px 15px rgba(0,0,0,0.2); z-index:10;">
+
+            <label>Select Cancellation Reason:</label>
+
+            <select id="reason-select-{{ order.id }}"
+                style="width:100%; padding:6px; margin-top:5px; border-radius:4px; border:1px solid #ccc;"
+                onchange="toggleOtherReason('{{ order.id }}')">
+
+                <option value="">--Select Reason--</option>
+                <option value="Found better price">Found better price</option>
+                <option value="Change of mind">Change of mind</option>
+                <option value="Order delayed">Order delayed</option>
+                <option value="Other">Other</option>
+            </select>
+
+            <textarea id="other-reason-{{ order.id }}"
+                placeholder="Enter your reason"
+                style="display:none; width:100%; margin-top:8px; padding:6px; border-radius:4px; border:1px solid #ccc;">
+            </textarea>
+
+            <button type="button" class="btn btn-cancel mt-2"
+                onclick="submitCancel('{{ order.id }}')">
+                Confirm Cancel
+            </button>
+
+            <div id="cancel-message-{{ order.id }}"
+                style="margin-top:8px; font-size:14px;">
+            </div>
+        </div>
+
+    {% else %}
+        
+        <!-- DISABLED BUTTON FOR ALL OTHER STATES -->
+        <button class="btn btn-disabled" disabled>
+            {% if order.order_status == "CANCELLED" %}
+                Cancelled
+            {% else %}
+                Cannot Cancel ({{ order.order_status|title }})
+            {% endif %}
+        </button>
+
+    {% endif %}
+
+</div>
+    </div> 
+    <script>
+        function showCancelBox(orderId) {
+            const box = document.getElementById("cancel-box-" + orderId);
+            if (box) box.style.display = "block";
+        }
+
+        function submitCancel(orderId) {
+            const reasonField = document.getElementById("reason-" + orderId);
+            const messageBox = document.getElementById("cancel-message-" + orderId);
+            const cancelBtn = document.getElementById("cancel-btn-" + orderId);
+            const statusText = document.getElementById("status-" + orderId);
+            const cancelBox = document.getElementById("cancel-box-" + orderId);
+            const reason = reasonField.value;
+
+            if (reason.trim() === "") {
+                messageBox.innerHTML = "<span style='color:red;'>Cancellation reason is required!</span>";
+                return;
+            }
+
+            fetch(`/orders/cancel/${orderId}/`, {
+                method: 'POST',
+                headers: {
+                    'X-CSRFToken': getCookie('csrftoken'),
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ reason: reason })
+            })
+                .then(res => res.json())
+                .then(data => {
+                    if (data.success) {
+                        statusText.innerText = "CANCELLED";
+                        cancelBtn.innerText = "Cancelled";
+                        cancelBtn.disabled = true;
+                        cancelBox.style.display = "none";
+                        reasonField.value = "";
+                    } else {
+                        messageBox.innerHTML = "<span style='color:red;'>" + data.message + "</span>";
+                    }
+                });
+        }
+
+        function getCookie(name) {
+            let cookieValue = null;
+            if (document.cookie && document.cookie !== '') {
+                const cookies = document.cookie.split(';');
+                for (let i = 0; i < cookies.length; i++) {
+                    const cookie = cookies[i].trim();
+                    if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                        cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                        break;
+                    }
+                }
+            }
+            return cookieValue;
+        }
+    </script>
+  
+<script>
+// Show/Hide Cancel Box & toggle button visibility
+function toggleCancelBox(orderId){
+    const box = document.getElementById("cancel-box-" + orderId);
+    const btn = document.getElementById("cancel-btn-" + orderId);
+
+    if(box.style.display === "block"){
+        box.style.display = "none";
+        btn.style.display = "inline-block"; // show button again if closing
+    } else {
+        box.style.display = "block";
+        btn.style.display = "none"; // hide button while box open
+    }
+}
+
+// Show textarea only if "Other" is selected
+function toggleOtherReason(orderId){
+    const select = document.getElementById("reason-select-" + orderId);
+    const textarea = document.getElementById("other-reason-" + orderId);
+    if(select.value === "Other"){
+        textarea.style.display = "block";
+    } else {
+        textarea.style.display = "none";
+    }
+}
+
+// Submit cancel with selected reason or custom
+function submitCancel(orderId){
+    const select = document.getElementById("reason-select-" + orderId);
+    const otherReason = document.getElementById("other-reason-" + orderId);
+    const messageBox = document.getElementById("cancel-message-" + orderId);
+    const cancelBtn = document.getElementById("cancel-btn-" + orderId);
+    const statusText = document.getElementById("status-" + orderId);
+    const box = document.getElementById("cancel-box-" + orderId);
+
+    let reason = select.value;
+    if(reason === "Other"){
+        reason = otherReason.value.trim();
+    }
+
+    if(!reason){
+        messageBox.innerHTML = "<span style='color:red;'>Please provide a reason!</span>";
+        return;
+    }
+
+    fetch(`/orders/cancel/${orderId}/`, {
+        method:'POST',
+        headers:{
+            'X-CSRFToken': getCookie('csrftoken'),
+            'Content-Type':'application/json'
+        },
+        body:JSON.stringify({reason: reason})
+    })
+    .then(res=>res.json())
+    .then(data=>{
+        if(data.success){
+
+            // ✅ Update status
+            statusText.innerText = "CANCELLED";
+
+            // ✅ MAKE BUTTON VISIBLE AGAIN
+            cancelBtn.style.display = "inline-block";
+
+            // ✅ Make button grey + disabled
+            cancelBtn.innerText = "Cancelled";
+            cancelBtn.disabled = true;
+            cancelBtn.style.backgroundColor = "#6c757d";
+            cancelBtn.style.borderColor = "#6c757d";
+            cancelBtn.style.color = "white";
+
+            // Hide popup
+            box.style.display = "none";
+
+            // Reset fields
+            select.value = "";
+            otherReason.value = "";
+            otherReason.style.display = "none";
+
+        } else {
+            messageBox.innerHTML = "<span style='color:red;'>" + data.message + "</span>";
+        }
+    });
+}// Standard CSRF getter
+function getCookie(name){
+    let cookieValue = null;
+    if(document.cookie && document.cookie!==''){
+        const cookies = document.cookie.split(';');
+        for(let i=0;i<cookies.length;i++){
+            const cookie = cookies[i].trim();
+            if(cookie.substring(0,name.length+1) === (name+'=')){
+                cookieValue = decodeURIComponent(cookie.substring(name.length+1));
+                break;
+            }
+        }
+    }
+    return cookieValue;
+}
+</script>
+    {% endblock %}
