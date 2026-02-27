@@ -58,62 +58,62 @@ from .models import FeedbackRating
 from django.db.models import Sum
 from django.views.decorators.http import require_POST
 
-@login_required(login_url='/accounts/customer_login/')
-def add_to_cart(request, food_id):
+# @login_required(login_url='/accounts/customer_login/')
+# def add_to_cart(request, food_id):
 
-    if request.method != "POST":
-        return JsonResponse({'status': 'invalid'})
+#     if request.method != "POST":
+#         return JsonResponse({'status': 'invalid'})
 
-    item = get_object_or_404(FoodItem, id=food_id)
+#     item = get_object_or_404(FoodItem, id=food_id)
 
-    # 🔥 TEMP FIX: use food price directly
-    # price = item.price  
-    discounted_price = get_discounted_price(item)
+#     # 🔥 TEMP FIX: use food price directly
+#     # price = item.price  
+#     discounted_price = get_discounted_price(item)
 
 
-    cart_item, created = Cart.objects.get_or_create(
-        user=request.user,
-        food_item=item,
-        defaults={
-            'quantity': 1,
-            'price': discounted_price 
-        }
-    )
+#     cart_item, created = Cart.objects.get_or_create(
+#         user=request.user,
+#         food_item=item,
+#         defaults={
+#             'quantity': 1,
+#             'price': discounted_price 
+#         }
+#     )
 
-    if not created:
-        cart_item.quantity += 1
-        cart_item.save()
+#     if not created:
+#         cart_item.quantity += 1
+#         cart_item.save()
 
-    return JsonResponse({
-        'status': 'success',
-        'quantity': cart_item.quantity
-    })
+#     return JsonResponse({
+#         'status': 'success',
+#         'quantity': cart_item.quantity
+#     })
 
 # ---------------- UPDATE QUANTITY ----------------
-@login_required(login_url='/accounts/customer_login/')
-def update_cart_quantity(request, food_id, action):
-    try:
-        cart_item = get_object_or_404(Cart, user=request.user, food_item_id=food_id)
-    except:
-        return JsonResponse({'status': 'error', 'message': 'Item not in cart', 'quantity': 0})
+# @login_required(login_url='/accounts/customer_login/')
+# def update_cart_quantity(request, food_id, action):
+#     try:
+#         cart_item = get_object_or_404(Cart, user=request.user, food_item_id=food_id)
+#     except:
+#         return JsonResponse({'status': 'error', 'message': 'Item not in cart', 'quantity': 0})
 
-    if action == 'increase':
-        cart_item.quantity += 1
-        cart_item.save()
-    elif action == 'decrease':
-        if cart_item.quantity > 1:
-            cart_item.quantity -= 1
-            cart_item.save()
-        else:
-            # Quantity 0 → remove item
-            cart_item.delete()
-            return JsonResponse({'status': 'removed', 'quantity': 0, 'food_id': food_id})
+#     if action == 'increase':
+#         cart_item.quantity += 1
+#         cart_item.save()
+#     elif action == 'decrease':
+#         if cart_item.quantity > 1:
+#             cart_item.quantity -= 1
+#             cart_item.save()
+#         else:
+#             # Quantity 0 → remove item
+#             cart_item.delete()
+#             return JsonResponse({'status': 'removed', 'quantity': 0, 'food_id': food_id})
 
-    return JsonResponse({
-        'status': 'updated',
-        'quantity': cart_item.quantity,
-        'food_id': food_id
-    })
+#     return JsonResponse({
+#         'status': 'updated',
+#         'quantity': cart_item.quantity,
+#         'food_id': food_id
+#     })
 
 
 # ---------------- GET CART ----------------
@@ -253,11 +253,11 @@ def decrease_qty(request, id):
 
 
 
-@login_required
-def remove_item(request, item_id):
-    cart_item = get_object_or_404(Cart, id=item_id, user=request.user)
-    cart_item.delete()
-    return redirect('cart_page')
+# @login_required
+# def remove_item(request, item_id):
+#     cart_item = get_object_or_404(Cart, id=item_id, user=request.user)
+#     cart_item.delete()
+#     return redirect('cart_page')
 
 
 def create_offer(request):
@@ -1369,6 +1369,88 @@ from django.contrib.auth.decorators import login_required
 from django.db.models import Sum
 from .models import Cart, FoodItem
 
+# @login_required
+# def add_variant_to_cart(request, food_id):
+
+#     if request.method != "POST":
+#         return JsonResponse({"status": "fail"}, status=400)
+
+#     user = request.user
+#     qty = int(request.POST.get("quantity", 1))
+#     variant_id = request.POST.get("variant_id")
+
+#     # ================= FOOD ITEM =================
+#     try:
+#         food_item = FoodItem.objects.get(id=food_id)
+#     except FoodItem.DoesNotExist:
+#         return JsonResponse({"status": "fail"}, status=404)
+
+#     # ================= VARIANT SAFE HANDLING =================
+#     variant = None
+
+#     if variant_id and variant_id not in ["None", "null", "", "default"]:
+#         try:
+#             variant = FoodItemVariant.objects.get(id=variant_id, food_item=food_item)
+#         except FoodItemVariant.DoesNotExist:
+#             return JsonResponse({"status": "fail"}, status=404)
+
+#     # ================= PRICE CALCULATION =================
+#     base_price = variant.price if variant else food_item.price
+#     final_price = get_discounted_price(food_item, base_price)
+
+#     base_price = round(base_price, 2)
+#     final_price = round(final_price, 2)
+
+#     cart_item, created = Cart.objects.get_or_create(
+#             user=user,
+#             food_item=food_item,
+#             variant=variant,
+#             defaults={
+#                 'quantity': qty,
+#                 'original_price': base_price,
+#                 'price': final_price,
+#             }
+#     )
+
+#     # if not created:
+#     #     cart_item.quantity += qty
+#     #     cart_item.original_price = base_price
+#     #     cart_item.price = final_price
+#     #     cart_item.save()
+
+#     # # ================= TOTAL QUANTITY =================
+#     # total_qty = (
+#     #     Cart.objects
+#     #     .filter(user=user, food_item=food_item)
+#     #     .aggregate(total=Sum("quantity"))["total"] or 0
+#     # )
+
+#     # return JsonResponse({
+#     #     "status": "success",
+#     #     "total_quantity": total_qty
+#     # })
+#     if not created:
+#         cart_item.quantity += qty
+
+#     # 🔥 AUTO DELETE WHEN ZERO
+#     if cart_item.quantity <= 0:
+#         cart_item.delete()
+
+#         total_qty = (
+#             Cart.objects
+#             .filter(user=user, food_item=food_item)
+#             .aggregate(total=Sum("quantity"))["total"] or 0
+#         )
+
+#         return JsonResponse({
+#             "status": "success",
+#             "total_quantity": total_qty
+#         })
+
+#     cart_item.original_price = base_price
+#     cart_item.price = final_price
+#     cart_item.save()
+
 @login_required
 def add_variant_to_cart(request, food_id):
 
@@ -1376,7 +1458,7 @@ def add_variant_to_cart(request, food_id):
         return JsonResponse({"status": "fail"}, status=400)
 
     user = request.user
-    qty = int(request.POST.get("quantity", 1))
+    qty_change = int(request.POST.get("quantity", 1))
     variant_id = request.POST.get("variant_id")
 
     # ================= FOOD ITEM =================
@@ -1385,38 +1467,62 @@ def add_variant_to_cart(request, food_id):
     except FoodItem.DoesNotExist:
         return JsonResponse({"status": "fail"}, status=404)
 
-    # ================= VARIANT SAFE HANDLING =================
+    
+    # ================= VARIANT =================
     variant = None
 
-    if variant_id and variant_id not in ["None", "null", "", "default"]:
+    if variant_id and variant_id not in ["null", "None", "regular", "default", "undefined"]:
         try:
-            variant = FoodItemVariant.objects.get(id=variant_id, food_item=food_item)
-        except FoodItemVariant.DoesNotExist:
-            return JsonResponse({"status": "fail"}, status=404)
+            variant = FoodItemVariant.objects.get(
+            id=int(variant_id),
+            food_item=food_item
+        )
+        except (FoodItemVariant.DoesNotExist, ValueError):
+            return JsonResponse({"status": "fail", "msg": "Invalid variant"}, status=400)
 
-    # ================= PRICE CALCULATION =================
+    # ================= PRICE =================
     base_price = variant.price if variant else food_item.price
     final_price = get_discounted_price(food_item, base_price)
 
     base_price = round(base_price, 2)
     final_price = round(final_price, 2)
 
-    cart_item, created = Cart.objects.get_or_create(
+    if variant is None:
+        cart_item = Cart.objects.filter(
+        user=user,
+        food_item=food_item,
+        variant__isnull=True
+    ).first()
+    else:
+        cart_item = Cart.objects.filter(
+        user=user,
+        food_item=food_item,
+        variant=variant
+    ).first()
+
+
+# ================= ADD / UPDATE =================
+
+    if cart_item:
+        cart_item.quantity += qty_change
+
+        if cart_item.quantity <= 0:
+            cart_item.delete()
+        else:
+            cart_item.original_price = base_price
+            cart_item.price = final_price
+            cart_item.save()
+
+    else:
+        if qty_change > 0:
+            Cart.objects.create(
             user=user,
             food_item=food_item,
             variant=variant,
-            defaults={
-                'quantity': qty,
-                'original_price': base_price,
-                'price': final_price,
-            }
-    )
-
-    if not created:
-        cart_item.quantity += qty
-        cart_item.original_price = base_price
-        cart_item.price = final_price
-        cart_item.save()
+            quantity=qty_change,
+            original_price=base_price,
+            price=final_price,
+        )
 
     # ================= TOTAL QUANTITY =================
     total_qty = (
@@ -1429,6 +1535,7 @@ def add_variant_to_cart(request, food_id):
         "status": "success",
         "total_quantity": total_qty
     })
+
 
 @login_required
 def remove_item_from_cart(request, food_id):
@@ -1444,24 +1551,120 @@ def remove_item_from_cart(request, food_id):
 
 from django.http import JsonResponse
 
-def get_variants(request, food_id):
+# @login_required
+# def get_variants(request, food_id):
 
+#     food = get_object_or_404(FoodItem, id=food_id)
+
+#     variant_list = []
+
+#     # ✅ Always add Regular first
+#     variant_list.append({
+#         "id": None,
+#         "name": "Regular",
+#         "price": float(food.price)
+#     })
+
+#     # Add DB variants
+#     variants = FoodItemVariant.objects.filter(food_item=food)
+
+#     for v in variants:
+#         variant_list.append({
+#             "id": v.id,
+#             "name": v.variant_name,
+#             "price": float(v.price)
+#         })
+
+#     return JsonResponse({
+#         "variants": variant_list
+#     })
+######-------------->>>>>>>>>>>>>>>>
+# @login_required
+# def get_variants(request, food_id):
+
+#     food = get_object_or_404(FoodItem, id=food_id)
+
+#     variant_list = []
+
+#     # Regular is a REAL selectable option
+#     variant_list.append({
+#         "id": "regular",   # 🔥 change here
+#         "name": "Regular",
+#         "price": float(food.price)
+#     })
+
+#     variants = FoodItemVariant.objects.filter(food_item=food)
+
+#     for v in variants:
+#         variant_list.append({
+#             "id": v.id,
+#             "name": v.variant_name,
+#             "price": float(v.price)
+#         })
+
+#     return JsonResponse({"variants": variant_list})
+
+# @login_required
+# def get_variants(request, food_id):
+#     food = get_object_or_404(FoodItem, id=food_id)
+
+#     variants = FoodItemVariant.objects.filter(food_item=food).order_by('id')
+
+#     # Remove duplicate variant names (just in case)
+#     seen = set()
+#     filtered_variants = []
+#     for v in variants:
+#         if v.variant_name not in seen:
+#             filtered_variants.append(v)
+#             seen.add(v.variant_name)
+
+#     variant_list = []
+
+#     # Only add "Regular" if there are NO actual variants
+#     if not filtered_variants:
+#         variant_list.append({
+#             "id": "regular",
+#             "name": "Regular",
+#             "price": float(food.price)
+#         })
+#     else:
+#         # Add all real variants
+#         for v in filtered_variants:
+#             variant_list.append({
+#                 "id": v.id,
+#                 "name": v.variant_name,
+#                 "price": float(v.price)
+#             })
+
+#     return JsonResponse({"variants": variant_list})
+
+
+@login_required
+def get_variants(request, food_id):
     food = get_object_or_404(FoodItem, id=food_id)
 
     variants = FoodItemVariant.objects.filter(food_item=food)
 
     variant_list = []
 
-    for v in variants:
+    # If variants exist → include base price as "Regular"
+    if variants.exists():
         variant_list.append({
-            "id": v.id,
-            "name": v.variant_name,
-            "price": float(v.price)
+            "id": "regular",
+            "name": "Regular",
+            "price": float(food.price)
         })
 
-    return JsonResponse({
-        "variants": variant_list
-    })
+        for v in variants:
+            variant_list.append({
+                "id": v.id,
+                "name": v.variant_name,
+                "price": float(v.price)
+            })
+
+    # If no variants → return empty list
+    return JsonResponse({"variants": variant_list})
+
 
 import razorpay
 from django.conf import settings
@@ -1660,52 +1863,67 @@ def refund_razorpay_payment(payment_id, amount):
     except Exception as e:
         return False, f"Refund Failed: {str(e)}"
 
+from decimal import Decimal
+from django.db import transaction
+import json
 
 @login_required
 @csrf_exempt
+@transaction.atomic
 def cancel_order(request, order_id):
+
     if request.method != "POST":
         return JsonResponse({"success": False, "message": "Invalid request method."})
 
+    # 🔥 Get reason from request body (fetch vala case ma JSON ave che)
+    try:
+        data = json.loads(request.body)
+        reason = data.get("reason")
+    except:
+        reason = None
+
+    if not reason:
+        return JsonResponse({
+            "success": False,
+            "message": "Cancellation reason is required."
+        })
+
     order = get_object_or_404(Order, id=order_id, user=request.user)
 
-    # Only allow cancel for PLACED or CONFIRMED orders
     if order.order_status not in ["PLACED", "CONFIRMED"]:
         return JsonResponse({"success": False, "message": "Cannot cancel this order now."})
 
-    # Update order status
+    order_details = OrderDetail.objects.filter(order=order)
+
+    for detail in order_details:
+
+        try:
+            prepared_item = PreparedItem.objects.get(product_name=detail.food_item.name)
+
+            usages = IngredientUsage.objects.filter(production=prepared_item)
+
+            for usage in usages:
+
+                if prepared_item.quantity_produced > 0:
+
+                    # 🔥 per pizza raw
+                    per_unit_raw = usage.qty_used / prepared_item.quantity_produced
+
+                    # 🔥 restore only cancelled qty
+                    restore_qty = per_unit_raw * Decimal(detail.qty)
+
+                    ingredient = usage.raw
+                    ingredient.available_qty += restore_qty
+                    ingredient.save()
+
+        except PreparedItem.DoesNotExist:
+            pass
+
     order.order_status = "CANCELLED"
     order.save()
-
-    refund_message = ""
-    refund_amount = 0
-
-    # Handle online payment refund
-    payment_obj = OrderHasPayment.objects.filter(order=order).last()
-
-    if payment_obj and payment_obj.payment.method != "COD" and payment_obj.payment.status == "PAID":
-        razorpay_payment_id = payment_obj.transaction_no  # should be Razorpay payment ID
-        refund_amount = payment_obj.amount
-
-        success, refund_message = refund_razorpay_payment(razorpay_payment_id, refund_amount)
-        if success:
-            payment_obj.payment.status = "REFUNDED"
-            payment_obj.payment.save()
-        else:
-            refund_message = f"Refund Failed: {refund_message}"
-
-    # Log admin notification
-    AdminNotification.objects.create(
-        order=order,
-        message=f"Order Cancelled by User. {refund_message}. Refund Amount: ₹{refund_amount:.2f}" if refund_amount else "Order Cancelled by User.",
-        created_at=timezone.now()
-    )
 
     return JsonResponse({
         "success": True,
         "order_status": order.order_status,
-        "refund_message": refund_message or None,
-        "message": f"Order cancelled. {refund_message}" if refund_message else "Order cancelled successfully."
+        "message": f"Order cancelled. Reason: {reason}"
     })
-
-# ================ahiya sudhi====================

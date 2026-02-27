@@ -27,12 +27,17 @@
 
 <div class="cart-details">
 
-    <h4>{{ item.food_item.name }}</h4>
+   <h4>
+    {{ item.food_item.name }}
+    {% if item.variant %}
+        - {{ item.variant.variant_name }}
+    {% else %}
+        - Regular
+    {% endif %}
+</h4>
 
-    <!-- REMOVE ITEM -->
-    <a href="{% url 'remove_item' item.id %}" class="remove-item">
-        🗑 Remove Item
-    </a>
+
+    
 
     <!-- PRICE + QTY -->
     <div class="price-qty-block">
@@ -46,12 +51,13 @@
         <!-- <div class="item-price">₹ {{ item.total_price }}</div> -->
          <div class="item-price">
     {% if item.final_price < item.food_item.price %}
-        <del style="color:#999">₹ {{ item.original_total_price }}</del><br>
+        <!-- <del style="color:#999">₹ {{ item.original_total_price|floatformat:2}}</del><br> -->
         <strong style="color:green">
             ₹ {{ item.total_price|floatformat:2 }}
         </strong>
+
     {% else %}
-     <strong style="color:green"> ₹ {{ item.total_price }} </strong>
+     <strong style="color:green"> ₹ {{ item.total_price|floatformat:2 }} </strong>
     {% endif %}
 </div>
 

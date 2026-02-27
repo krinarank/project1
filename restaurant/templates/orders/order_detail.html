@@ -173,76 +173,132 @@
     <!-- ===aa krisha ae add karelu===== -->
 <!-- Order Status & Cancel Button -->
 <!-- ================= ORDER STATUS & CANCEL BUTTON ================= -->
-<div class="order-status-section" style="margin-top:20px; display:flex; justify-content:space-between; align-items:center;">
-    <!-- Left: Status Text -->
-    <p style="margin:0;"><strong>Status:</strong> <span id="status-{{ order.id }}">{{ order.order_status }}</span></p>
+<!-- ================= ORDER STATUS & CANCEL BUTTON ================= -->
+<div class="order-status-section"
+     style="margin-top:20px; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap;">
 
-    <!-- Right: Cancel Button -->
-    {% if order.order_status in 'PLACED,CONFIRMED' %}
-    <button id="cancel-btn-{{ order.id }}" 
-            class="btn btn-cancel" 
-            data-order-id="{{ order.id }}">
-        Cancel Order
-    </button>
-{% elif order.order_status == 'PREPARING' %}
-    <button class="btn btn-disabled btn-preparing" disabled>
-       Cancel Order
-    </button>
-{% else %}
-    <button class="btn btn-disabled" disabled>
-        Cancelled
-    </button>
-{% endif %}
+    <!-- Left: Status -->
+    <p style="margin:0;">
+        <strong>Status:</strong>
+        <span id="status-{{ order.id }}">
+            {{ order.order_status }}
+        </span>
+    </p>
 
+    <!-- Right Side -->
+    <div>
+
+    {% if order.order_status == "PLACED" or order.order_status == "CONFIRMED" %}
+
+        <!-- Cancel Button -->
+        <button type="button"
+            id="cancel-btn-{{ order.id }}"
+            class="btn btn-cancel"
+            onclick="showCancelBox('{{ order.id }}')">
+            Cancel Order
+        </button>
+
+        <!-- Hidden Reason Box -->
+        <div id="cancel-box-{{ order.id }}"
+             style="display:none; margin-top:10px; background:#f5f5f5; padding:10px; border-radius:6px;">
+
+            <textarea id="reason-{{ order.id }}"
+                      placeholder="Enter cancellation reason"
+                      style="width:100%; margin-bottom:8px;"></textarea>
+
+            <button type="button"
+                    class="btn btn-danger"
+                    onclick="submitCancel('{{ order.id }}')">
+                Confirm Cancel
+            </button>
+
+            <div id="cancel-message-{{ order.id }}"
+                 style="margin-top:8px; font-size:14px;"></div>
+
+        </div>
+
+    {% elif order.order_status == "PREPARING" %}
+        <button class="btn btn-disabled" disabled>
+            Cancel Order
+        </button>
+
+    {% else %}
+        <button class="btn btn-disabled" disabled>
+            Cancelled
+        </button>
+    {% endif %}
+
+    </div>
 </div>
 <script>
-document.addEventListener("DOMContentLoaded", function() {
-    const cancelBtn = document.querySelector('.btn-cancel');
-    if(cancelBtn){
-        cancelBtn.addEventListener('click', function() {
-            const orderId = this.dataset.orderId;
-            if(confirm("Are you sure you want to cancel this order?")){
-                fetch(`/orders/cancel/${orderId}/`, {
-                    method: 'POST',
-                    headers: {
-                        'X-CSRFToken': getCookie('csrftoken'),
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify({})
-                })
-                .then(res => res.json())
-                .then(data => {
-                    alert(data.message);
-                    if(data.success){
-                        cancelBtn.disabled = true;
-                        cancelBtn.classList.remove('btn-cancel');
-                        cancelBtn.classList.add('btn-disabled');
-                        cancelBtn.innerText = 'Cancelled';
-                        const statusElem = document.querySelector(`#status-${orderId}`);
-                        if(statusElem) statusElem.innerText = 'CANCELLED';
-                    }
-                })
-                .catch(err => console.error("Error:", err));
-            }
-        });
-    }
-});
 
-// CSRF helper
+function showCancelBox(orderId){
+    const box = document.getElementById("cancel-box-" + orderId);
+    if(box){
+        box.style.display = "block";
+    }
+}
+
+function submitCancel(orderId){
+
+    const reasonField = document.getElementById("reason-" + orderId);
+    const messageBox = document.getElementById("cancel-message-" + orderId);
+    const cancelBtn = document.getElementById("cancel-btn-" + orderId);
+    const statusText = document.getElementById("status-" + orderId);
+    const cancelBox = document.getElementById("cancel-box-" + orderId);
+
+    const reason = reasonField.value;
+
+    if(reason.trim() === ""){
+        messageBox.innerHTML = "<span style='color:red;'>Cancellation reason is required!</span>";
+        return;
+    }
+
+    fetch(`/orders/cancel/${orderId}/`, {
+        method: 'POST',
+        headers: {
+            'X-CSRFToken': getCookie('csrftoken'),
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ reason: reason })
+    })
+    .then(res => res.json())
+    .then(data => {
+
+        if(data.success){
+
+            // 🔥 Instant UI Update (No Refresh Needed)
+
+            statusText.innerText = "CANCELLED";
+
+            cancelBtn.innerText = "Cancelled";
+            cancelBtn.disabled = true;
+
+            cancelBox.style.display = "none";
+            reasonField.value = "";
+
+        } else {
+            messageBox.innerHTML = "<span style='color:red;'>" + data.message + "</span>";
+        }
+
+    });
+}
+
 function getCookie(name) {
     let cookieValue = null;
-    if(document.cookie && document.cookie !== '') {
+    if (document.cookie && document.cookie !== '') {
         const cookies = document.cookie.split(';');
-        for(let i=0;i<cookies.length;i++){
+        for (let i = 0; i < cookies.length; i++) {
             const cookie = cookies[i].trim();
-            if(cookie.substring(0,name.length+1) === (name+'=')){
-                cookieValue = decodeURIComponent(cookie.substring(name.length+1));
+            if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
                 break;
             }
         }
     }
     return cookieValue;
 }
+
 </script>
 
 

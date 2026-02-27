@@ -76,5 +76,9 @@ path('reports/pdf/payment/', views.payment_report_pdf, name='payment_report_pdf'
 path('reports/pdf/order-history/', views.order_history_pdf, name='order_history_pdf'),
 path('reports/pdf/delivery-status/', views.delivery_status_pdf, name='delivery_status_pdf'),
 #path('reports/pdf/assign-order/', views.assign_order_pdf, name='assign_order_pdf'),
+path('profile/', views.admin_profile, name='admin_profile'),
+path('admin/profile/edit/', views.admin_profile_edit, name='admin_profile_edit'),  # edit page
+path('admin/profile/change-password/', views.admin_change_password, name='admin_change_password'),
+
 
 ]

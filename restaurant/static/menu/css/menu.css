@@ -151,3 +151,87 @@ body.all-active .category-block {
 .filter-panel.active {
     left: 0;
 }
+
+/* Overlay */
+#sheetOverlay {
+    position: fixed;
+    top: 0; left: 0;
+    width: 100%; height: 100%;
+    background: rgba(0,0,0,0.4);
+    display: none;
+    z-index: 999;
+}
+
+/* Small Bottom Sheet */
+#variantSheet {
+    position: fixed;
+    bottom: -100%;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 400px; /* small for laptop/mobile */
+    max-width: 90%;
+    background: #fff;
+    border-radius: 15px 15px 0 0;
+    box-shadow: 0 -5px 20px rgba(0,0,0,0.3);
+    transition: 0.3s;
+    z-index: 1000;
+    padding: 20px;
+    max-height: 60%;
+    overflow-y: auto;
+}
+
+#variantSheet.active {
+    bottom: 0;
+}
+
+.sheet-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 15px;
+}
+
+#closeSheet {
+    font-size: 24px;
+    cursor: pointer;
+}
+
+#variantList .variant-item {
+    padding: 10px 12px;
+    border: 1px solid #ddd;
+    border-radius: 10px;
+    margin-bottom: 10px;
+    display: flex;
+    justify-content: space-between;
+    cursor: pointer;
+}
+
+#variantList .variant-item.selected {
+    border: 2px solid #28a745;
+    background: #f1fff5;
+    font-weight: bold;
+}
+
+.sheet-qty {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 15px;
+    margin: 10px 0;
+}
+
+.sheet-qty button {
+    width: 30px;
+    height: 30px;
+}
+
+#addVariantToCart {
+    width: 100%;
+    background: #28a745;
+    color: white;
+    padding: 12px;
+    border: none;
+    border-radius: 10px;
+    font-size: 16px;
+    margin-top: 10px;
+}

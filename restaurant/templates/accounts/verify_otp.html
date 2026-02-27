@@ -1,8 +1,4 @@
-<!-- <form method="POST" action="{% url verify_url %}">
-    {% csrf_token %}
-    <input type="text" name="otp" placeholder="Enter OTP">
-    <button>Verify</button>
-</form> -->
+
 
 
 <!DOCTYPE html>
@@ -10,71 +6,109 @@
 <head>
     <title>Verify OTP</title>
     <style>
-        body {
-            background: #f4f6f8;
-            font-family: Arial;
-        }
-        .card {
-            width: 450px;
-            margin: 120px auto;
-            padding: 25px;
-            background: white;
-            border-radius: 8px;
-            text-align: center;
-        }
-        input {
-            width: 100%;
-            padding: 10px;
-            font-size: 18px;
-            text-align: center;
-            letter-spacing: 5px;
-            margin-top: 15px;
-        }
-        button {
-            width: 100%;
-            padding: 10px;
-            margin-top: 20px;
-            background: #4caf50;
-            color: white;
-            border: none;
-            border-radius: 5px;
-        }
-        .error { color: red; margin-top: 10px; }
-        .resend {
-            margin-top: 15px;
-        }
-        .resend a {
-            text-decoration: none;
-            color: #555;
-        }
+    body {
+        background: linear-gradient(135deg, #f4f6f8, #e9eef3);
+        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        height: 100vh;
+        margin: 0;
+    }
 
-        .otp-box {
-    display: flex;
-    justify-content: space-between;
-    gap: 8px;
-    margin-top: 20px;
-}
+    .card {
+        width: 380px;
+        padding: 30px 25px;
+        background: white;
+        border-radius: 12px;
+        text-align: center;
+        box-shadow: 0 8px 25px rgba(0, 0, 0, 0.08);
+        animation: fadeIn 0.4s ease-in-out;
+    }
 
-.otp-input {
-    width: 35px;
-    height: 40px;
-    font-size: 22px;
-    text-align: center;
-    border: 2px solid #ccc;
-    border-radius: 6px;
-    outline: none;
-    transition: 0.2s;
-}
+    @keyframes fadeIn {
+        from { opacity: 0; transform: translateY(-10px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
 
-.otp-input:focus {
-    border-color: #4caf50;
-}
+    h2 {
+        margin-bottom: 5px;
+    }
 
-.otp-input.error {
-    border-color: red;
-}
+    p {
+        color: #666;
+        font-size: 14px;
+        margin-bottom: 20px;
+    }
 
-    </style>
+    .otp-box {
+        display: flex;
+        justify-content: space-between;
+        gap: 10px;
+        margin: 20px 0;
+    }
+
+    .otp-input {
+        width: 45px;
+        height: 50px;
+        font-size: 22px;
+        text-align: center;
+        border: 2px solid #ddd;
+        border-radius: 8px;
+        outline: none;
+        transition: 0.3s;
+    }
+
+    .otp-input:focus {
+        border-color: #4caf50;
+        box-shadow: 0 0 5px rgba(76, 175, 80, 0.4);
+    }
+
+    button {
+        width: 100%;
+        padding: 12px;
+        margin-top: 15px;
+        background: #4caf50;
+        color: white;
+        border: none;
+        border-radius: 8px;
+        font-size: 15px;
+        cursor: pointer;
+        transition: 0.3s;
+    }
+
+    button:hover {
+        background: #43a047;
+    }
+
+    .error {
+        color: red;
+        font-size: 14px;
+        margin-bottom: 10px;
+    }
+
+    #timer {
+        font-size: 13px;
+        color: #777;
+        margin-top: 10px;
+    }
+
+    #resendBtn {
+        margin-top: 10px;
+        background: none;
+        border: none;
+        color: gray;
+        font-size: 14px;
+        cursor: pointer;
+    }
+
+    #resendBtn:enabled {
+        color: #4caf50;
+        font-weight: 500;
+    }
+
+</style>
+
 </head>
 <body>
 
@@ -88,15 +122,6 @@
         {% endfor %}
     {% endif %}
 
-    <!-- <form method="POST"  action="{% url verify_url %}">
-        {% csrf_token %}
-        <input type="text" name="otp" maxlength="6" placeholder="------" required>
-        <button type="submit">Verify OTP</button>
-    </form> -->
-
-    <!-- <div class="resend">
-        <a href="{% url 'delivery_forgot_password' %}">Resend OTP</a>
-    </div> -->
 
     <form method="post" id="otpForm" action="{% url verify_url %}">
   {% csrf_token %}
@@ -124,37 +149,7 @@
 
   <button type="submit">Verify OTP</button>
 
-  <!-- <p id="timer"></p> -->
-
-  <!-- <a href="{% url 'resend_otp' %}"
-   id="resendBtn"
-   style="pointer-events:none; color:gray;">
-   Resend OTP
-</a> -->
-<!-- <form method="post" action="{% url 'resend_otp' %}">
-    {% csrf_token %}
-    <button type="submit"
-            id="resendBtn"
-            style="pointer-events:none; color:gray;">
-        Resend OTP
-    </button>
-</form> -->
-
-
-<!-- <a href="{% url 'resend_otp' %}"
-   id="resendBtn"
-   style="
-      pointer-events:none;
-      color:gray;
-      display:inline-block;
-      margin-top:10px;
-   ">
-   Resend OTP
-</a> -->
-<!-- <form method="post" action="{% url 'resend_otp' %}">
-    {% csrf_token %}
-    <button type="submit" id="resendBtn" style="pointer-events:none; color:gray;">Resend OTP</button>
-</form> -->
+ 
 <p id="timer"></p>
 
 </form>
@@ -168,56 +163,6 @@ Resend OTP
 
 
 </div>
-<!-- <script>
-const inputs = document.querySelectorAll(".otp-input");
-const hiddenOtp = document.getElementById("otpValue");
-const form = document.getElementById("otpForm");
-
-inputs.forEach((input, index) => {
-
-  input.addEventListener("input", () => {
-    // allow only numbers
-    input.value = input.value.replace(/[^0-9]/g, "");
-
-    if (input.value && index < inputs.length - 1) {
-      inputs[index + 1].focus();
-    }
-
-    let otp = "";
-    inputs.forEach(i => otp += i.value);
-    hiddenOtp.value = otp;
-
-    if (otp.length === 6 ) {
-      form.submit(); // 🚀 auto submit
-    }
-  });
-
-  input.addEventListener("keydown", (e) => {
-    if (e.key === "Backspace" && !input.value && index > 0) {
-      inputs[index - 1].focus();
-    }
-  });
-
-});
-</script>
-
-<script>
-let timeLeft = 60;
-const timer = document.getElementById("timer");
-const resendBtn = document.getElementById("resendBtn");
-
-const countdown = setInterval(() => {
-    timer.innerText = "Resend OTP in " + timeLeft + "s";
-    timeLeft--;
-
-    if (timeLeft < 0) {
-        clearInterval(countdown);
-        timer.innerText = "You can resend OTP now";
-        resendBtn.style.pointerEvents = "auto";
-        resendBtn.style.color = "#4caf50";
-    }
-}, 1000);
-</script> -->
 
 <script>
 const inputs = document.querySelectorAll(".otp-input");

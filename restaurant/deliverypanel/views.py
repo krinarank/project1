@@ -206,38 +206,34 @@ def delivery_mark_delivered(request, order_id):
 
     messages.success(request, f"Order #{order.id} marked as delivered.")
     return redirect('delivery_dashboard')
-
 def delivery_forgot_password(request):
     if request.method == 'POST':
-        email = request.POST.get('email')
+        username = request.POST.get('username')
 
         try:
-            user = Customer.objects.get(email=email, is_delivery_person=True)
+            user = Customer.objects.get(username=username, is_delivery_person=True)
 
             otp = random.randint(100000, 999999)
-            request.session['otp'] = str(otp)
-            request.session['otp_time'] = time.time()      # ⏱️ timestamp
-            request.session['otp_attempts'] = 0             # 🔢 reset attempts
-            request.session['reset_user_id'] = user.id  
 
-            request.session['reset_email'] = email
-            request.session['reset_user_id'] = user.id   # ⭐ VERY IMPORTANT
             request.session['otp'] = str(otp)
+            request.session['otp_time'] = time.time()
+            request.session['otp_attempts'] = 0
+            request.session['reset_user_id'] = user.id
 
             send_mail(
                 'Your OTP for Password Reset',
-                f'Your OTP is {otp}','This OTP is valid for only 5 minutes'
+                f'Your OTP is {otp}\nThis OTP is valid for 5 minutes.',
                 'leelarestaurant.official@gmail.com',
-                [user.email],
+                [user.email],   # 🔥 OTP still goes to registered email
                 fail_silently=False
             )
-            messages.success(request,"OTP sent to your registered email")
+
+            messages.success(request, "OTP sent to your registered email")
             return redirect('verify_otp')
 
         except Customer.DoesNotExist:
-            messages.error(request, "This Email is not registered.")
+            messages.error(request, "Username not found.")
 
-    #return render(request, 'deliverypanel/forgot_password.html')
     return render(request, 'accounts/forgot_password.html', {
         'form_action': 'delivery_forgot_password',
         'login_url': 'delivery_login'

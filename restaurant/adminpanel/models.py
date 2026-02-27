@@ -55,6 +55,7 @@ class FoodItemVariant(models.Model):
     food_item = models.ForeignKey(FoodItem, on_delete=models.CASCADE, related_name='variants')
     variant_name = models.CharField(max_length=50)
     price = models.DecimalField(max_digits=8, decimal_places=2)
-
+    is_default = models.BooleanField(default=False)
+    
     def __str__(self):
         return f"{self.food_item.name} - {self.variant_name}"

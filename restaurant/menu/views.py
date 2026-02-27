@@ -402,3 +402,22 @@ def profile_page(request):
         'show_modal': show_modal,
         'wishlist_items': wishlist_items,
     })
+from django.shortcuts import render, get_object_or_404
+from adminpanel.models import FoodItem
+
+def food_detail(request, food_id):
+    food = get_object_or_404(FoodItem, id=food_id)
+
+    # variants
+    variants = food.variants.all().order_by('price')
+
+    # first image (because images separate table me hai)
+    food_image = food.images.first()
+
+    context = {
+        'food': food,
+        'variants': variants,
+        'food_image': food_image
+    }
+
+    return render(request, 'menu/food_detail.html', context)

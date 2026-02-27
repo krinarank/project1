@@ -116,7 +116,11 @@
                 DELIVERED
             </span>
         {% endif %}
-
+{% if obj.order.order_status == 'CANCELLED' %}
+            <span class="status-btn btn-delivered">
+                CANCELLED
+            </span>
+        {% endif %}
     </div>
 
 
