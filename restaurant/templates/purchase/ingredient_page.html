@@ -38,7 +38,11 @@
 
         <h3>All Ingredients</h3>
 
-        <table>
+        <div style="max-height:300px; overflow-y:auto; border:1px solid #ddd; border-radius:8px;">
+
+        <table style="width:100%; border-collapse:collapse;">
+            
+            <thead style="position:sticky; top:0; background:#212529; color:white; z-index:10;">
             <tr>
                 <th>Name</th>
                 <th>Unit</th>
@@ -47,6 +51,7 @@
                 <th>Last Updated</th>
                 <th>Actions</th>
             </tr>
+            </thead>
 
             {% for i in ingredients %}
             <tr>
@@ -70,6 +75,7 @@
             </tr>
             {% endfor %}
         </table>
+        </div>
     </div>
 
 </div>
@@ -163,6 +169,25 @@ function prepareOrder(prepared_id, order_qty) {
         }
     });
 }
+</script>
+<script>
+const ingredientSearch = document.getElementById("ingredientSearch");
+
+ingredientSearch.addEventListener("keyup", function () {
+
+    let filter = this.value.toLowerCase();
+    let rows = document.querySelectorAll(".ingredient-table table tbody tr");
+
+    rows.forEach(row => {
+
+        // Skip empty row
+        if (row.querySelector("td[colspan]")) return;
+
+        let text = row.innerText.toLowerCase();
+        row.style.display = text.includes(filter) ? "" : "none";
+    });
+
+});
 </script>
 
 {% endblock %}

@@ -2,11 +2,17 @@
 
 {% block content %}
 <h2 class="mb-4">⭐ Customer Feedback & Ratings</h2>
-
+<div style="display:flex; justify-content:flex-end; margin-bottom:10px;">
+    <input type="text" id="feedbackSearch"
+           placeholder="🔍 Search feedback..."
+           style="width:250px; padding:6px; border-radius:6px; border:1px solid #ccc;">
+</div>
 <div class="card shadow">
-    <div class="card-body table-responsive">
-        <table class="table table-bordered table-hover align-middle">
-            <thead class="table-dark text-center">
+    <div style="max-height:300px; overflow-y:auto; border:1px solid #ddd; border-radius:8px;">
+
+        <table style="width:100%; border-collapse:collapse;">
+            
+            <thead style="position:sticky; top:0; background:#212529; color:white; z-index:10;">
                 <tr>
                     <th>Order ID</th>
                     <th>Customer</th>
@@ -54,6 +60,26 @@
                 {% endfor %}
             </tbody>
         </table>
+        </div>
     </div>
 </div>
+<script>
+const feedbackSearch = document.getElementById("feedbackSearch");
+
+feedbackSearch.addEventListener("keyup", function () {
+
+    let filter = this.value.toLowerCase();
+    let rows = document.querySelectorAll("table tbody tr");
+
+    rows.forEach(row => {
+
+        // Skip empty row
+        if (row.querySelector("td[colspan]")) return;
+
+        let text = row.innerText.toLowerCase();
+        row.style.display = text.includes(filter) ? "" : "none";
+    });
+
+});
+</script>
 {% endblock %}

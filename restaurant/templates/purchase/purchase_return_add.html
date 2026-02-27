@@ -64,13 +64,18 @@
         <input type="text" id="purchaseReturnSearch" placeholder="🔍 Search purchase returns...">
     </div>
         <h3>All Purchase Returns</h3>
-        <table>
+        <div style="max-height:300px; overflow-y:auto; border:1px solid #ddd; border-radius:8px;">
+
+        <table style="width:100%; border-collapse:collapse;">
+            
+            <thead style="position:sticky; top:0; background:#212529; color:white; z-index:10;">
             <tr>
                 <th>Purchase</th>
                 <th>Date</th>
                 <th>Reason</th>
                 <th>Total Return</th>
             </tr>
+            </thead>
             {% for r in returns %}
             <tr>
                 <td>Purchase #{{ r.purchase.id }}</td>
@@ -80,6 +85,7 @@
             </tr>
             {% endfor %}
         </table>
+        </div>
     </div>
 
 </div>
