@@ -1,7 +1,17 @@
 {% extends "deliverypanel/base_delivery.html" %}
 
 {% block content %}
-
+<style>
+.completed-badge {
+    display: inline-block;
+    padding: 6px 12px;
+    font-size: 14px;
+    background-color: #198754;
+    color: white;
+    border-radius: 4px;
+    font-weight: 500;
+}
+</style>
 <div class="profile-card mb-4">
     <h2>Welcome, {{ delivery.fname }} 👋</h2>
 
@@ -12,45 +22,6 @@
         <p><strong>Joining Date:</strong> {{ delivery.joining_date }}</p>
     </div>
 </div>
-
-
-<!-- ================= ACTIVE ORDERS ================= -->
-<h4 class="mb-2">🚚 Active Orders</h4>
-
-<table class="table table-bordered table-striped">
-    <thead class="table-dark">
-
-        <tr>
-            <th>Order ID</th>
-            <th>Customer</th>
-            <th>Address</th>
-            <th>Action</th>
-        </tr>
-    </thead>
-    <tbody>
-        {% for a in active_assignments %}
-        <tr>
-            <td>#{{ a.order.id }}</td>
-            <td>{{ a.user.firstname }} {{ a.user.lastname }}</td>
-            <td>{{ a.user.address }}</td>
-            <td>
-                <form method="POST" action="{% url 'delivery_mark_delivered' a.order.id %}">
-                    {% csrf_token %}
-                    <button class="btn btn-success btn-sm">
-                        Mark Delivered
-                    </button>
-                </form>
-            </td>
-        </tr>
-        {% empty %}
-        <tr>
-            <td colspan="4" class="text-center text-muted">
-                No active orders.
-            </td>
-        </tr>
-        {% endfor %}
-    </tbody>
-</table>
 
 
 <!-- ================= NEW REQUESTS ================= -->
@@ -95,5 +66,100 @@
         {% endfor %}
     </tbody>
 </table>
+
+
+<!-- ================= ACTIVE ORDERS ================= -->
+<h4 class="mb-2">🚚 Delivery Orders</h4>
+
+<table class="table table-bordered table-striped">
+    <thead class="table-dark">
+
+        <tr>
+            <th>Order ID</th>
+            <th>Customer</th>
+            <th>Address</th>
+            <th>Payment</th>
+            <th>Action</th>
+        </tr>
+    </thead>
+    <tbody>
+    {% for a in active_assignments %}
+    <tr>
+        <td>#{{ a.order.id }}</td>
+        <td>{{ a.user.firstname }} {{ a.user.lastname }}</td>
+        <td>{{ a.user.address }}</td>
+
+        <!-- ================= PAYMENT COLUMN ================= -->
+        <td>
+            {% for op in a.order.orderhaspayment_set.all %}
+                {{ op.payment.method }}
+                <br>
+
+                {% if op.payment.status == "PENDING" %}
+                    <span class="badge bg-warning text-dark">Pending</span>
+                {% elif op.payment.status == "PAID" %}
+                    <span class="badge bg-success">Paid</span>
+                {% else %}
+                    <span class="badge bg-secondary">
+                        {{ op.payment.status }}
+                    </span>
+                {% endif %}
+            {% empty %}
+                <span class="text-muted">No Payment</span>
+            {% endfor %}
+        </td>
+
+        <!-- ================= ACTION COLUMN ================= -->
+        <td>
+            {% for op in a.order.orderhaspayment_set.all %}
+
+                {% if a.status != "DELIVERED" %}
+
+                    <!-- Mark Delivered -->
+                    <form method="POST" action="{% url 'delivery_mark_delivered' a.order.id %}">
+                        {% csrf_token %}
+                        <button class="btn btn-success btn-sm">
+                            Mark Delivered
+                        </button>
+                    </form>
+
+                {% elif op.payment.method == "COD" and op.payment.status == "PENDING" %}
+
+                    <!-- COD Payment Button -->
+                    <form method="POST" action="{% url 'delivery_mark_paid' a.order.id %}">
+                        {% csrf_token %}
+                        <button class="btn btn-warning btn-sm">
+                            Mark Payment Received
+                        </button>
+                    </form>
+
+                {% else %}
+
+                    <button class="completed-badge" >
+                    <!-- <button class="btn btn-secondary btn-sm" > -->
+                        Completed
+                    </button>
+
+                {% endif %}
+
+            {% empty %}
+                <button class="btn btn-secondary btn-sm" disabled>
+                    No Action
+                </button>
+            {% endfor %}
+        </td>
+
+    </tr>
+    {% empty %}
+    <tr>
+        <td colspan="5" class="text-center text-muted">
+            No active orders.
+        </td>
+    </tr>
+    {% endfor %}
+</tbody>
+</table>
+
+
 
 {% endblock %}
