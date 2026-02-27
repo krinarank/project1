@@ -36,7 +36,12 @@
         <input type="text" id="supplierSearch" placeholder="🔍 Search supplier...">
     </div>
         <h3>All Suppliers</h3>
-        <table>
+        <div style="max-height:300px; overflow-y:auto; border:1px solid #ddd; border-radius:8px;">
+
+        <table style="width:100%; border-collapse:collapse;">
+            
+            <thead style="position:sticky; top:0; background:#212529; color:white; z-index:10;">
+        
             <tr>
                 <th>Name</th>
                 <th>Contact</th>
@@ -44,6 +49,7 @@
                 <th>Area</th>
                 <th>Actions</th>
             </tr>
+            </thead>
             {% for s in suppliers %}
             <tr>
                 <td>{{ s.fname }} {{ s.lname }}</td>
@@ -61,6 +67,7 @@
             </tr>
             {% endfor %}
         </table>
+        </div>
     </div>
 </div>
 <a href="{% url 'dashboard' %}" style="display:inline-flex;align-items:center;gap:5px;margin-top:20px;padding:8px 14px;background-color:#28343b;color:#fff;text-decoration:none;font-weight:500;border-radius:5px;transition:0.3s;">⬅ Back to Dashboard</a>

@@ -61,13 +61,19 @@
         <input type="text" id="Search" placeholder="🔍 Search purchases...">
     </div>
         <h3>All Purchases</h3>
-        <table>
+        <div style="max-height:300px; overflow-y:auto; border:1px solid #ddd; border-radius:8px;">
+
+        <table style="width:100%; border-collapse:collapse;">
+            
+            <thead style="position:sticky; top:0; background:#212529; color:white; z-index:10;">
             <tr>
                 <th>Supplier</th>
                 <th>Date</th>
                 <th>Total Amount</th>
                 <th>Actions</th>
+                
             </tr>
+            </thead>
             {% for p in purchases %}
             <tr>
                 <td>{{ p.supplier.fname }} {{ p.supplier.lname }}</td>
@@ -86,7 +92,7 @@
             {% endfor %}
         </table>
     </div>
-
+</div>
 </div>
 
 <script>
