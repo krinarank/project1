@@ -1,0 +1,286 @@
+{% extends "adminpanel/base.html" %}
+{% block content %}
+
+<div class="container mt-5" style="max-width:520px;">
+
+    <div class="card shadow p-4 border-0 rounded-4 position-relative">
+
+        <!-- ================= VIEW SECTION ================= -->
+        <div id="profileView" class="text-center">
+            {% if user.profile_image %}
+                <img src="{{ user.profile_image.url }}" class="rounded-circle mb-3" width="120" height="120">
+            {% else %}
+                <div class="rounded-circle mb-3" style="width:120px; height:120px; background:#e2e2e2; display:inline-block;"></div>
+            {% endif %}
+
+            <h3 class="mb-2">{{ user.firstname }} {{ user.lastname }}</h3>
+            <p class="text-muted">{{ user.email }}</p>
+
+            <div class="text-start mt-4 px-2">
+                <div class="mb-2"><strong>Contact No:</strong> {{ user.contactno }}</div>
+                <div class="mb-2"><strong>Gender:</strong> {{ user.gender }}</div>
+                <div class="mb-2"><strong>Address:</strong> {{ user.address }}</div>
+            </div>
+        </div>
+
+        <!-- ================= EDIT SECTION ================= -->
+        <div id="profileEdit" style="display:none;">
+            <form method="post" enctype="multipart/form-data" action="{% url 'admin_profile_edit' %}">
+                {% csrf_token %}
+
+                <div class="mb-3 text-center">
+                    {% if user.profile_image %}
+                        <img src="{{ user.profile_image.url }}" class="rounded-circle mb-2" width="120" height="120">
+                    {% endif %}
+                    <input type="file" name="profile_image" class="form-control mt-2">
+                </div>
+
+                <div class="mb-3">
+                    <label class="form-label">First Name</label>
+                    <input type="text" name="firstname" class="form-control" value="{{ user.firstname }}">
+                </div>
+
+                <div class="mb-3">
+                    <label class="form-label">Last Name</label>
+                    <input type="text" name="lastname" class="form-control" value="{{ user.lastname }}">
+                </div>
+
+                <div class="mb-3">
+                    <label class="form-label">Email</label>
+                    <input type="email" name="email" class="form-control" value="{{ user.email }}">
+                </div>
+
+                <div class="mb-3">
+                    <label class="form-label">Contact No</label>
+                    <input type="text" name="contactno" class="form-control" value="{{ user.contactno }}">
+                </div>
+
+                <div class="mb-3">
+                    <label class="form-label d-block">Gender</label>
+                    <div class="form-check form-check-inline">
+                        <input class="form-check-input" type="radio" name="gender" value="Male"
+                        {% if user.gender == "Male" %}checked{% endif %}>
+                        <label class="form-check-label">Male</label>
+                    </div>
+                    <div class="form-check form-check-inline">
+                        <input class="form-check-input" type="radio" name="gender" value="Female"
+                        {% if user.gender == "Female" %}checked{% endif %}>
+                        <label class="form-check-label">Female</label>
+                    </div>
+                </div>
+
+                <div class="mb-3">
+                    <label class="form-label">Address</label>
+                    <textarea name="address" class="form-control">{{ user.address }}</textarea>
+                </div>
+
+                <div class="d-flex justify-content-between mt-3">
+                    <button type="submit" class="btn btn-primary flex-fill me-2">Save Changes</button>
+                    <button type="button" class="btn btn-secondary flex-fill ms-2" onclick="hideEditForm()">Cancel</button>
+                </div>
+            </form>
+        </div>
+
+        <!-- ================= CHANGE PASSWORD SECTION ================= -->
+        <div id="changePasswordSection" style="display:none; margin-top:20px;">
+            <form method="post" action="{% url 'admin_change_password' %}" onsubmit="return validatePassword()">
+                {% csrf_token %}
+
+                <div class="mb-3">
+                    <label class="form-label">Current Password</label>
+                    <input type="password" name="current_password" class="form-control" required>
+                </div>
+
+                <div class="mb-3">
+                    <label class="form-label">New Password</label>
+                    <input type="password" id="new_password" name="new_password"
+                           class="form-control" oninput="checkStrength()" required>
+
+                    <small id="strengthText" class="d-block mt-1 fw-bold"></small>
+                </div>
+
+                <div class="mb-3">
+                    <label class="form-label">Confirm New Password</label>
+                    <input type="password" id="confirm_new_password"
+                           name="confirm_new_password"
+                           class="form-control" oninput="checkStrength()" required>
+
+                    <div id="confirmPasswordMsg" class="mt-1"></div>
+                </div>
+
+                <div class="d-flex justify-content-between">
+                    <button type="submit" class="btn btn-success flex-fill me-2">Change Password</button>
+                    <button type="button" class="btn btn-secondary flex-fill ms-2" onclick="hideChangePassword()">Cancel</button>
+                </div>
+            </form>
+        </div>
+
+        <!-- ================= BUTTONS ================= -->
+        <div class="mt-4 d-flex justify-content-center gap-3">
+            <button class="btn btn-outline-primary" id="editBtn" onclick="showEditForm()">Edit</button>
+            <button class="btn btn-outline-warning" id="showChangePwBtn" onclick="showChangePassword()">Change Password</button>
+        </div>
+
+    </div>
+</div>
+
+<!-- ================= JAVASCRIPT ================= -->
+<script>
+
+function showEditForm(){
+    document.getElementById('profileView').style.display = 'none';
+    document.getElementById('profileEdit').style.display = 'block';
+    document.getElementById('changePasswordSection').style.display = 'none';
+    document.getElementById('editBtn').style.display = 'none';
+    document.getElementById('showChangePwBtn').style.display = 'none';
+}
+
+function hideEditForm(){
+    document.getElementById('profileView').style.display = 'block';
+    document.getElementById('profileEdit').style.display = 'none';
+    document.getElementById('editBtn').style.display = 'inline-block';
+    document.getElementById('showChangePwBtn').style.display = 'inline-block';
+}
+
+function showChangePassword(){
+    document.getElementById('profileView').style.display = 'none';
+    document.getElementById('profileEdit').style.display = 'none';
+    document.getElementById('changePasswordSection').style.display = 'block';
+    document.getElementById('editBtn').style.display = 'none';
+    document.getElementById('showChangePwBtn').style.display = 'none';
+}
+
+function hideChangePassword(){
+    document.getElementById('profileView').style.display = 'block';
+    document.getElementById('changePasswordSection').style.display = 'none';
+    document.getElementById('editBtn').style.display = 'inline-block';
+    document.getElementById('showChangePwBtn').style.display = 'inline-block';
+}
+
+function checkStrength(){
+    const password = document.getElementById("new_password").value;
+    const confirmPw = document.getElementById("confirm_new_password").value;
+
+    const strengthText = document.getElementById("strengthText");
+    const confirmMsg = document.getElementById("confirmPasswordMsg");
+
+    let strength = 0;
+
+    if(password.length >= 8) strength++;
+    if(/[A-Z]/.test(password)) strength++;
+    if(/[a-z]/.test(password)) strength++;
+    if(/[0-9]/.test(password)) strength++;
+    if(/[!@#$%^&*]/.test(password)) strength++;
+
+    if(password.length === 0){
+        strengthText.textContent = "";
+    }
+    else if(strength <= 2){
+        strengthText.textContent = "Weak Password";
+        strengthText.className = "text-danger fw-bold";
+    }
+    else if(strength <= 4){
+        strengthText.textContent = "Medium Password";
+        strengthText.className = "text-warning fw-bold";
+    }
+    else{
+        strengthText.textContent = "Strong Password";
+        strengthText.className = "text-success fw-bold";
+    }
+
+    if(confirmPw && password !== confirmPw){
+        confirmMsg.textContent = "Passwords do not match";
+        confirmMsg.className = "text-danger";
+    } else {
+        confirmMsg.textContent = "";
+    }
+}
+
+function validatePassword(){
+    const password = document.getElementById("new_password").value;
+    const confirmPw = document.getElementById("confirm_new_password").value;
+
+    if(password.length < 8){
+        alert("Password must be at least 8 characters.");
+        return false;
+    }
+
+    if(password !== confirmPw){
+        alert("Passwords do not match.");
+        return false;
+    }
+
+    return true;
+}
+
+</script>
+
+<style>
+
+/* Card Smooth Animation */
+.card {
+    border-radius: 20px;
+    transition: all 0.3s ease;
+}
+.card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 15px 35px rgba(0,0,0,0.12);
+}
+
+/* Smooth Button Hover */
+.btn {
+    transition: all 0.3s ease;
+}
+.btn:hover {
+    transform: scale(1.05);
+}
+
+/* PERFECT ROUND RADIO BUTTON */
+.form-check-input[type="radio"] {
+    appearance: none;
+    -webkit-appearance: none;
+    width: 18px;
+    height: 18px;
+    border: 2px solid #6c757d;
+    border-radius: 50%;
+    position: relative;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    margin-right: 6px;
+}
+
+/* Inside Dot */
+.form-check-input[type="radio"]:checked {
+    border-color: #0d6efd;
+}
+
+.form-check-input[type="radio"]:checked::before {
+    content: "";
+    width: 10px;
+    height: 10px;
+    background: #0d6efd;
+    border-radius: 50%;
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+}
+
+/* Hover Effect */
+.form-check-input[type="radio"]:hover {
+    box-shadow: 0 0 5px rgba(13,110,253,0.5);
+}
+
+/* Password Strength Smooth Fade */
+#strengthText {
+    transition: all 0.3s ease;
+}
+
+/* Confirm Password Text */
+#confirmPasswordMsg {
+    font-weight: 500;
+}
+
+</style>
+
+{% endblock %}

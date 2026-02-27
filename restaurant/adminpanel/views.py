@@ -298,6 +298,107 @@ def add_subcategory(request):
 #         'categories': categories,
 #         'subcategories': subcategories
 #     })
+
+# @login_required
+# def add_fooditem(request):
+
+#     if request.method == 'POST':
+
+#         category_id = request.POST.get('category_id')
+#         subcategory_id = request.POST.get('subcategory_id')
+#         name = request.POST.get('name', '').strip()
+#         price = request.POST.get('price')
+#         calories = request.POST.get('calories')
+#         has_variant = request.POST.get('has_variant') == 'on'
+#         is_available = request.POST.get('is_available') == 'on'
+#         is_special = request.POST.get('is_special') == 'on'
+
+#         if not all([category_id, subcategory_id, name, calories]):
+#             messages.error(request, "Required fields missing")
+#             return redirect('add_fooditem')
+
+#         if name.isnumeric():
+#             messages.error(request, "Food name cannot be numeric")
+#             return redirect('add_fooditem')
+
+#         category = get_object_or_404(FoodItemCategory, id=category_id)
+#         subcategory = get_object_or_404(FoodItemSubCategory, id=subcategory_id, food_item_cat=category)
+
+#         if FoodItem.objects.filter(name__iexact=name, sub_cat=subcategory).exists():
+#             messages.error(request, "Food already exists")
+#             return redirect('add_fooditem')
+
+#         try:
+#             calories = int(calories)
+#             if calories <= 0:
+#                 raise ValueError
+#         except:
+#             messages.error(request, "Invalid calories")
+#             return redirect('add_fooditem')
+
+#         # ===== PRICE LOGIC =====
+
+#         if has_variant:
+#             # FoodItem ma Regular price store karisu
+#             try:
+#                 price = float(price)
+#             except:
+#                 messages.error(request, "Enter Regular Price")
+#                 return redirect('add_fooditem')
+#         else:
+#             try:
+#                 price = float(price)
+#             except:
+#                 messages.error(request, "Invalid price")
+#                 return redirect('add_fooditem')
+
+#         # CREATE FOOD
+#         food = FoodItem.objects.create(
+#             name=name,
+#             price=price,
+#             calories=calories,
+#             is_available=is_available,
+#             is_special=is_special,
+#             has_variant=has_variant,
+#             sub_cat=subcategory
+#         )
+
+#         # ===== VARIANT SAVE =====
+
+#     if has_variant:
+
+#         variant_names = request.POST.getlist('variant_name[]')
+#         variant_prices = request.POST.getlist('variant_price[]')
+
+#         created_any = False
+
+#         for vname, vprice in zip(variant_names, variant_prices):
+#             if vname.strip() and vprice:
+#                 FoodItemVariant.objects.create(
+#                 food_item=food,
+#                 variant_name=vname.strip(),
+#                 price=float(vprice)
+#             )
+#             created_any = True
+
+#     # safety: if admin checked variant but didn't enter rows
+#     if not created_any:
+#         food.has_variant = False
+#         food.save()
+
+#         messages.success(request, "Food item added successfully")
+#         return redirect('add_fooditem')
+
+#     fooditems = FoodItem.objects.select_related('sub_cat__food_item_cat').all()
+#     categories = FoodItemCategory.objects.all()
+#     subcategories = FoodItemSubCategory.objects.all()
+
+#     return render(request, 'add/add_fooditem.html', {
+#         'fooditems': fooditems,
+#         'categories': categories,
+#         'subcategories': subcategories
+#     })
+
 @login_required
 def add_fooditem(request):
 
@@ -308,6 +409,7 @@ def add_fooditem(request):
         name = request.POST.get('name', '').strip()
         price = request.POST.get('price')
         calories = request.POST.get('calories')
+
         has_variant = request.POST.get('has_variant') == 'on'
         is_available = request.POST.get('is_available') == 'on'
         is_special = request.POST.get('is_special') == 'on'
@@ -335,21 +437,11 @@ def add_fooditem(request):
             messages.error(request, "Invalid calories")
             return redirect('add_fooditem')
 
-        # ===== PRICE LOGIC =====
-
-        if has_variant:
-            # FoodItem ma Regular price store karisu
-            try:
-                price = float(price)
-            except:
-                messages.error(request, "Enter Regular Price")
-                return redirect('add_fooditem')
-        else:
-            try:
-                price = float(price)
-            except:
-                messages.error(request, "Invalid price")
-                return redirect('add_fooditem')
+        try:
+            price = float(price)
+        except:
+            messages.error(request, "Invalid price")
+            return redirect('add_fooditem')
 
         # CREATE FOOD
         food = FoodItem.objects.create(
@@ -362,31 +454,35 @@ def add_fooditem(request):
             sub_cat=subcategory
         )
 
-        # ===== VARIANT SAVE =====
-
+        # SAVE VARIANTS
         if has_variant:
 
             variant_names = request.POST.getlist('variant_name[]')
             variant_prices = request.POST.getlist('variant_price[]')
 
-            # Default Regular variant
-            FoodItemVariant.objects.create(
-                food_item=food,
-                variant_name="Regular",
-                price=food.price
-            )
+            created_any = False
+            first = True
 
             for vname, vprice in zip(variant_names, variant_prices):
-                if vname and vprice:
+                if vname.strip() and vprice:
                     FoodItemVariant.objects.create(
                         food_item=food,
-                        variant_name=vname,
-                        price=float(vprice)
+                        variant_name=vname.strip(),
+                        price=float(vprice),
+                        is_default=first
                     )
+                    first=False
+                    created_any = True
+
+            # if checkbox checked but no rows entered
+            if not created_any:
+                food.has_variant = False
+                food.save()
 
         messages.success(request, "Food item added successfully")
         return redirect('add_fooditem')
 
+    # ===== GET REQUEST (PAGE LOAD) =====
     fooditems = FoodItem.objects.select_related('sub_cat__food_item_cat').all()
     categories = FoodItemCategory.objects.all()
     subcategories = FoodItemSubCategory.objects.all()
@@ -397,18 +493,132 @@ def add_fooditem(request):
         'subcategories': subcategories
     })
 
+# def update_fooditem(request, id):
+#     item = get_object_or_404(FoodItem, id=id)
+#     subcategories = FoodItemSubCategory.objects.all()
+
+#     # 🔥 AUTO CREATE DEFAULT VARIANT FOR OLD ITEMS
+#     if not item.variants.exists():
+#         FoodItemVariant.objects.create(
+#             food_item=item,
+#             variant_name="Regular",
+#             price=item.price,
+#             is_default=True
+#         )
+#         item.has_variant = True
+#         item.save()
+
+#     if request.method == 'POST':
+#         item.name = request.POST.get('name')
+#         item.price = request.POST.get('price')
+#         item.calories = request.POST.get('calories')
+#         item.is_available = request.POST.get('is_available') == 'on'
+#         item.is_special = request.POST.get('is_special') == 'on'
+#         item.sub_cat_id = request.POST.get('subcategory_id')
+#         item.save()
+
+#         # 🔥 ALSO UPDATE DEFAULT VARIANT PRICE
+#         default_variant = item.variants.filter(is_default=True).first()
+#         if default_variant:
+#             default_variant.price = item.price
+#             default_variant.save()
+
+#         return redirect(f'/dashboard/update-fooditem/{item.id}/?success=1')
+
+#     return render(request, 'update/update_fooditem.html', {
+#         'fooditem': item,
+#         'subcategories': subcategories
+#     })
+#---------------------------------------------------------------
+# def update_fooditem(request, id):
+#     item = get_object_or_404(FoodItem, id=id)
+#     subcategories = FoodItemSubCategory.objects.all()
+
+#     # 🔥 AUTO CREATE DEFAULT VARIANT FOR OLD ITEMS
+#     if not item.variants.exists():
+#         FoodItemVariant.objects.create(
+#             food_item=item,
+#             variant_name="Regular",
+#             price=item.price,
+#             is_default=True
+#         )
+#         item.has_variant = True
+#         item.save()
+
+#     if request.method == 'POST':
+#         # ----- UPDATE MAIN FIELDS -----
+#         item.name = request.POST.get('name')
+#         item.price = float(request.POST.get('price'))
+#         item.calories = int(request.POST.get('calories'))
+#         item.is_available = request.POST.get('is_available') == 'on'
+#         item.sub_cat_id = request.POST.get('subcategory_id')
+#         item.save()
+
+#         # ----- UPDATE DEFAULT VARIANT PRICE -----
+#         default_variant = item.variants.filter(is_default=True).first()
+#         if default_variant:
+#             default_variant.price = item.price
+#             default_variant.save()
+
+#         # ----- HANDLE NEW/UPDATED VARIANTS -----
+#         variant_names = request.POST.getlist('variant_name[]')
+#         variant_prices = request.POST.getlist('variant_price[]')
+
+#         for vname, vprice in zip(variant_names, variant_prices):
+#             vname = vname.strip()
+#             if vname and vprice:
+#                 # Check if variant exists (skip default)
+#                 variant, created = FoodItemVariant.objects.get_or_create(
+#                     food_item=item,
+#                     variant_name=vname,
+#                     defaults={'price': float(vprice)}
+#                 )
+#                 if not created:
+#                     variant.price = float(vprice)
+#                     variant.save()
+
+#         # Update has_variant flag
+#         item.has_variant = item.variants.count() > 1  # default variant always exists
+#         item.save()
+
+#         return redirect(f'/dashboard/update-fooditem/{item.id}/?success=1')
+
+#     return render(request, 'update/update_fooditem.html', {
+#         'fooditem': item,
+#         'subcategories': subcategories
+#     })
 
 def update_fooditem(request, id):
     item = get_object_or_404(FoodItem, id=id)
     subcategories = FoodItemSubCategory.objects.all()
 
     if request.method == 'POST':
+        # ----- UPDATE MAIN FIELDS -----
         item.name = request.POST.get('name')
-        item.price = request.POST.get('price')
-        item.calories = request.POST.get('calories')
+        item.price = float(request.POST.get('price'))
+        item.calories = int(request.POST.get('calories'))
         item.is_available = request.POST.get('is_available') == 'on'
-        item.is_special = request.POST.get('is_special') == 'on'
         item.sub_cat_id = request.POST.get('subcategory_id')
+        item.save()
+
+        # ----- HANDLE NEW / UPDATED VARIANTS -----
+        variant_names = request.POST.getlist('variant_name[]')
+        variant_prices = request.POST.getlist('variant_price[]')
+
+        # Delete old variants first (optional but clean)
+        item.variants.all().delete()
+
+        for vname, vprice in zip(variant_names, variant_prices):
+            vname = vname.strip()
+            if vname and vprice:
+                FoodItemVariant.objects.create(
+                    food_item=item,
+                    variant_name=vname,
+                    price=float(vprice)
+                )
+
+        # ✅ has_variant = True if ANY variant exists
+        item.has_variant = item.variants.exists()
         item.save()
 
         return redirect(f'/dashboard/update-fooditem/{item.id}/?success=1')
@@ -417,6 +627,7 @@ def update_fooditem(request, id):
         'fooditem': item,
         'subcategories': subcategories
     })
+
 
 # ---------------- DELETE FOOD ITEM ----------------
 def delete_fooditem(request, id):
@@ -1817,3 +2028,109 @@ def dashboard(request):
     notifications = AdminNotification.objects.filter(is_read=False).order_by('-created_at')
     return render(request, 'admin_dashboard.html', {'notifications': notifications})
 # ==============ahiya sudhi================
+
+from django.contrib.auth.decorators import login_required
+from django.shortcuts import render, redirect
+from django.contrib import messages
+
+@login_required
+def admin_profile(request):
+
+    # SECURITY CHECK
+    if not request.user.isadmin:
+        return redirect('login')
+
+    user = request.user
+
+    if request.method == "POST":
+
+        user.firstname = request.POST.get("firstname", "")
+        user.lastname = request.POST.get("lastname", "")
+        user.email = request.POST.get("email", "")
+        user.contactno = request.POST.get("contactno", "")
+        user.address = request.POST.get("address", "")
+
+        # Profile image update
+        if request.FILES.get("profile_image"):
+            user.profile_image = request.FILES.get("profile_image")
+
+        user.save()
+        messages.success(request, "Profile updated successfully.")
+
+        return redirect("admin_profile")
+
+    return render(request, "adminpanel/profile.html", {
+        "user": user
+    })
+
+# adminpanel/views.py
+from django.shortcuts import render, redirect
+from accounts.models import Customer
+from django.contrib import messages
+
+def admin_profile_edit(request):
+    user = request.user
+
+    if request.method == "POST":
+        firstname = request.POST.get('firstname', '').strip()
+        lastname = request.POST.get('lastname', '').strip()
+        contactno = request.POST.get('contactno', '').strip()
+        gender = request.POST.get('gender', '').strip()
+        address = request.POST.get('address', '').strip()
+        profile_image = request.FILES.get('profile_image')
+
+        # Update fields
+        user.firstname = firstname
+        user.lastname = lastname
+        user.contactno = contactno
+        user.gender = gender
+        user.address = address
+        if profile_image:
+            user.profile_image = profile_image
+
+        user.save()
+        messages.success(request, "Profile updated successfully")
+        return redirect('admin_profile')  # back to view page
+
+    return render(request, 'adminpanel/profile_edit.html', {'user': user})
+
+from django.contrib.auth import update_session_auth_hash
+from django.contrib import messages
+from django.shortcuts import redirect
+from django.contrib.auth.decorators import login_required
+
+@login_required
+def admin_change_password(request):
+    if request.method == "POST":
+        current = request.POST.get('current_password')
+        new = request.POST.get('new_password')
+        confirm = request.POST.get('confirm_new_password')
+
+        user = request.user
+
+        # 1. Current password check
+        if not user.check_password(current):
+            messages.error(request, "Current password is incorrect")
+            return redirect('admin_profile')  # ya profile page
+
+        # 2. New password match
+        if new != confirm:
+            messages.error(request, "New password and confirm password do not match")
+            return redirect('admin_profile')
+
+        # 3. Optional: Strength validation
+        if len(new) < 8:
+            messages.error(request, "Password must be at least 8 characters")
+            return redirect('admin_profile')
+
+        # ✅ Change password
+        user.set_password(new)
+        user.save()
+
+        # Keep user logged in after password change
+        update_session_auth_hash(request, user)
+
+        messages.success(request, "Password changed successfully")
+        return redirect('admin_profile')
+
+    return redirect('admin_profile')

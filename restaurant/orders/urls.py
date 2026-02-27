@@ -3,9 +3,9 @@ from . import views
 from .views import toggle_wishlist
 
 urlpatterns = [
-    path('add/<int:food_id>/', views.add_to_cart, name='add_to_cart'),
+   # path('add/<int:food_id>/', views.add_to_cart, name='add_to_cart'),
     #path("add-to-cart/", views.add_to_cart, name="add_to_cart"),
-    path('update/<int:food_id>/<str:action>/', views.update_cart_quantity, name='update_cart_quantity'),
+   # path('update/<int:food_id>/<str:action>/', views.update_cart_quantity, name='update_cart_quantity'),
     path('get_cart/', views.get_cart, name='get_cart'),
     path('cart/', views.cart_page, name='cart_page'),
     path('cart/', views.cart_view, name='cart'),
@@ -14,9 +14,9 @@ urlpatterns = [
     path('checkout/', views.checkout, name='checkout'),
     path('order-success/<int:order_id>/', views.order_success, name='order_success'),
     path('place-order/', views.place_order, name='place_order'),
-    path('remove-item/<int:item_id>/', views.remove_item, name='remove_item'),
+   # path('remove-item/<int:item_id>/', views.remove_item, name='remove_item'),
     # orders/urls.py
-path('remove_item/<int:food_id>/', views.remove_item_from_cart, name='remove_item'),
+#path('remove_item/<int:food_id>/', views.remove_item_from_cart, name='remove_item'),
 
    # urls.py
    path('variants/<int:food_id>/', views.get_food_variants_ajax, name='get_food_variants_ajax'),

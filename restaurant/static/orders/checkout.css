@@ -1,15 +1,15 @@
-/* ============ CHECKOUT V2 (CLEAN & BALANCED) ============ */
+/* ============ CHECKOUT V3 (PERFECT ALIGNMENT VERSION) ============ */
 
 .ck-wrapper {
     max-width: 1100px;
     margin: 40px auto;
     display: grid;
-    grid-template-columns: 1fr 1fr; /* ✅ SAME WIDTH */
+    grid-template-columns: 1fr 1fr;
     gap: 30px;
     font-family: 'Segoe UI', sans-serif;
 }
 
-/* ========== CARDS ========== */
+/* ========== CARD ========== */
 .ck-card {
     background: #ffffff;
     padding: 28px;
@@ -47,95 +47,44 @@
     box-shadow: 0 0 0 3px rgba(0,200,83,0.2);
 }
 
-/* ========== SUMMARY ========== */
-.ck-summary {
-    background: #fafafa;
-    padding: 22px;
-    border-radius: 16px;
-}
+/* ========== ORDER SUMMARY (PERFECT VERTICAL ALIGNMENT) ========== */
 
-.ck-row {
+
+.ck-summary {
     display: flex;
     justify-content: space-between;
-    margin-bottom: 12px;
+    align-items: center;
+    padding: 6px 0;
     font-size: 15px;
 }
 
-.ck-total {
-    display: flex;
-    justify-content: space-between;
-    font-size: 18px;
-    font-weight: 700;
-    margin-top: 14px;
-}
-
-/* ========== PAYMENT BUTTONS ========== */
-.ck-payments {
-    display: flex;
-    gap: 14px;
-    margin: 22px 0;
-}
-
-.ck-btn {
+/* LEFT LABEL */
+.ck-summary span:first-child {
     flex: 1;
-    padding: 14px;
-    border-radius: 14px;
-    font-weight: 700;
-    cursor: pointer;
-    border: 2px solid transparent;
-    transition: 0.3s;
+    color: #444;
 }
 
-/* COD – STRONG ORANGE */
-.ck-cod {
-    background: #fff;
-    border-color: #ff9800;
-    color: #ff9800;
+/* RIGHT PRICE COLUMN */
+.ck-summary span:last-child {
+    width: 150px;                 /* fixed width column */
+    text-align: right;
+    font-weight: 600;
+    font-variant-numeric: tabular-nums; /* 🔥 equal number width */
 }
 
-.ck-cod:hover {
-    background: #ff9800;
-    color: #ffffff;
-}
-
-/* UPI – PREMIUM */
-.ck-upi {
-    background: linear-gradient(135deg, #6a11cb, #2575fc);
-    color: #ffffff;
-}
-
-.ck-upi:hover {
-    transform: translateY(-2px);
-}
-
-/* ========== PLACE ORDER – FULL GREEN ========== */
-.ck-place-btn {
-    width: 100%;
-    padding: 18px;
-    background: linear-gradient(135deg, #00c853, #009e42);
-    color: #ffffff;
+/* Divider */
+.ck-card hr {
+    margin: 14px 0;
     border: none;
-    border-radius: 16px;
-    font-size: 17px;
+    border-top: 1px solid #e5e7eb;
+}
+
+/* TOTAL ROW */
+.ck-summary:last-of-type {
+    font-size: 18px;
     font-weight: 800;
-    cursor: pointer;
-    transition: 0.3s;
 }
-
-.ck-place-btn:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 12px 28px rgba(0,200,83,0.45);
-}
-
-/* ========== MOBILE ========== */
-@media (max-width: 900px) {
-    .ck-wrapper {
-        grid-template-columns: 1fr;
-    }
-}
-
-
-/* ===== PAYMENT METHOD V3 ===== */
+/* ========== PAYMENT SECTION ========== */
 
 .pay-heading {
     margin-top: 24px;
@@ -151,12 +100,11 @@
     gap: 12px;
 }
 
-/* hide default radio */
+/* hide radio */
 .pay-card input {
     display: none;
 }
 
-/* card */
 .pay-card {
     border: 1.6px solid #e5e7eb;
     border-radius: 14px;
@@ -166,14 +114,12 @@
     transition: all 0.25s ease;
 }
 
-/* content */
 .pay-content {
     display: flex;
     align-items: center;
     gap: 14px;
 }
 
-/* radio circle */
 .radio-dot {
     width: 18px;
     height: 18px;
@@ -182,7 +128,6 @@
     position: relative;
 }
 
-/* radio inner */
 .radio-dot::after {
     content: "";
     width: 10px;
@@ -196,19 +141,16 @@
     transition: 0.2s ease;
 }
 
-/* text */
 .pay-text {
     font-size: 15px;
     font-weight: 500;
     color: #111;
 }
 
-/* hover */
 .pay-card:hover {
     border-color: #c7c7c7;
 }
 
-/* selected */
 .pay-card:has(input:checked) {
     border-color: #16a34a;
     background: #f0fdf4;
@@ -220,4 +162,38 @@
 
 .pay-card:has(input:checked) .radio-dot::after {
     transform: translate(-50%, -50%) scale(1);
+}
+
+/* ========== PLACE ORDER BUTTON ========== */
+
+.ck-place-btn {
+    width: 100%;
+    padding: 18px;
+    margin-top: 20px;
+    background: linear-gradient(135deg, #00c853, #009e42);
+    color: #ffffff;
+    border: none;
+    border-radius: 16px;
+    font-size: 17px;
+    font-weight: 800;
+    cursor: pointer;
+    transition: 0.3s;
+}
+
+.ck-place-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 12px 28px rgba(0,200,83,0.45);
+}
+
+.ck-place-btn[disabled] {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
+/* ========== MOBILE ========== */
+
+@media (max-width: 900px) {
+    .ck-wrapper {
+        grid-template-columns: 1fr;
+    }
 }

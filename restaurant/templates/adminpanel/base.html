@@ -80,6 +80,14 @@
                 </a>
                 
                 <a href="{% url 'admin_notifications' %}">🔔</a>
+                <a href="{% url 'admin_profile' %}" class="profile-link">
+    {% if request.user.profile_image %}
+        <img src="{{ request.user.profile_image.url }}" class="profile-icon">
+    {% else %}
+        <div class="profile-icon default-icon">👤</div>
+    {% endif %}
+</a>
+
             </div>
         </div>
 

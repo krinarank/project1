@@ -12,4 +12,7 @@ urlpatterns = [
     path('notifications/', views.customer_notifications, name='customer_notifications'),
 
     path('profile/', views.profile_page, name='profile'),
+    path('food/<int:food_id>/', views.food_detail, name='food_detail'),
+
+
 ]
