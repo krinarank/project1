@@ -9,31 +9,86 @@ from .models import Customer, PasswordResetOTP
 
 
 
+
+import re
+from django.contrib import messages
+from django.shortcuts import render, redirect
+
+
+
 # def customer_register(request):
+
 #     if request.method == "POST":
-#         username = request.POST.get('username')
-#         firstname = request.POST.get('firstname')
-#         lastname = request.POST.get('lastname')
-#         gender = request.POST.get('gender')
-#         email = request.POST.get('email')
-#         contactno = request.POST.get('contactno')
-#         address = request.POST.get('address')
-#         password = request.POST.get('password')
-#         confirmpassword = request.POST.get('confirmpassword')
+
+#         username = request.POST.get('username', '').strip()
+#         firstname = request.POST.get('firstname', '').strip()
+#         lastname = request.POST.get('lastname', '').strip()
+#         gender = request.POST.get('gender', '').strip()
+#         email = request.POST.get('email', '').strip()
+#         contactno = request.POST.get('contactno', '').strip()
+#         address = request.POST.get('address', '').strip()
+#         password = request.POST.get('password', '')
+#         confirmpassword = request.POST.get('confirmpassword', '')
+
+#         errors = []
+
+#         # ================= VALIDATIONS =================
+
+#         if not all([username, firstname, lastname, gender, email, contactno, password, confirmpassword]):
+#             errors.append("All fields are required.")
+
+#         if not re.match(r'^[A-Za-z0-9_]{4,20}$', username):
+#             errors.append("Username must be 4-20 characters and contain only letters, numbers, underscore.")
+
+#         if not firstname.isalpha():
+#             errors.append("First name must contain only letters.")
+
+#         if not lastname.isalpha():
+#             errors.append("Last name must contain only letters.")
+
+#         if gender not in ["Male", "Female"]:
+#             errors.append("Invalid gender selection.")
+
+#         if not re.match(r'^[\w\.-]+@[\w\.-]+\.\w+$', email):
+#             errors.append("Invalid email format.")
+
+#         if not re.match(r'^[6-9]\d{9}$', contactno):
+#             errors.append("Enter valid 10 digit Indian mobile number.")
+
+#         if len(password) < 8:
+#             errors.append("Password must be at least 8 characters long.")
+
+#         if not re.search(r'[A-Z]', password):
+#             errors.append("Password must contain at least one uppercase letter.")
+
+#         if not re.search(r'[a-z]', password):
+#             errors.append("Password must contain at least one lowercase letter.")
+
+#         if not re.search(r'\d', password):
+#             errors.append("Password must contain at least one number.")
+
+#         if not re.search(r'[@$!%*?&]', password):
+#             errors.append("Password must contain at least one special character.")
 
 #         if password != confirmpassword:
-#             messages.error(request, "Password mismatch")
-#             return redirect('customer_register')
+#             errors.append("Password and Confirm Password do not match.")
 
 #         if Customer.objects.filter(username=username).exists():
-#             messages.error(request, "Username already exists")
-#             return redirect('customer_register')
+#             errors.append("Username already exists.")
 
 #         if Customer.objects.filter(email=email).exists():
-#             messages.error(request, "Email already exists")
-#             return redirect('customer_register')
+#             errors.append("Email already registered.")
 
-#         # ✅ CORRECT WAY
+#         # ================= STOP IF ERRORS =================
+
+#         if errors:
+#             for error in errors:
+#                 messages.error(request, error)
+
+#             return render(request, 'accounts/customer_register.html')
+
+#         # ================= CREATE USER =================
+
 #         Customer.objects.create_user(
 #             username=username,
 #             password=password,
@@ -49,103 +104,107 @@ from .models import Customer, PasswordResetOTP
 #         return redirect('customer_login')
 
 #     return render(request, 'accounts/customer_register.html')
-
-
 import re
-from django.contrib import messages
 from django.shortcuts import render, redirect
-
-
+from django.contrib import messages
+from accounts.models import Customer
 
 def customer_register(request):
 
     if request.method == "POST":
 
-        username = request.POST.get('username', '').strip()
-        firstname = request.POST.get('firstname', '').strip()
-        lastname = request.POST.get('lastname', '').strip()
-        gender = request.POST.get('gender', '').strip()
-        email = request.POST.get('email', '').strip()
-        contactno = request.POST.get('contactno', '').strip()
-        address = request.POST.get('address', '').strip()
-        password = request.POST.get('password', '')
-        confirmpassword = request.POST.get('confirmpassword', '')
+        username = request.POST.get("username", "").strip()
+        firstname = request.POST.get("firstname", "").strip()
+        lastname = request.POST.get("lastname", "").strip()
+        gender = request.POST.get("gender", "").strip()
+        email = request.POST.get("email", "").strip()
+        contactno = request.POST.get("contactno", "").strip()
+        address = request.POST.get("address", "").strip()
+        password = request.POST.get("password", "")
+        confirmpassword = request.POST.get("confirmpassword", "")
 
-        errors = []
+        errors = {}
 
-        # ================= VALIDATIONS =================
+        # ================= REQUIRED FIELD CHECK =================
+        if not username:
+            errors["username"] = "Username is required"
 
-        if not all([username, firstname, lastname, gender, email, contactno, password, confirmpassword]):
-            errors.append("All fields are required.")
+        if not firstname:
+            errors["firstname"] = "First name is required"
 
-        if not re.match(r'^[A-Za-z0-9_]{4,20}$', username):
-            errors.append("Username must be 4-20 characters and contain only letters, numbers, underscore.")
+        if not lastname:
+            errors["lastname"] = "Last name is required"
 
-        if not firstname.isalpha():
-            errors.append("First name must contain only letters.")
+        if not gender:
+            errors["gender"] = "Gender is required"
 
-        if not lastname.isalpha():
-            errors.append("Last name must contain only letters.")
+        if not email:
+            errors["email"] = "Email is required"
 
-        if gender not in ["Male", "Female"]:
-            errors.append("Invalid gender selection.")
+        if not contactno:
+            errors["contactno"] = "Contact number is required"
 
-        if not re.match(r'^[\w\.-]+@[\w\.-]+\.\w+$', email):
-            errors.append("Invalid email format.")
+        if not address:
+            errors["address"] = "Address is required"
 
-        if not re.match(r'^[6-9]\d{9}$', contactno):
-            errors.append("Enter valid 10 digit Indian mobile number.")
+        if not password:
+            errors["password"] = "Password is required"
 
-        if len(password) < 8:
-            errors.append("Password must be at least 8 characters long.")
+        if not confirmpassword:
+            errors["confirmpassword"] = "Confirm password is required"
 
-        if not re.search(r'[A-Z]', password):
-            errors.append("Password must contain at least one uppercase letter.")
+        # ================= SPECIAL CHARACTER USERNAME =================
+        if username and not re.search(r'[!@#$%^&*(),.?":{}|<>]', username):
+            errors["username"] = "Username must contain at least 1 special character"
 
-        if not re.search(r'[a-z]', password):
-            errors.append("Password must contain at least one lowercase letter.")
+        # ================= EMAIL FORMAT =================
+        if email and not re.match(r"[^@]+@[^@]+\.[^@]+", email):
+            errors["email"] = "Enter valid email address"
 
-        if not re.search(r'\d', password):
-            errors.append("Password must contain at least one number.")
+        # ================= DUPLICATE EMAIL =================
+        if email and Customer.objects.filter(email=email).exists():
+            errors["email"] = "Email already registered"
 
-        if not re.search(r'[@$!%*?&]', password):
-            errors.append("Password must contain at least one special character.")
+        # ================= DUPLICATE USERNAME =================
+        if username and Customer.objects.filter(username=username).exists():
+            errors["username"] = "Username already taken"
 
-        if password != confirmpassword:
-            errors.append("Password and Confirm Password do not match.")
+        # ================= CONTACT VALIDATION =================
+        if contactno and not re.match(r'^[0-9]{10}$', contactno):
+            errors["contactno"] = "Enter valid 10-digit number"
 
-        if Customer.objects.filter(username=username).exists():
-            errors.append("Username already exists.")
+        # ================= PASSWORD CHECK =================
+        if password and len(password) < 6:
+            errors["password"] = "Password must be at least 6 characters"
 
-        if Customer.objects.filter(email=email).exists():
-            errors.append("Email already registered.")
+        if password and confirmpassword and password != confirmpassword:
+            errors["confirmpassword"] = "Passwords do not match"
 
-        # ================= STOP IF ERRORS =================
-
+        # ================= IF ERRORS =================
         if errors:
-            for error in errors:
-                messages.error(request, error)
-
-            return render(request, 'accounts/customer_register.html')
+            return render(request, "accounts/customer_register.html", {
+                "errors": errors,
+                "old": request.POST
+            })
 
         # ================= CREATE USER =================
-
-        Customer.objects.create_user(
+        user = Customer.objects.create_user(
             username=username,
-            password=password,
             email=email,
-            firstname=firstname,
-            lastname=lastname,
-            gender=gender,
-            contactno=contactno,
-            address=address
+            password=password,
         )
 
-        messages.success(request, "Registration successful")
-        return redirect('customer_login')
+        user.firstname = firstname
+        user.lastname = lastname
+        user.gender = gender
+        user.contactno = contactno
+        user.address = address
+        user.save()
 
-    return render(request, 'accounts/customer_register.html')
+        messages.success(request, "Registration successful.")
+        return redirect("customer_login")
 
+    return render(request, "accounts/customer_register.html")
 # def customer_login(request):
 #     if request.method == "POST":
 #         username = request.POST.get('username')

@@ -6,13 +6,12 @@ import random
 
 
 class Customer(AbstractUser):
+    email = models.EmailField(unique=True)
     firstname = models.CharField(max_length=50)
     lastname = models.CharField(max_length=50)
     gender = models.CharField(max_length=10)
     contactno = models.CharField(max_length=15)
     address = models.TextField()
-
-
     isadmin = models.BooleanField(default=False)
     is_delivery_person = models.BooleanField(default=False)  # ⭐ main role flag
 

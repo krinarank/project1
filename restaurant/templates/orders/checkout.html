@@ -65,7 +65,7 @@
             <span>Discount You Saved</span>
             <span>- ₹ {{ total_discount|floatformat:2 }}</span>
         </div>
-        {% endif %}
+        {% endif %}<hr>
         <div class="ck-summary"><span>Subtotal</span><span>₹ {{ item_total|floatformat:2 }}</span></div>
         <div class="ck-summary"><span>GST (5%)</span><span>₹ {{ tax|floatformat:2 }}</span></div>
         <div class="ck-summary"><span>Delivery Charges</span><span>₹ {{ delivery_charge|floatformat:2 }}</span></div>
