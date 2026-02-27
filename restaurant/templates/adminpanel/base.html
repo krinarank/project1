@@ -83,6 +83,7 @@
             </div>
         </div>
 
+
         <!-- PAGE CONTENT (NOW CORRECT POSITION) -->
         <div class="dashboard-content">
 
@@ -105,26 +106,7 @@
 
 {% block extra_js %}{% endblock %}
 
-{% if low_stock_ingredients %}
-<div id="lowStockTopPopup" style="
-    position:fixed; top:15px; left:50%; transform:translateX(-50%);
-    background:#fff3cd; border:1px solid #ffeeba; color:#856404;
-    padding:15px 25px; border-radius:6px; box-shadow:0 4px 10px rgba(0,0,0,0.2);
-    z-index:9999; min-width:400px;">
-    <strong style="color:#dc3545;">⚠️ Low Stock Alert!</strong>
-    <ul style="margin:8px 0 0 18px;">
-        {% for ing in low_stock_ingredients %}
-        <li>{{ ing.name }} — <strong style="color:red;">{{ ing.available_qty }}</strong></li>
-        {% endfor %}
-    </ul>
-    <div style="text-align:right; margin-top:8px;">
-        <button onclick="document.getElementById('lowStockTopPopup').style.display='none'"
-            style="padding:4px 10px; border:none; background:#dc3545; color:white; border-radius:4px;">
-            Close
-        </button>
-    </div>
-</div>
-{% endif %}
+
 
 <script>
 function toggleMainMenu(){

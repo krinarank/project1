@@ -1661,51 +1661,165 @@ def refund_razorpay_payment(payment_id, amount):
         return False, f"Refund Failed: {str(e)}"
 
 
+# @login_required
+# @csrf_exempt
+# def cancel_order(request, order_id):
+#     if request.method != "POST":
+#         return JsonResponse({"success": False, "message": "Invalid request method."})
+
+#     order = get_object_or_404(Order, id=order_id, user=request.user)
+
+#     # Only allow cancel for PLACED or CONFIRMED orders
+#     if order.order_status not in ["PLACED", "CONFIRMED"]:
+#         return JsonResponse({"success": False, "message": "Cannot cancel this order now."})
+
+#     # Update order status
+#     order.order_status = "CANCELLED"
+#     order.save()
+
+#     refund_message = ""
+#     refund_amount = 0
+
+#     # Handle online payment refund
+#     payment_obj = OrderHasPayment.objects.filter(order=order).last()
+
+#     if payment_obj and payment_obj.payment.method != "COD" and payment_obj.payment.status == "PAID":
+#         razorpay_payment_id = payment_obj.transaction_no  # should be Razorpay payment ID
+#         refund_amount = payment_obj.amount
+
+#         success, refund_message = refund_razorpay_payment(razorpay_payment_id, refund_amount)
+#         if success:
+#             payment_obj.payment.status = "REFUNDED"
+#             payment_obj.payment.save()
+#         else:
+#             refund_message = f"Refund Failed: {refund_message}"
+
+#     # Log admin notification
+#     AdminNotification.objects.create(
+#         order=order,
+#         message=f"Order Cancelled by User. {refund_message}. Refund Amount: ₹{refund_amount:.2f}" if refund_amount else "Order Cancelled by User.",
+#         created_at=timezone.now()
+#     )
+
+#     return JsonResponse({
+#         "success": True,
+#         "order_status": order.order_status,
+#         "refund_message": refund_message or None,
+#         "message": f"Order cancelled. {refund_message}" if refund_message else "Order cancelled successfully."
+#     })
+
+# # ================ahiya sudhi====================
+from decimal import Decimal
+from django.db import transaction
+
+# @login_required
+# @csrf_exempt
+# @transaction.atomic
+# def cancel_order(request, order_id):
+
+#     if request.method != "POST":
+#         return JsonResponse({"success": False, "message": "Invalid request method."})
+
+#     order = get_object_or_404(Order, id=order_id, user=request.user)
+
+#     if order.order_status not in ["PLACED", "CONFIRMED"]:
+#         return JsonResponse({"success": False, "message": "Cannot cancel this order now."})
+
+#     order_details = OrderDetail.objects.filter(order=order)
+
+#     for detail in order_details:
+
+#         try:
+#             prepared_item = PreparedItem.objects.get(product_name=detail.food_item.name)
+
+#             usages = IngredientUsage.objects.filter(production=prepared_item)
+
+#             for usage in usages:
+
+#                 if prepared_item.quantity_produced > 0:
+
+#                     # 🔥 per pizza raw
+#                     per_unit_raw = usage.qty_used / prepared_item.quantity_produced
+
+#                     # 🔥 restore only cancelled qty
+#                     restore_qty = per_unit_raw * Decimal(detail.qty)
+
+#                     ingredient = usage.raw
+#                     ingredient.available_qty += restore_qty
+#                     ingredient.save()
+
+#         except PreparedItem.DoesNotExist:
+#             pass
+
+#     order.order_status = "CANCELLED"
+#     order.save()
+
+#     return JsonResponse({
+#         "success": True,
+#         "order_status": order.order_status,
+#         "message": "Order cancelled and correct ingredient restored."
+#     })
+from decimal import Decimal
+from django.db import transaction
+import json
+
 @login_required
 @csrf_exempt
+@transaction.atomic
 def cancel_order(request, order_id):
+
     if request.method != "POST":
         return JsonResponse({"success": False, "message": "Invalid request method."})
 
+    # 🔥 Get reason from request body (fetch vala case ma JSON ave che)
+    try:
+        data = json.loads(request.body)
+        reason = data.get("reason")
+    except:
+        reason = None
+
+    if not reason:
+        return JsonResponse({
+            "success": False,
+            "message": "Cancellation reason is required."
+        })
+
     order = get_object_or_404(Order, id=order_id, user=request.user)
 
-    # Only allow cancel for PLACED or CONFIRMED orders
     if order.order_status not in ["PLACED", "CONFIRMED"]:
         return JsonResponse({"success": False, "message": "Cannot cancel this order now."})
 
-    # Update order status
+    order_details = OrderDetail.objects.filter(order=order)
+
+    for detail in order_details:
+
+        try:
+            prepared_item = PreparedItem.objects.get(product_name=detail.food_item.name)
+
+            usages = IngredientUsage.objects.filter(production=prepared_item)
+
+            for usage in usages:
+
+                if prepared_item.quantity_produced > 0:
+
+                    # 🔥 per pizza raw
+                    per_unit_raw = usage.qty_used / prepared_item.quantity_produced
+
+                    # 🔥 restore only cancelled qty
+                    restore_qty = per_unit_raw * Decimal(detail.qty)
+
+                    ingredient = usage.raw
+                    ingredient.available_qty += restore_qty
+                    ingredient.save()
+
+        except PreparedItem.DoesNotExist:
+            pass
+
     order.order_status = "CANCELLED"
     order.save()
-
-    refund_message = ""
-    refund_amount = 0
-
-    # Handle online payment refund
-    payment_obj = OrderHasPayment.objects.filter(order=order).last()
-
-    if payment_obj and payment_obj.payment.method != "COD" and payment_obj.payment.status == "PAID":
-        razorpay_payment_id = payment_obj.transaction_no  # should be Razorpay payment ID
-        refund_amount = payment_obj.amount
-
-        success, refund_message = refund_razorpay_payment(razorpay_payment_id, refund_amount)
-        if success:
-            payment_obj.payment.status = "REFUNDED"
-            payment_obj.payment.save()
-        else:
-            refund_message = f"Refund Failed: {refund_message}"
-
-    # Log admin notification
-    AdminNotification.objects.create(
-        order=order,
-        message=f"Order Cancelled by User. {refund_message}. Refund Amount: ₹{refund_amount:.2f}" if refund_amount else "Order Cancelled by User.",
-        created_at=timezone.now()
-    )
 
     return JsonResponse({
         "success": True,
         "order_status": order.order_status,
-        "refund_message": refund_message or None,
-        "message": f"Order cancelled. {refund_message}" if refund_message else "Order cancelled successfully."
+        "message": f"Order cancelled. Reason: {reason}"
     })
-
-# ================ahiya sudhi====================

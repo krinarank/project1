@@ -191,150 +191,204 @@
 </div>
 
 <script>
-    document.addEventListener("DOMContentLoaded", function () {
+document.addEventListener("DOMContentLoaded", function () {
 
-        const items = document.querySelectorAll(".food-item");
-        const categories = document.querySelectorAll(".category-btn");
-        const subFilters = document.querySelectorAll(".sub-filter");
+    const items = document.querySelectorAll(".food-item");
+    const categories = document.querySelectorAll(".category-btn");
+    const subFilters = document.querySelectorAll(".sub-filter");
 
-        const filterSheet = document.getElementById("filterSheet");
-        const menuWrapper = document.querySelector(".menu-wrapper");
+    const filterSheet = document.getElementById("filterSheet");
+    const menuWrapper = document.querySelector(".menu-wrapper");
 
-        const openBtn = document.getElementById("openFilter");
-        const closeBtn = document.getElementById("closeFilter");
+    const openBtn = document.getElementById("openFilter");
+    const closeBtn = document.getElementById("closeFilter");
 
-        const minInput = document.getElementById("min-price");
-        const maxInput = document.getElementById("max-price");
-        const applyBtn = document.getElementById("applyFilter");
-        const errorBox = document.getElementById("price-error");
-        const activeBox = document.getElementById("activeFilters");
+    const minInput = document.getElementById("min-price");
+    const maxInput = document.getElementById("max-price");
+    const applyBtn = document.getElementById("applyFilter");
+    const errorBox = document.getElementById("price-error");
+    const activeBox = document.getElementById("activeFilters");
 
+    // ✅ MULTIPLE SELECT ARRAYS
+    let selectedCategories = [];
+    let selectedSubs = [];
 
-        let selectedCategory = "all";
-        let selectedSub = "all";
+    // OPEN FILTER
+    openBtn.onclick = () => {
+        filterSheet.classList.add("active");
+        menuWrapper.classList.add("shifted");
+    };
 
-        openBtn.onclick = () => {
-            filterSheet.classList.add("active");
-            menuWrapper.classList.add("shifted");
-        };
+    // CLOSE FILTER
+    closeBtn.onclick = () => {
+        filterSheet.classList.remove("active");
+        menuWrapper.classList.remove("shifted");
+    };
 
-        closeBtn.onclick = () => {
+    filterSheet.addEventListener("click", e => {
+        if (e.target === filterSheet) {
             filterSheet.classList.remove("active");
             menuWrapper.classList.remove("shifted");
-        };
+        }
+    });
 
-        filterSheet.addEventListener("click", e => {
-            if (e.target === filterSheet) {
-                filterSheet.classList.remove("active");
-                menuWrapper.classList.remove("shifted");
+    // ✅ CATEGORY MULTIPLE SELECT
+    categories.forEach(btn => {
+    btn.addEventListener("click", function () {
+
+        const value = this.dataset.filter;
+
+        if (value === "all") {
+
+            selectedCategories = [];
+            selectedSubs = [];
+
+            categories.forEach(b => b.classList.remove("active"));
+            subFilters.forEach(s => s.classList.remove("active"));
+
+            document.querySelectorAll(".subcategory-container")
+                .forEach(div => div.style.display = "none");
+
+            this.classList.add("active");
+
+        } else {
+
+            document.querySelector("[data-filter='all']").classList.remove("active");
+
+            this.classList.toggle("active");
+
+            if (selectedCategories.includes(value)) {
+                selectedCategories = selectedCategories.filter(c => c !== value);
+
+                // hide subcategory
+                document.getElementById("sub-" + value).style.display = "none";
+
+            } else {
+                selectedCategories.push(value);
+
+                // show subcategory
+                document.getElementById("sub-" + value).style.display = "block";
             }
-        });
+        }
 
-        categories.forEach(btn => {
-            btn.addEventListener("click", function () {
-                categories.forEach(b => b.classList.remove("active"));
-                this.classList.add("active");
-                selectedCategory = this.dataset.filter;
-                selectedSub = "all";
+        applyFilters();
+        updateActiveFilters();
+    });
+});
 
-                document.querySelectorAll(".subcategory-container")
-                    .forEach(div => div.style.display = "none");
 
-                if (selectedCategory !== "all") {
-                    document.getElementById("sub-" + selectedCategory)
-                        .style.display = "block";
-                }
+    // ✅ SUBCATEGORY MULTIPLE SELECT
+    subFilters.forEach(btn => {
+        btn.addEventListener("click", function () {
 
-                applyFilters();
-                updateActiveFilters();
+            const subVal = this.dataset.sub;
 
-            });
-        });
+            this.classList.toggle("active");
 
-        subFilters.forEach(btn => {
-            btn.addEventListener("click", function () {
-                selectedSub = this.dataset.sub;
-                selectedCategory = this.dataset.parent;
-                applyFilters();
-                updateActiveFilters();
-
-            });
-        });
-
-        applyBtn.addEventListener("click", function () {
-            errorBox.innerText = "";
-            const min = parseFloat(minInput.value);
-            const max = parseFloat(maxInput.value);
-
-            if ((!isNaN(min) && min < 0) || (!isNaN(max) && max < 0)) {
-                errorBox.innerText = "Price cannot be negative ❌";
-                return;
-            }
-
-            if (!isNaN(min) && !isNaN(max) && min > max) {
-                errorBox.innerText = "Min price cannot be greater than Max price ❌";
-                return;
+            if (selectedSubs.includes(subVal)) {
+                selectedSubs = selectedSubs.filter(s => s !== subVal);
+            } else {
+                selectedSubs.push(subVal);
             }
 
             applyFilters();
             updateActiveFilters();
-            filterSheet.classList.remove("active");
-            menuWrapper.classList.remove("shifted");
         });
-
-        function applyFilters() {
-            const min = parseFloat(minInput.value);
-            const max = parseFloat(maxInput.value);
-
-            items.forEach(i => {
-                const price = parseFloat(i.dataset.price);
-                const okCat = selectedCategory === "all" || i.dataset.category === selectedCategory;
-                const okSub = selectedSub === "all" || i.dataset.sub === selectedSub;
-                const okMin = isNaN(min) || price >= min;
-                const okMax = isNaN(max) || price <= max;
-                i.style.display = (okCat && okSub && okMin && okMax) ? "block" : "none";
-            });
-        }
-
-        function updateActiveFilters() {
-
-            const min = parseFloat(minInput.value);
-            const max = parseFloat(maxInput.value);
-
-            let text = "";
-
-            if (selectedCategory !== "all") {
-                text += "Category: " + selectedCategory + " ";
-            }
-
-            if (selectedSub !== "all") {
-                text += "| Subcategory: " + selectedSub + " ";
-            }
-
-            if (!isNaN(min) || !isNaN(max)) {
-                text += "| Price: ";
-                if (!isNaN(min)) text += "₹" + min;
-                text += " - ";
-                if (!isNaN(max)) text += "₹" + max;
-            }
-
-            if (text !== "") {
-                activeBox.style.display = "block";
-                activeBox.innerHTML = text +
-                    " <button class='btn btn-sm btn-link text-danger p-0 ms-2' id='clearFilterBtn'>all</button>";
-
-                document.getElementById("clearFilterBtn").onclick = function () {
-                    location.reload();
-                };
-
-            } else {
-                activeBox.style.display = "none";
-            }
-        }
-
-
     });
+
+    // ✅ PRICE APPLY
+    applyBtn.addEventListener("click", function () {
+
+        errorBox.innerText = "";
+        const min = parseFloat(minInput.value);
+        const max = parseFloat(maxInput.value);
+
+        if ((!isNaN(min) && min < 0) || (!isNaN(max) && max < 0)) {
+            errorBox.innerText = "Price cannot be negative ❌";
+            return;
+        }
+
+        if (!isNaN(min) && !isNaN(max) && min > max) {
+            errorBox.innerText = "Min price cannot be greater than Max price ❌";
+            return;
+        }
+
+        applyFilters();
+        updateActiveFilters();
+
+        filterSheet.classList.remove("active");
+        menuWrapper.classList.remove("shifted");
+    });
+
+    // ✅ MAIN FILTER LOGIC
+    function applyFilters() {
+
+        const min = parseFloat(minInput.value);
+        const max = parseFloat(maxInput.value);
+
+        items.forEach(i => {
+
+            const price = parseFloat(i.dataset.price);
+            const itemCategory = i.dataset.category;
+            const itemSub = i.dataset.sub;
+
+            const okCat =
+                selectedCategories.length === 0 ||
+                selectedCategories.includes(itemCategory);
+
+            const okSub =
+                selectedSubs.length === 0 ||
+                selectedSubs.includes(itemSub);
+
+            const okMin = isNaN(min) || price >= min;
+            const okMax = isNaN(max) || price <= max;
+
+            i.style.display = (okCat && okSub && okMin && okMax)
+                ? "block"
+                : "none";
+        });
+    }
+
+    // ✅ ACTIVE FILTER DISPLAY
+    function updateActiveFilters() {
+
+        const min = parseFloat(minInput.value);
+        const max = parseFloat(maxInput.value);
+
+        let text = "";
+
+        if (selectedCategories.length > 0) {
+            text += "Category: " + selectedCategories.join(", ") + " ";
+        }
+
+        if (selectedSubs.length > 0) {
+            text += "| Subcategory: " + selectedSubs.join(", ") + " ";
+        }
+
+        if (!isNaN(min) || !isNaN(max)) {
+            text += "| Price: ";
+            if (!isNaN(min)) text += "₹" + min;
+            text += " - ";
+            if (!isNaN(max)) text += "₹" + max;
+        }
+
+        if (text !== "") {
+            activeBox.style.display = "block";
+            activeBox.innerHTML = text +
+                " <button class='btn btn-sm btn-link text-danger p-0 ms-2' id='clearFilterBtn'>Clear</button>";
+
+            document.getElementById("clearFilterBtn").onclick = function () {
+                location.reload();
+            };
+
+        } else {
+            activeBox.style.display = "none";
+        }
+    }
+
+});
 </script>
+
 
 <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
 
