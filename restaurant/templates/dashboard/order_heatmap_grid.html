@@ -5,6 +5,33 @@
 
 <div id="treemap" style="width: 100%; height: 600px;"></div>
 
+<!-- Modal -->
+<div id="orderModal" 
+     style="display:none; position:fixed; top:0; left:0; 
+            width:100%; height:100%; 
+            background:rgba(0,0,0,0.5); 
+            justify-content:center; align-items:center; 
+            z-index:9999;">
+
+    <div id="modalBox"
+         style="background:white;
+                width:100%;
+                max-width:900px;
+                max-height:85%;
+                overflow:auto;
+                border-radius:12px;
+                padding:25px;
+                box-shadow:0 8px 30px rgba(0,0,0,0.25);
+                position:relative;">
+
+        <span id="closeModal" 
+              style="position:absolute; right:15px; top:10px; 
+                     cursor:pointer; font-size:20px;">✖</span>
+
+        <div id="modalContent"></div>
+    </div>
+</div>
+
 {{ labels|json_script:"labels-data" }}
 {{ values|json_script:"values-data" }}
 {{ ids|json_script:"ids-data" }}
@@ -13,15 +40,17 @@
 <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
 
 <script>
+
+var modalOpen = false;
+var clickLock = false;
+
 var labels = JSON.parse(document.getElementById('labels-data').textContent);
 var values = JSON.parse(document.getElementById('values-data').textContent);
 var ids = JSON.parse(document.getElementById('ids-data').textContent);
 var details = JSON.parse(document.getElementById('details-data').textContent);
 
-// Prepare customdata for each area
-var customdata = ids.map(id => details[id]);
+var customdata = ids.map(id => details[String(id)] || []);
 
-// Professional color palette (no gradient)
 var neoColors = ['#FF3F4F','#FF9F1C','#2EC4B6','#E71D36','#011627','#FFBF69','#6A0572','#FF6B6B','#4CC9F0','#8338EC'];
 var colors = labels.map((_, i) => neoColors[i % neoColors.length]);
 
@@ -30,66 +59,126 @@ var data = [{
     labels: labels,
     parents: Array(labels.length).fill(""),
     values: values,
+    branchvalues: "total",
+    root: { color: "white" },
     customdata: customdata,
-    hovertemplate: "<b>%{label}</b><br>Total Orders: %{value}<extra></extra>",
+    hoverinfo: "label+value",
     textinfo: "label",
-    textposition: "middle center",
-    marker: { colors: colors, line: { width: 2, color: 'white' } } // applied professional colors
+    marker: { colors: colors, line: { width: 2, color: 'white' } },
+    pathbar: { visible: false }
 }];
 
 var layout = {
     margin: { t: 50, l: 25, r: 25, b: 25 },
-    font: { family: 'Arial, sans-serif', size: 14 },
     title: "Area-wise Orders Treemap",
-    uniformtext: { minsize: 12, mode: 'show' },
-    paper_bgcolor:'#f9f9f9'
+    dragmode: false,
+    clickmode: "event"
 };
 
-Plotly.newPlot('treemap', data, layout);
+Plotly.newPlot('treemap', data, layout, {
+    displayModeBar: false,
+    scrollZoom: false,
+    doubleClick: false,
+    responsive: true
+}).then(function() {
 
-var treemap = document.getElementById('treemap');
-var expandedBoxes = {};
-var initialTexts = labels.map(label => label);
+    var treemap = document.getElementById('treemap');
 
-// Initialize treemap text
-Plotly.restyle('treemap', {
-    text: [initialTexts],
-    texttemplate: [Array(labels.length).fill("%{text}")],
-    textposition: ["middle center"],
-    textfont: [{size: 20, family: 'Arial'}]
-});
+    treemap.on("plotly_click", function(eventData){
 
-// Click event for expand/collapse with table
-treemap.on('plotly_click', function(eventData){
-    var point = eventData.points[0];
-    var idx = point.pointNumber;
-    var areaOrders = point.customdata;
+        if(clickLock || modalOpen) return;
 
-    if(expandedBoxes[idx]) {
-        // Collapse box → show only area name
-        initialTexts[idx] = point.label;
-        expandedBoxes[idx] = false;
-    } else {
-        // Expand box → show area name + orders in table
-        var ordersText = `<b>${point.label}</b><br><br>`;
+        clickLock = true;
+        setTimeout(() => clickLock = false, 300);
+
+        var point = eventData.points[0];
+        var areaOrders = point.customdata || [];
+
+        modalOpen = true;
+        document.getElementById("orderModal").style.display = "flex";
+        document.body.style.overflow = "hidden";
+
+        var html = `
+        <div style="margin-bottom:20px;">
+            <div style="display:flex; justify-content:space-between; align-items:center;">
+                <div>
+                    <h2 style="margin:0;">${point.label}</h2>
+                    <span style="background:#007bff; color:white; padding:4px 10px; 
+                                 border-radius:20px; font-size:13px;">
+                        ${areaOrders.length} Orders
+                    </span>
+                </div>
+                <input type="text" id="tableSearch" placeholder="Search..."
+                       style="padding:8px 12px; border-radius:20px; border:1px solid #ccc;">
+            </div>
+        </div>
+        `;
+
         if(areaOrders.length === 0){
-            ordersText += "No orders in this area.";
+            html += "<p>No orders in this area.</p>";
         } else {
-            // Table-like formatting
-            ordersText += "<b>ID   Customer              Amount</b><br>";
-            ordersText += "----------------------------------------------<br>";
+
+            html += `<table id="ordersTable" style="width:100%; border-collapse:collapse;">
+                        <thead>
+                            <tr>
+                                <th>Order ID</th>
+                                <th>Customer</th>
+                                <th>Amount</th>
+                                <th>Status</th>
+                            </tr>
+                        </thead>
+                        <tbody>`;
+
             areaOrders.forEach(o => {
-                let customer = o.customer_name.padEnd(22, ' ');
-                let amount = o.total_amount.toString().padStart(6, ' ');
-                ordersText += `${o.id.toString().padStart(2,' ')} | ${customer} | ₹${amount}<br>`;
+                html += `
+                    <tr>
+                        <td>${o.id}</td>
+                        <td>${o.customer_name}</td>
+                        <td>₹${o.total_amount}</td>
+                        <td>${o.order_status}</td>
+                    </tr>
+                `;
+            });
+
+            html += "</tbody></table>";
+        }
+
+        document.getElementById("modalContent").innerHTML = html;
+
+        var searchInput = document.getElementById("tableSearch");
+        if(searchInput){
+            searchInput.addEventListener("keyup", function() {
+                var filter = this.value.toLowerCase();
+                var rows = document.querySelectorAll("#ordersTable tbody tr");
+                rows.forEach(row => {
+                    row.style.display = row.innerText.toLowerCase().includes(filter) ? "" : "none";
+                });
             });
         }
-        initialTexts[idx] = ordersText;
-        expandedBoxes[idx] = true;
-    }
 
-    Plotly.restyle('treemap', { text: [initialTexts] });
+    });
+
 });
+
+
+// CLOSE BUTTON (with stopPropagation)
+document.getElementById("closeModal").addEventListener("click", function(e){
+    e.stopPropagation();
+    modalOpen = false;
+    document.getElementById("orderModal").style.display = "none";
+    document.body.style.overflow = "auto";
+});
+
+
+// CLICK OUTSIDE MODAL BOX
+document.getElementById("orderModal").addEventListener("click", function(e){
+    if(e.target.id === "orderModal"){
+        modalOpen = false;
+        this.style.display = "none";
+        document.body.style.overflow = "auto";
+    }
+});
+
 </script>
 
 {% endblock %}

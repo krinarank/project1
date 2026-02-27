@@ -17,35 +17,86 @@ from django.db.models import Count
 
 
 
+# def order_heatmap(request):
+#     # Get area-wise order counts
+#     area_orders = Area.objects.annotate(order_count=Count('order')).values('id', 'name', 'order_count')
+
+#     # Prepare order details per area
+#     area_order_details = {}
+#     for area in area_orders:
+#         # Fetch order info using related user fields
+#         orders = list(
+#             Order.objects.filter(area_id=area['id']).values(
+#                 'id',
+#                 'total_amount',
+#                 'order_status',
+#                 'order_date',
+#                 'user__firstname',
+#                 'user__lastname'
+#             )
+#         )
+
+#         # Optional: format the customer name for front-end
+#         for order in orders:
+#             order['customer_name'] = f"{order.pop('user__firstname')} {order.pop('user__lastname')}"
+
+#         area_order_details[area['id']] = orders
+
+#     context = {
+#         'labels': [area['name'] for area in area_orders],
+#         'values': [area['order_count'] for area in area_orders],
+#         'ids': [area['id'] for area in area_orders],
+#         'area_order_details': area_order_details
+#     }
+#     return render(request, 'dashboard/order_heatmap_grid.html', context)
+
+from django.shortcuts import render
+from django.db.models import Count, Prefetch
+from location.models import Area
+from orders.models import Order
+
+
 def order_heatmap(request):
-    # Get area-wise order counts
-    area_orders = Area.objects.annotate(order_count=Count('order')).values('id', 'name', 'order_count')
 
-    # Prepare order details per area
-    area_order_details = {}
-    for area in area_orders:
-        # Fetch order info using related user fields
-        orders = list(
-            Order.objects.filter(area_id=area['id']).values(
-                'id',
-                'total_amount',
-                'order_status',
-                'order_date',
-                'user__firstname',
-                'user__lastname'
-            )
+    # Prefetch orders with user (avoid N+1 query)
+    areas = Area.objects.annotate(
+        order_count=Count('order')
+    ).prefetch_related(
+        Prefetch(
+            'order_set',
+            queryset=Order.objects.select_related('user'),
+            to_attr='prefetched_orders'
         )
+    )
 
-        # Optional: format the customer name for front-end
-        for order in orders:
-            order['customer_name'] = f"{order.pop('user__firstname')} {order.pop('user__lastname')}"
+    labels = []
+    values = []
+    ids = []
+    area_order_details = {}
 
-        area_order_details[area['id']] = orders
+    for area in areas:
+        labels.append(area.name)
+        values.append(area.order_count)
+        ids.append(area.id)
+
+        orders_list = []
+
+        for order in area.prefetched_orders:
+            orders_list.append({
+                'id': order.id,
+                'total_amount': order.total_amount,
+                'order_status': order.order_status,
+                'customer_name': f"{order.user.firstname} {order.user.lastname}"
+            })
+
+        area_order_details[area.id] = orders_list
 
     context = {
-        'labels': [area['name'] for area in area_orders],
-        'values': [area['order_count'] for area in area_orders],
-        'ids': [area['id'] for area in area_orders],
+        'labels': labels,
+        'values': values,
+        'ids': ids,
         'area_order_details': area_order_details
     }
+
     return render(request, 'dashboard/order_heatmap_grid.html', context)
+    
