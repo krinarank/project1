@@ -578,24 +578,6 @@ def remove_from_wishlist(request, food_id):
     return redirect('my_wishlist')
 
 
-# def my_wishlist(request):
-
-#     # 🔹 Logged-in user
-#     if request.user.is_authenticated:
-#         wishlist_items = FoodItem.objects.filter(
-#             wishlist__user=request.user   # Wishlist FK
-#         ).prefetch_related('images')
-
-#     # 🔹 Guest user
-#     else:
-#         wishlist_ids = request.session.get('wishlist', [])
-#         wishlist_items = FoodItem.objects.filter(
-#             id__in=wishlist_ids
-#         ).prefetch_related('images')
-
-#     return render(request, 'orders/wishlist.html', {
-#         'wishlist_items': wishlist_items
-#     })
 from orders.utils import get_best_offer
 
 def my_wishlist(request):
@@ -641,187 +623,7 @@ def my_orders(request):
 
 
 from orders.utils import get_discounted_price   # ⚠️ je file ma hoy tya thi import karje
-
-
-# @login_required
-# def order_detail(request, order_id):
-
-#     # ================= ORDER =================
-#     order = get_object_or_404(
-#         Order,
-#         id=order_id,
-#         user=request.user
-#     )
-
-#     order_items = OrderDetail.objects.filter(order=order).select_related("food_item")
-
-#     # ================= TOTALS =================
-#     original_total = Decimal("0.00")
-#     item_total = Decimal("0.00")
-#     total_discount = Decimal("0.00")
-
-#     for item in order_items:
-#         # original price (qty sathe)
-#         original_price = item.food_item.price * item.qty
-#         original_total += original_price
-
-#         # 🔥 discounted price (runtime)
-#         discounted_price = get_discounted_price(item.food_item) * item.qty
-#         item_total += discounted_price
-
-#         # discount per item
-#         item_discount = original_price - discounted_price
-#         total_discount += item_discount
-
-#         # 🔥 attach extra values to item (HTML mate)
-#         item.discounted_price = discounted_price
-#         item.item_discount = item_discount
-
-#     # ================= EXTRA CHARGES =================
-#     tax = (item_total * Decimal("0.05")).quantize(Decimal("0.01"))
-#     delivery_charge = Decimal("50.00")   # tu area-wise pan kari sake
-
-#     grand_total = item_total + tax + delivery_charge
-
-#     # ================= CONTEXT =================
-#     context = {
-#         "order": order,
-#         "order_items": order_items,
-
-#         # checkout-style values
-#         "original_total": original_total,
-#         "total_discount": total_discount,
-#         "item_total": item_total,
-#         "tax": tax,
-#         "delivery_charge": delivery_charge,
-#         "grand_total": grand_total,
-#     }
-
-#     return render(request, "orders/order_detail.html", context)
-# @login_required
-# def order_detail(request, order_id):
-#     # ================= ORDER =================
-#     order = get_object_or_404(
-#         Order,
-#         id=order_id,
-#         user=request.user
-#     )
-#     order_items = OrderDetail.objects.filter(order=order).select_related("food_item")
-
-#     # ================= TOTALS =================
-#     original_total = Decimal("0.00")
-#     item_total = Decimal("0.00")
-#     total_discount = Decimal("0.00")
-
-#     for item in order_items:
-#         original_price = item.food_item.price * item.qty
-#         original_total += original_price
-
-#         discounted_price = get_discounted_price(item.food_item) * item.qty
-#         item_total += discounted_price
-
-#         item_discount = original_price - discounted_price
-#         total_discount += item_discount
-
-#         item.discounted_price = discounted_price
-#         item.item_discount = item_discount
-
-#     tax = (item_total * Decimal("0.05")).quantize(Decimal("0.01"))
-#     delivery_charge = Decimal("50.00")
-#     grand_total = item_total + tax + delivery_charge
-
-#     # ================= STATUS TRACKER =================
-#     steps = ["placed", "confirmed", "preparing", "out_for_delivery", "delivered"]
-#     try:
-#         current_index = steps.index(order.order_status.lower())
-#     except ValueError:
-#         current_index = 0
-
-#     # ================= CONTEXT =================
-#     context = {
-#         "order": order,
-#         "order_items": order_items,
-#         "original_total": original_total,
-#         "total_discount": total_discount,
-#         "item_total": item_total,
-#         "tax": tax,
-#         "delivery_charge": delivery_charge,
-#         "grand_total": grand_total,
-#         "steps": steps,
-#         "current_index": current_index,
-#     }
-
-#     return render(request, "orders/order_detail.html", context)
-
-
 from .models import FeedbackRating
-
-# @login_required
-# def order_detail(request, order_id):
-#     order = get_object_or_404(Order, id=order_id, user=request.user)
-#     order_items = OrderDetail.objects.filter(order=order).select_related("food_item")
-
-#     # ================= TOTALS =================
-#     original_total = Decimal("0.00")
-#     item_total = Decimal("0.00")
-#     total_discount = Decimal("0.00")
-
-#     for item in order_items:
-#         original_price = item.food_item.price * item.qty
-#         original_total += original_price
-
-#         discounted_price = get_discounted_price(item.food_item) * item.qty
-#         item_total += discounted_price
-
-#         item_discount = original_price - discounted_price
-#         total_discount += item_discount
-
-#         item.discounted_price = discounted_price
-#         item.item_discount = item_discount
-
-#     tax = (item_total * Decimal("0.05")).quantize(Decimal("0.01"))
-#     delivery_charge = Decimal("50.00")
-#     grand_total = item_total + tax + delivery_charge
-
-#     # ================= STATUS TRACKER =================
-#     steps = ["placed", "confirmed", "preparing", "out_for_delivery", "delivered"]
-#     try:
-#         current_index = steps.index(order.order_status.lower())
-#     except:
-#         current_index = 0
-
-#     # ================= FEEDBACK LOGIC =================
-#     feedback = FeedbackRating.objects.filter(order=order, user=request.user).first()
-
-#     if request.method == "POST" and order.order_status.upper() == "DELIVERED":
-#         if not feedback:
-#             rating = request.POST.get("rating")
-#             feedback_text = request.POST.get("feedback_text")
-
-#             FeedbackRating.objects.create(
-#                 user=request.user,
-#                 order=order,
-#                 rating=rating,
-#                 feedback_text=feedback_text
-#             )
-#             return redirect("order_detail", order_id=order.id)
-
-#     context = {
-#         "order": order,
-#         "order_items": order_items,
-#         "original_total": original_total,
-#         "total_discount": total_discount,
-#         "item_total": item_total,
-#         "tax": tax,
-#         "delivery_charge": delivery_charge,
-#         "grand_total": grand_total,
-#         "steps": steps,
-#         "current_index": current_index,
-#         "feedback": feedback,   # 🔴 VERY IMPORTANT
-#     }
-
-#     return render(request, "orders/order_detail.html", context)
-
 
 
 from decimal import Decimal
@@ -1771,6 +1573,7 @@ def download_invoice(request, order_id):
 #         "current_index": current_index,
 #         "feedback": feedback,
 #     })
+
 
 @login_required
 def order_detail(request, order_id):
