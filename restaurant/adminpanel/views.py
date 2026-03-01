@@ -409,7 +409,7 @@ def add_fooditem(request):
         name = request.POST.get('name', '').strip()
         price = request.POST.get('price')
         calories = request.POST.get('calories')
-
+        preparation_time = request.POST.get("preparation_time")
         has_variant = request.POST.get('has_variant') == 'on'
         is_available = request.POST.get('is_available') == 'on'
         is_special = request.POST.get('is_special') == 'on'
@@ -448,6 +448,7 @@ def add_fooditem(request):
             name=name,
             price=price,
             calories=calories,
+            preparation_time=preparation_time,
             is_available=is_available,
             is_special=is_special,
             has_variant=has_variant,
@@ -597,6 +598,7 @@ def update_fooditem(request, id):
         item.name = request.POST.get('name')
         item.price = float(request.POST.get('price'))
         item.calories = int(request.POST.get('calories'))
+        item.preparation_time = int(request.POST.get('preparation_time'))
         item.is_available = request.POST.get('is_available') == 'on'
         item.sub_cat_id = request.POST.get('subcategory_id')
         item.save()
@@ -858,6 +860,23 @@ def dashboard_view(request):
     )
     revenue_labels = [x['period'].strftime("%d-%b") for x in daily_revenue]
     revenue_totals = [float(x['total'] or 0) for x in daily_revenue]
+     # =========================
+    # 💰 REVENUE CHART (FIXED)
+    # =========================
+    today = date.today()
+    start_date = today - timedelta(days=6)
+
+    daily_revenue = (
+        Order.objects
+        .filter(order_date__date__gte=start_date, order_status='DELIVERED')
+        .annotate(period=TruncDate('order_date'))
+        .values('period')
+        .annotate(total=Sum('total_amount'))
+        .order_by('period')
+    )
+
+    revenue_labels = [x['period'].strftime("%d-%b") for x in daily_revenue]
+    revenue_data = [float(x['total'] or 0) for x in daily_revenue]  # ✅ renamed
 
     # =========================
     # 📦 ORDERS CHART (NEW)
@@ -893,6 +912,9 @@ def dashboard_view(request):
         # Purchases
         'purchase_labels': purchase_labels,
         'purchase_totals': purchase_totals,
+        # Revenue ✅ FIXED NAME
+        'revenue_labels': revenue_labels,
+        'revenue_data': revenue_data,
 
         # Orders (NEW)
         'order_daily_labels': order_daily_labels,
@@ -1190,6 +1212,8 @@ def add_and_list_area(request):
     if request.method == "POST":
         name = request.POST.get('name')
         city_id = request.POST.get('city')
+        delivery_time = request.POST.get("delivery_time")
+        
 
         if name and city_id:
             city = get_object_or_404(City, id=city_id)
@@ -1208,7 +1232,9 @@ def add_and_list_area(request):
                     name=name,
                     city=city,
                     latitude=lat,
-                    longitude=lng
+                    longitude=lng,
+                    delivery_time=delivery_time,
+                    
                 )
                 messages.success(request, "Area added successfully!")
 
@@ -1231,6 +1257,7 @@ def edit_area(request, id):
     if request.method == "POST":
         new_name = request.POST.get('name')
         new_city_id = request.POST.get('city')
+        delivery_time = request.POST.get('delivery_time') 
 
         if new_name and new_city_id:
             city_obj = get_object_or_404(City, id=new_city_id)
@@ -1240,6 +1267,7 @@ def edit_area(request, id):
             else:
                 area.name = new_name
                 area.city = city_obj
+                area.delivery_time = delivery_time  
                 area.save()
                 updated = True
 

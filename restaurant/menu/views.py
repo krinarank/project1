@@ -254,7 +254,7 @@ def menu_page(request):
     return render(request, 'menu/menu.html', context)
 
 
-from orders.models import Notification
+from orders.models import Notification,FeedbackRating
 from django.utils import timezone
 from django.db.models import Q
 
@@ -393,6 +393,7 @@ def profile_page(request):
     completed = int(sum(100 / 6 for f in fields if f))
 
     wishlist_items = FoodItem.objects.filter(wishlist__user=user).prefetch_related('images')
+    feedbacks = FeedbackRating.objects.filter(user=user).select_related('order')
 
     return render(request, 'profile/profile_page.html', {
         'customer': user,
@@ -401,6 +402,7 @@ def profile_page(request):
         'success_msg': success_msg,
         'show_modal': show_modal,
         'wishlist_items': wishlist_items,
+        'feedbacks': feedbacks,
     })
 from django.shortcuts import render, get_object_or_404
 from adminpanel.models import FoodItem

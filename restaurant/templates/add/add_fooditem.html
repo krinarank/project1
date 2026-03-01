@@ -42,6 +42,11 @@
 
             <label>Calories</label>
             <input type="number" name="calories" required>
+            <label>Preparation Time (Minutes)</label>
+<input type="number"
+       name="preparation_time"
+       min="1"
+       required>
 
             <!-- <label>Has Variant</label>
             <input type="checkbox" id="hasVariant" name="has_variant"> -->
@@ -112,6 +117,7 @@
                 <th>Subcategory</th>
                 <th>Price</th>
                 <th>Calories</th>
+                <th>Preparation Time</th>
                 <!-- <th>Variant</th> -->
                 
                 
@@ -125,6 +131,7 @@
                 <td>{{ item.sub_cat.subcategory_name }}</td>
                 <td>{{ item.price }}</td>
                 <td>{{ item.calories }}</td>
+                <td>{{ item.preparation_time}}</td>
                 <!-- <td>{{ item.has_variant|yesno:"Yes,No" }}</td>
                 <td>{{ item.is_available|yesno:"Yes,No" }}</td> -->
                 

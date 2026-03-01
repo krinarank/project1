@@ -828,6 +828,8 @@ from decimal import Decimal
 from django.shortcuts import render, redirect
 from django.utils import timezone
 from django.contrib.auth.decorators import login_required
+from collections import defaultdict
+from decimal import Decimal
 #from .models import Cart, FoodItemOfferDiscount, SubCategoryOfferDiscount, CategoryOfferDiscount, Area, Wallet, Customer
 @login_required
 def checkout(request):
@@ -842,36 +844,49 @@ def checkout(request):
         return redirect('menu_page')
 
     # ====================================================
-    # 🔥 STOCK CHECK BEFORE OPENING CHECKOUT
-    # ====================================================
+# 🔥 FINAL COMBINED STOCK CHECK (WORKING VERSION)
+# ====================================================
+
+
+
+    ingredient_totals = defaultdict(Decimal)
+
     for item in cart_items:
 
         prepared_item = PreparedItem.objects.filter(
             product_name=item.food_item.name
-        ).first()
+    ).first()
 
         if not prepared_item:
             messages.error(request, f"{item.food_item.name} recipe not found.")
             return redirect("cart_page")
 
-        total_produced_qty = Decimal(prepared_item.quantity_produced)
-
-        if total_produced_qty <= 0:
+        if prepared_item.quantity_produced <= 0:
             messages.error(request, f"{item.food_item.name} is currently unavailable.")
             return redirect("cart_page")
 
         usages = IngredientUsage.objects.filter(production=prepared_item)
 
         for usage in usages:
-            per_piece_qty = Decimal(usage.qty_used) / total_produced_qty
-            required_qty = per_piece_qty * Decimal(item.quantity)
 
-            if usage.raw.available_qty < required_qty:
-                messages.error(
-                    request,
-                    f"❌ {item.food_item.name} stock not available. Please reduce quantity."
-                )
-                return redirect("cart_page")
+        # 🔥 Correct Formula
+         required_qty = (
+            Decimal(usage.qty_used) *
+            Decimal(item.quantity)
+        ) / Decimal(prepared_item.quantity_produced)
+
+         ingredient_totals[usage.raw] += required_qty
+
+
+# 🔥 FINAL STOCK VALIDATION
+    for ingredient, total_required in ingredient_totals.items():
+
+        if ingredient.available_qty < total_required:
+            messages.error(
+            request,
+            f"❌ Not enough stock for {ingredient.name}. "
+        )
+            return redirect("cart_page")
 
     # ====================================================
     # ✅ IF STOCK OK → NORMAL CHECKOUT LOGIC
@@ -1486,6 +1501,45 @@ def add_variant_to_cart(request, food_id):
 
     base_price = round(base_price, 2)
     final_price = round(final_price, 2)
+    # ================= STOCK CHECK =================
+
+
+
+    # ================= STOCK CHECK =================
+
+    prepared_item = PreparedItem.objects.filter(
+         product_name=food_item.name
+        ).first()
+
+    if not prepared_item:
+         return JsonResponse({
+            "status": "fail",
+            "msg": "Recipe not found for this item"
+         }, status=400)
+
+    total_produced_qty = Decimal(prepared_item.quantity_produced)
+
+    if total_produced_qty <= 0:
+        return JsonResponse({
+            "status": "fail",
+            "msg": "Item currently unavailable"
+            }, status=400)
+
+    usages = IngredientUsage.objects.filter(production=prepared_item)
+
+# ✅ CHECK ALL INGREDIENTS PROPERLY
+    for usage in usages:
+
+        per_piece_qty = Decimal(usage.qty_used) / total_produced_qty
+        required_qty = per_piece_qty * Decimal(qty_change)
+
+        ingredient = usage.raw
+
+        if ingredient.available_qty < required_qty:
+            return JsonResponse({
+             "status": "fail",
+             "msg": f"Stock not available for {ingredient.name}"
+             }, status=400)
 
     if variant is None:
         cart_item = Cart.objects.filter(
@@ -1776,6 +1830,42 @@ def download_invoice(request, order_id):
 def order_detail(request, order_id):
     order = get_object_or_404(Order, id=order_id, user=request.user)
     order_items = OrderDetail.objects.filter(order=order).select_related("food_item")
+    #a code ma 5 min extra valu nathi simple 6 
+    # ===== DELIVERY TIME CALCULATION =====
+#   if order.order_status.lower() in ["delivered", "cancelled"]:
+#       total_time = 0
+#   else:
+#       prep_times = [
+#         item.food_item.preparation_time
+#         for item in order_items
+#     ]
+
+#       if prep_times:
+#         max_prep_time = max(prep_times)
+#         total_time = max_prep_time + order.area.delivery_time
+#       else:
+#         total_time = 0
+    # 🔥 Calculate time only if order active
+    if order.order_status.lower() in ["delivered", "cancelled"]:
+         total_time = None
+         delivery_display = None # ⛔ Disable time
+    else:
+        prep_times = [
+            item.food_item.preparation_time
+            for item in order_items
+         ]
+
+        if prep_times:
+             max_prep_time = max(prep_times)
+             total_time = max_prep_time + order.area.delivery_time
+
+             min_time = total_time
+             max_time = total_time + 5
+
+             delivery_display = f"{min_time} – {max_time} Minutes"
+
+        else:
+             delivery_display = " Calculating..."
 
     original_total = sum(item.food_item.price * item.qty for item in order_items)
     item_total = sum(item.total_amount for item in order_items)
@@ -1833,6 +1923,8 @@ def order_detail(request, order_id):
         "steps": steps,
         "current_index": current_index,
         "feedback": feedback,
+        "total_time": total_time,
+        "delivery_display": delivery_display, 
     })
 
 
@@ -2029,3 +2121,41 @@ def cancel_order(request, order_id):
         "order_status": order.order_status,
         "message": f"Order cancelled. Reason: {reason}"
     })
+from django.http import JsonResponse
+from decimal import Decimal
+
+
+
+def check_stock(request, food_id):
+
+    try:
+        food_item = FoodItem.objects.get(id=food_id)
+    except FoodItem.DoesNotExist:
+        return JsonResponse({"available": False})
+
+    prepared_item = PreparedItem.objects.filter(
+        product_name=food_item.name
+    ).first()
+
+    if not prepared_item:
+        return JsonResponse({"available": False})
+
+    total_produced_qty = Decimal(prepared_item.quantity_produced)
+
+    if total_produced_qty <= 0:
+        return JsonResponse({"available": False})
+
+    usages = IngredientUsage.objects.filter(production=prepared_item)
+
+    # 🔥 Check all ingredients
+    for usage in usages:
+
+        per_piece_qty = Decimal(usage.qty_used) / total_produced_qty
+        required_qty = per_piece_qty
+
+        ingredient = usage.raw
+
+        if ingredient.available_qty < required_qty:
+            return JsonResponse({"available": False})
+
+    return JsonResponse({"available": True})

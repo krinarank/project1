@@ -21,6 +21,11 @@
                     <option value="{{ city.id }}" {% if area.city.id == city.id %}selected{% endif %}>{{ city.name }}</option>
                     {% endfor %}
                 </select>
+                <input type="number"
+       name="delivery_time"
+       placeholder="Delivery Time (minutes)"
+       required>
+       
                 <button type="submit">Save</button>
             </form>
         </div>
@@ -42,6 +47,7 @@
                     <th>sr.no.</th>
                     <th>Area Name</th>
                     <th>City</th>
+                    <th>Delivery Time</th>
                     <th>Action</th>
                 </tr>
                 </thead>
@@ -51,6 +57,8 @@
                     <td>{{ forloop.counter }}</td>
                     <td>{{ area.name }}</td>
                     <td>{{ area.city.name }}</td>
+                    <td>{{ area.delivery_time }}</td>
+                    
                     <td>
                         <a href="{% url 'edit_area' area.id %}" class="btn btn-edit">Edit</a>
                         <a href="{% url 'delete_area' area.id %}" class="btn btn-delete" onclick="return confirm('Are you sure you want to delete {{ area.name }}?');">Delete</a>

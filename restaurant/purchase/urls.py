@@ -28,7 +28,7 @@ urlpatterns = [
     path('prepared/delete/<int:item_id>/', views.prepared_item_delete, name='prepared_item_delete'),
     
     path('confirm-order/<int:prepared_id>/<int:order_qty>/', views.confirm_order, name='confirm_order'),
-    path('preparing/<int:prepared_id>/<int:order_qty>/', views.preparing_order, name='preparing_order')
+    path('preparing/<int:prepared_id>/<int:order_qty>/', views.preparing_order, name='preparing_order'),
     
 
 

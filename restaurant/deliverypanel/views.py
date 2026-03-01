@@ -203,8 +203,6 @@ def delivery_mark_delivered(request, order_id):
     order = assignment.order
     order.order_status = 'DELIVERED'
     order.save()
-
-    messages.success(request, f"Order #{order.id} marked as delivered.")
     return redirect('delivery_dashboard')
 def delivery_forgot_password(request):
     if request.method == 'POST':

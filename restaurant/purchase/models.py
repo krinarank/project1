@@ -32,6 +32,7 @@ class PreparedItem(models.Model):
     product_name = models.CharField(max_length=100)
     production_date = models.DateField()
     quantity_produced = models.IntegerField()
+    
 
     def __str__(self):
         return self.product_name
