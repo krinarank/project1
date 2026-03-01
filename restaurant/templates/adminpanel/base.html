@@ -72,10 +72,10 @@
             <div><h2>Welcome to Dashboard</h2></div>
             {% endif %}
             <div class="header-right">
-                <a href="{% url 'admin_inquiry_list' %}" class="header-icon">
+                <a href="{% url 'admin_inquiry_list' %}"  class="inquiry-icon-container">
                     📩
                     {% if pending_inquiries > 0 %}
-                        <span class="badge">{{ pending_inquiries }}</span>
+                        <span class="stat-number">{{ pending_inquiries }}</span>
                     {% endif %}
                 </a>
                 

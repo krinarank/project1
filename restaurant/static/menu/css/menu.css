@@ -162,76 +162,126 @@ body.all-active .category-block {
     z-index: 999;
 }
 
-/* Small Bottom Sheet */
+/* Variant Bottom Sheet */
 #variantSheet {
     position: fixed;
     bottom: -100%;
     left: 50%;
     transform: translateX(-50%);
-    width: 400px; /* small for laptop/mobile */
+    width: 400px;
     max-width: 90%;
-    background: #fff;
+    background: #ffffff;
     border-radius: 15px 15px 0 0;
-    box-shadow: 0 -5px 20px rgba(0,0,0,0.3);
-    transition: 0.3s;
+    box-shadow: 0 -8px 25px rgba(0,0,0,0.35);
+    transition: bottom 0.4s ease, box-shadow 0.3s ease;
     z-index: 1000;
     padding: 20px;
-    max-height: 60%;
-    overflow-y: auto;
+    max-height: 65%; /* slightly taller */
+    overflow: hidden; /* scroll removed */
 }
 
+/* Sheet active state */
 #variantSheet.active {
     bottom: 0;
 }
 
+/* Header */
 .sheet-header {
     display: flex;
     justify-content: space-between;
     align-items: center;
     margin-bottom: 15px;
+    border-bottom: 1px solid #eee;
+    padding-bottom: 5px;
 }
 
+/* Close button */
 #closeSheet {
-    font-size: 24px;
+    font-size: 26px;
     cursor: pointer;
+    transition: color 0.2s ease;
+}
+#closeSheet:hover {
+    color: #ff4d4d;
 }
 
+/* Variant items */
 #variantList .variant-item {
-    padding: 10px 12px;
+    padding: 12px 15px;
     border: 1px solid #ddd;
-    border-radius: 10px;
+    border-radius: 12px;
     margin-bottom: 10px;
     display: flex;
     justify-content: space-between;
     cursor: pointer;
+    transition: all 0.2s ease;
+    background: #fff;
 }
-
+#variantList .variant-item:hover {
+    background: #f1fff5;
+    border-color: #28a745;
+    box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+    transform: translateY(-1px);
+}
 #variantList .variant-item.selected {
     border: 2px solid #28a745;
-    background: #f1fff5;
+    background: #d4ffe2;
     font-weight: bold;
+    box-shadow: 0 2px 5px rgba(40,167,69,0.2);
 }
 
+
+/* Quantity selector */
 .sheet-qty {
     display: flex;
     justify-content: center;
     align-items: center;
-    gap: 15px;
-    margin: 10px 0;
+    gap: 18px;
+    margin: 15px 0;
 }
-
 .sheet-qty button {
-    width: 30px;
-    height: 30px;
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    border: 1px solid #ccc;
+    background: #f8f8f8;
+    font-weight: bold;
+    transition: background 0.2s ease;
+}
+.sheet-qty button:hover {
+    background: #e6e6e6;
+}
+.sheet-qty .qty-number {
+    font-size: 18px;
+    min-width: 25px;
+    text-align: center;
 }
 
+/* Add / Update button */
 #addVariantToCart {
     width: 100%;
     background: #28a745;
-    color: white;
-    padding: 12px;
+    color: #fff;
+    padding: 14px;
     border: none;
-    border-radius: 10px;
-    font-size: 16px;
+    border-radius: 12px;
+    font-size: 17px;
+    font-weight: 500;
     margin-top: 10px;
+    transition: background 0.2s ease, transform 0.2s ease;
+}
+#addVariantToCart:hover {
+    background: #218838;
+    transform: translateY(-1px);
+}
+
+#sheetFoodName {
+    font-size: 20px;       /* slightly bigger */
+    font-weight: 600;      /* semi-bold */
+    color: #333;           /* dark but soft */
+    margin: 0;             /* remove default margin */
+    overflow: hidden;
+    text-overflow: ellipsis; /* truncate long names */
+    white-space: nowrap;      /* keep in single line */
+    
 }

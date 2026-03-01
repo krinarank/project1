@@ -171,10 +171,37 @@ body {
     margin-top: 8px;
 }
 
-.stat-number {
-    color: #ff4d00;
-    font-weight: bold;
+/* =============================
+   HEADER INQUIRY ICON + BADGE
+============================= */
+.inquiry-icon-container {
+    position: relative;      /* badge position relative to icon */
+    display: inline-block;
+    font-size: 22px;         /* icon size */
+    color: white;
+    cursor: pointer;
 }
+
+.inquiry-icon-container .stat-number {
+    position: absolute;
+    top: -5px;               /* badge vertical position */
+    right: -5px;             /* badge horizontal position */
+    min-width: 18px;         /* badge size */
+    height: 18px;
+    padding: 0 5px;          /* horizontal padding for number */
+    border-radius: 50%;      /* round badge */
+    background-color: #ff4d00; /* red badge */
+    color: #fff;             /* number color */
+    font-size: 12px;         /* number size */
+    font-weight: bold;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    line-height: 1;
+    text-align: center;
+    pointer-events: none;    /* so it doesn't block icon click */
+}
+
 
 /* FORMS */
 .dashboard-right form input,

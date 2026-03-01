@@ -408,6 +408,7 @@ def add_fooditem(request):
         subcategory_id = request.POST.get('subcategory_id')
         name = request.POST.get('name', '').strip()
         price = request.POST.get('price')
+        description = request.POST.get('description', '').strip()
         calories = request.POST.get('calories')
 
         has_variant = request.POST.get('has_variant') == 'on'
@@ -451,6 +452,7 @@ def add_fooditem(request):
             is_available=is_available,
             is_special=is_special,
             has_variant=has_variant,
+            description=description,
             sub_cat=subcategory
         )
 
@@ -493,100 +495,6 @@ def add_fooditem(request):
         'subcategories': subcategories
     })
 
-# def update_fooditem(request, id):
-#     item = get_object_or_404(FoodItem, id=id)
-#     subcategories = FoodItemSubCategory.objects.all()
-
-#     # 🔥 AUTO CREATE DEFAULT VARIANT FOR OLD ITEMS
-#     if not item.variants.exists():
-#         FoodItemVariant.objects.create(
-#             food_item=item,
-#             variant_name="Regular",
-#             price=item.price,
-#             is_default=True
-#         )
-#         item.has_variant = True
-#         item.save()
-
-#     if request.method == 'POST':
-#         item.name = request.POST.get('name')
-#         item.price = request.POST.get('price')
-#         item.calories = request.POST.get('calories')
-#         item.is_available = request.POST.get('is_available') == 'on'
-#         item.is_special = request.POST.get('is_special') == 'on'
-#         item.sub_cat_id = request.POST.get('subcategory_id')
-#         item.save()
-
-#         # 🔥 ALSO UPDATE DEFAULT VARIANT PRICE
-#         default_variant = item.variants.filter(is_default=True).first()
-#         if default_variant:
-#             default_variant.price = item.price
-#             default_variant.save()
-
-#         return redirect(f'/dashboard/update-fooditem/{item.id}/?success=1')
-
-#     return render(request, 'update/update_fooditem.html', {
-#         'fooditem': item,
-#         'subcategories': subcategories
-#     })
-#---------------------------------------------------------------
-# def update_fooditem(request, id):
-#     item = get_object_or_404(FoodItem, id=id)
-#     subcategories = FoodItemSubCategory.objects.all()
-
-#     # 🔥 AUTO CREATE DEFAULT VARIANT FOR OLD ITEMS
-#     if not item.variants.exists():
-#         FoodItemVariant.objects.create(
-#             food_item=item,
-#             variant_name="Regular",
-#             price=item.price,
-#             is_default=True
-#         )
-#         item.has_variant = True
-#         item.save()
-
-#     if request.method == 'POST':
-#         # ----- UPDATE MAIN FIELDS -----
-#         item.name = request.POST.get('name')
-#         item.price = float(request.POST.get('price'))
-#         item.calories = int(request.POST.get('calories'))
-#         item.is_available = request.POST.get('is_available') == 'on'
-#         item.sub_cat_id = request.POST.get('subcategory_id')
-#         item.save()
-
-#         # ----- UPDATE DEFAULT VARIANT PRICE -----
-#         default_variant = item.variants.filter(is_default=True).first()
-#         if default_variant:
-#             default_variant.price = item.price
-#             default_variant.save()
-
-#         # ----- HANDLE NEW/UPDATED VARIANTS -----
-#         variant_names = request.POST.getlist('variant_name[]')
-#         variant_prices = request.POST.getlist('variant_price[]')
-
-#         for vname, vprice in zip(variant_names, variant_prices):
-#             vname = vname.strip()
-#             if vname and vprice:
-#                 # Check if variant exists (skip default)
-#                 variant, created = FoodItemVariant.objects.get_or_create(
-#                     food_item=item,
-#                     variant_name=vname,
-#                     defaults={'price': float(vprice)}
-#                 )
-#                 if not created:
-#                     variant.price = float(vprice)
-#                     variant.save()
-
-#         # Update has_variant flag
-#         item.has_variant = item.variants.count() > 1  # default variant always exists
-#         item.save()
-
-#         return redirect(f'/dashboard/update-fooditem/{item.id}/?success=1')
-
-#     return render(request, 'update/update_fooditem.html', {
-#         'fooditem': item,
-#         'subcategories': subcategories
-#     })
 
 def update_fooditem(request, id):
     item = get_object_or_404(FoodItem, id=id)
@@ -597,6 +505,7 @@ def update_fooditem(request, id):
         item.name = request.POST.get('name')
         item.price = float(request.POST.get('price'))
         item.calories = int(request.POST.get('calories'))
+        item.description = request.POST.get('description')
         item.is_available = request.POST.get('is_available') == 'on'
         item.sub_cat_id = request.POST.get('subcategory_id')
         item.save()
@@ -787,23 +696,64 @@ def admin_inquiry_list(request):
     })
 
 
-def reply_inquiry(request, id):
-    #inquiry = Inquiry.objects.get(id=id)
-    inquiry = get_object_or_404(Inquiry, inquiry_id=id)
+# def reply_inquiry(request, id):
+#     #inquiry = Inquiry.objects.get(id=id)
+#     inquiry = get_object_or_404(Inquiry, inquiry_id=id)
 
+
+#     if request.method == "POST":
+#         reply_msg = request.POST.get("reply")
+
+#         inquiry.admin_reply = reply_msg
+#         inquiry.status = "Responded"
+#         inquiry.save()
+
+#         return redirect('admin_inquiry_list')
+
+#     return render(request, 'adminpanel/reply_inquiry.html', {
+#         'inquiry': inquiry
+#     })
+
+from django.shortcuts import render, get_object_or_404, redirect
+from django.contrib.auth.decorators import login_required
+from django.core.mail import send_mail
+from django.conf import settings
+from menu.models import Inquiry  # ensure correct import
+
+@login_required
+def reply_inquiry(request, id):
+    # Get the inquiry object or 404
+    inquiry = get_object_or_404(Inquiry, inquiry_id=id)
 
     if request.method == "POST":
         reply_msg = request.POST.get("reply")
 
+        # 1️⃣ Save admin reply in DB
         inquiry.admin_reply = reply_msg
         inquiry.status = "Responded"
         inquiry.save()
 
+        # 2️⃣ Send email to customer
+        try:
+            send_mail(
+                subject=f"Reply to your inquiry: {inquiry.subject}",
+                message=f"Hello {inquiry.name},\n\n{reply_msg}\n\nThank you,\nLeela Restaurant",
+                from_email=settings.EMAIL_HOST_USER,
+                recipient_list=[inquiry.email],
+                fail_silently=False,
+            )
+        except Exception as e:
+            # Optional: log the error, email failed but admin still redirected
+            print(f"Error sending inquiry reply email: {e}")
+
+        # 3️⃣ Redirect back to inquiry list
         return redirect('admin_inquiry_list')
 
+    # GET request: show the reply form
     return render(request, 'adminpanel/reply_inquiry.html', {
         'inquiry': inquiry
     })
+
 
 
 

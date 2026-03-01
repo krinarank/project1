@@ -20,6 +20,7 @@ class FoodItem(models.Model):
     is_special = models.BooleanField(default=True)
     calories = models.IntegerField()
     has_variant = models.BooleanField(default=False)
+    description = models.TextField(blank=True, null=True)
     sub_cat = models.ForeignKey(FoodItemSubCategory, on_delete=models.CASCADE)
     def __str__(self):
         return self.name

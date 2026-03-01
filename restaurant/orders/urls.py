@@ -46,6 +46,8 @@ urlpatterns = [
 # Invoice download URL
     path("order/<int:order_id>/invoice/", views.download_invoice, name="download_invoice"),
 
+path('cart/food-summary/<int:food_id>/', views.food_cart_summary, name='food_cart_summary'),
+
 # ========================krisha ae add karelu================
      path('cancel/<int:order_id>/', views.cancel_order, name='cancel_order'),
 #    ==================ahiya sudhi==============

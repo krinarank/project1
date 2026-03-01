@@ -22,98 +22,8 @@ import json
 from .models import FeedbackRating
 
 
-
-
-# @login_required(login_url='/accounts/customer_login/')
-# def add_to_cart(request, food_id):
-
-#     if request.method != "POST":
-#         return JsonResponse({'status': 'invalid'})
-
-#     item = get_object_or_404(FoodItem, id=food_id)
-
-#     # 🔥 TEMP FIX: use food price directly
-#     # price = item.price  
-#     discounted_price = get_discounted_price(item)
-
-
-#     cart_item, created = Cart.objects.get_or_create(
-#         user=request.user,
-#         food_item=item,
-#         defaults={
-#             'quantity': 1,
-#             'price': discounted_price 
-#         }
-#     )
-
-#     if not created:
-#         cart_item.quantity += 1
-#         cart_item.save()
-
-#     return JsonResponse({
-#         'status': 'success',
-#         'quantity': cart_item.quantity
-#     })
-
 from django.db.models import Sum
 from django.views.decorators.http import require_POST
-
-# @login_required(login_url='/accounts/customer_login/')
-# def add_to_cart(request, food_id):
-
-#     if request.method != "POST":
-#         return JsonResponse({'status': 'invalid'})
-
-#     item = get_object_or_404(FoodItem, id=food_id)
-
-#     # 🔥 TEMP FIX: use food price directly
-#     # price = item.price  
-#     discounted_price = get_discounted_price(item)
-
-
-#     cart_item, created = Cart.objects.get_or_create(
-#         user=request.user,
-#         food_item=item,
-#         defaults={
-#             'quantity': 1,
-#             'price': discounted_price 
-#         }
-#     )
-
-#     if not created:
-#         cart_item.quantity += 1
-#         cart_item.save()
-
-#     return JsonResponse({
-#         'status': 'success',
-#         'quantity': cart_item.quantity
-#     })
-
-# ---------------- UPDATE QUANTITY ----------------
-# @login_required(login_url='/accounts/customer_login/')
-# def update_cart_quantity(request, food_id, action):
-#     try:
-#         cart_item = get_object_or_404(Cart, user=request.user, food_item_id=food_id)
-#     except:
-#         return JsonResponse({'status': 'error', 'message': 'Item not in cart', 'quantity': 0})
-
-#     if action == 'increase':
-#         cart_item.quantity += 1
-#         cart_item.save()
-#     elif action == 'decrease':
-#         if cart_item.quantity > 1:
-#             cart_item.quantity -= 1
-#             cart_item.save()
-#         else:
-#             # Quantity 0 → remove item
-#             cart_item.delete()
-#             return JsonResponse({'status': 'removed', 'quantity': 0, 'food_id': food_id})
-
-#     return JsonResponse({
-#         'status': 'updated',
-#         'quantity': cart_item.quantity,
-#         'food_id': food_id
-#     })
 
 
 # ---------------- GET CART ----------------
@@ -250,14 +160,6 @@ def decrease_qty(request, id):
         cart_item.delete()
     return redirect('cart_page')
 
-
-
-
-# @login_required
-# def remove_item(request, item_id):
-#     cart_item = get_object_or_404(Cart, id=item_id, user=request.user)
-#     cart_item.delete()
-#     return redirect('cart_page')
 
 
 def create_offer(request):
@@ -578,24 +480,6 @@ def remove_from_wishlist(request, food_id):
     return redirect('my_wishlist')
 
 
-# def my_wishlist(request):
-
-#     # 🔹 Logged-in user
-#     if request.user.is_authenticated:
-#         wishlist_items = FoodItem.objects.filter(
-#             wishlist__user=request.user   # Wishlist FK
-#         ).prefetch_related('images')
-
-#     # 🔹 Guest user
-#     else:
-#         wishlist_ids = request.session.get('wishlist', [])
-#         wishlist_items = FoodItem.objects.filter(
-#             id__in=wishlist_ids
-#         ).prefetch_related('images')
-
-#     return render(request, 'orders/wishlist.html', {
-#         'wishlist_items': wishlist_items
-#     })
 from orders.utils import get_best_offer
 
 def my_wishlist(request):
@@ -642,186 +526,7 @@ def my_orders(request):
 
 from orders.utils import get_discounted_price   # ⚠️ je file ma hoy tya thi import karje
 
-
-# @login_required
-# def order_detail(request, order_id):
-
-#     # ================= ORDER =================
-#     order = get_object_or_404(
-#         Order,
-#         id=order_id,
-#         user=request.user
-#     )
-
-#     order_items = OrderDetail.objects.filter(order=order).select_related("food_item")
-
-#     # ================= TOTALS =================
-#     original_total = Decimal("0.00")
-#     item_total = Decimal("0.00")
-#     total_discount = Decimal("0.00")
-
-#     for item in order_items:
-#         # original price (qty sathe)
-#         original_price = item.food_item.price * item.qty
-#         original_total += original_price
-
-#         # 🔥 discounted price (runtime)
-#         discounted_price = get_discounted_price(item.food_item) * item.qty
-#         item_total += discounted_price
-
-#         # discount per item
-#         item_discount = original_price - discounted_price
-#         total_discount += item_discount
-
-#         # 🔥 attach extra values to item (HTML mate)
-#         item.discounted_price = discounted_price
-#         item.item_discount = item_discount
-
-#     # ================= EXTRA CHARGES =================
-#     tax = (item_total * Decimal("0.05")).quantize(Decimal("0.01"))
-#     delivery_charge = Decimal("50.00")   # tu area-wise pan kari sake
-
-#     grand_total = item_total + tax + delivery_charge
-
-#     # ================= CONTEXT =================
-#     context = {
-#         "order": order,
-#         "order_items": order_items,
-
-#         # checkout-style values
-#         "original_total": original_total,
-#         "total_discount": total_discount,
-#         "item_total": item_total,
-#         "tax": tax,
-#         "delivery_charge": delivery_charge,
-#         "grand_total": grand_total,
-#     }
-
-#     return render(request, "orders/order_detail.html", context)
-# @login_required
-# def order_detail(request, order_id):
-#     # ================= ORDER =================
-#     order = get_object_or_404(
-#         Order,
-#         id=order_id,
-#         user=request.user
-#     )
-#     order_items = OrderDetail.objects.filter(order=order).select_related("food_item")
-
-#     # ================= TOTALS =================
-#     original_total = Decimal("0.00")
-#     item_total = Decimal("0.00")
-#     total_discount = Decimal("0.00")
-
-#     for item in order_items:
-#         original_price = item.food_item.price * item.qty
-#         original_total += original_price
-
-#         discounted_price = get_discounted_price(item.food_item) * item.qty
-#         item_total += discounted_price
-
-#         item_discount = original_price - discounted_price
-#         total_discount += item_discount
-
-#         item.discounted_price = discounted_price
-#         item.item_discount = item_discount
-
-#     tax = (item_total * Decimal("0.05")).quantize(Decimal("0.01"))
-#     delivery_charge = Decimal("50.00")
-#     grand_total = item_total + tax + delivery_charge
-
-#     # ================= STATUS TRACKER =================
-#     steps = ["placed", "confirmed", "preparing", "out_for_delivery", "delivered"]
-#     try:
-#         current_index = steps.index(order.order_status.lower())
-#     except ValueError:
-#         current_index = 0
-
-#     # ================= CONTEXT =================
-#     context = {
-#         "order": order,
-#         "order_items": order_items,
-#         "original_total": original_total,
-#         "total_discount": total_discount,
-#         "item_total": item_total,
-#         "tax": tax,
-#         "delivery_charge": delivery_charge,
-#         "grand_total": grand_total,
-#         "steps": steps,
-#         "current_index": current_index,
-#     }
-
-#     return render(request, "orders/order_detail.html", context)
-
-
 from .models import FeedbackRating
-
-# @login_required
-# def order_detail(request, order_id):
-#     order = get_object_or_404(Order, id=order_id, user=request.user)
-#     order_items = OrderDetail.objects.filter(order=order).select_related("food_item")
-
-#     # ================= TOTALS =================
-#     original_total = Decimal("0.00")
-#     item_total = Decimal("0.00")
-#     total_discount = Decimal("0.00")
-
-#     for item in order_items:
-#         original_price = item.food_item.price * item.qty
-#         original_total += original_price
-
-#         discounted_price = get_discounted_price(item.food_item) * item.qty
-#         item_total += discounted_price
-
-#         item_discount = original_price - discounted_price
-#         total_discount += item_discount
-
-#         item.discounted_price = discounted_price
-#         item.item_discount = item_discount
-
-#     tax = (item_total * Decimal("0.05")).quantize(Decimal("0.01"))
-#     delivery_charge = Decimal("50.00")
-#     grand_total = item_total + tax + delivery_charge
-
-#     # ================= STATUS TRACKER =================
-#     steps = ["placed", "confirmed", "preparing", "out_for_delivery", "delivered"]
-#     try:
-#         current_index = steps.index(order.order_status.lower())
-#     except:
-#         current_index = 0
-
-#     # ================= FEEDBACK LOGIC =================
-#     feedback = FeedbackRating.objects.filter(order=order, user=request.user).first()
-
-#     if request.method == "POST" and order.order_status.upper() == "DELIVERED":
-#         if not feedback:
-#             rating = request.POST.get("rating")
-#             feedback_text = request.POST.get("feedback_text")
-
-#             FeedbackRating.objects.create(
-#                 user=request.user,
-#                 order=order,
-#                 rating=rating,
-#                 feedback_text=feedback_text
-#             )
-#             return redirect("order_detail", order_id=order.id)
-
-#     context = {
-#         "order": order,
-#         "order_items": order_items,
-#         "original_total": original_total,
-#         "total_discount": total_discount,
-#         "item_total": item_total,
-#         "tax": tax,
-#         "delivery_charge": delivery_charge,
-#         "grand_total": grand_total,
-#         "steps": steps,
-#         "current_index": current_index,
-#         "feedback": feedback,   # 🔴 VERY IMPORTANT
-#     }
-
-#     return render(request, "orders/order_detail.html", context)
-
 
 
 from decimal import Decimal
@@ -1295,74 +1000,85 @@ def admin_assign_delivery(request, order_id):
 from django.http import JsonResponse
 from adminpanel.models import FoodItem, FoodItemVariant
 
+
+
 @login_required
 def get_food_variants_ajax(request, food_id):
     food = get_object_or_404(FoodItem, id=food_id)
     today = timezone.now().date()
-
-    # Calculate discount
+    
+    # ================= DISCOUNT CALCULATION =================
     discount_percent = 0
     food_offer = FoodItemOfferDiscount.objects.filter(
-        food_item=food,
-        is_active=True,
-        applied_date__lte=today,
-        expiry_date__gte=today
+        food_item=food, is_active=True,
+        applied_date__lte=today, expiry_date__gte=today
     ).select_related('offer').first()
     if food_offer and food_offer.offer.is_currently_active():
         discount_percent = float(food_offer.offer.discount_percentage)
-
     if discount_percent == 0:
         sub_offer = SubCategoryOfferDiscount.objects.filter(
-            subcategory=food.sub_cat,
-            is_active=True,
-            applied_date__lte=today,
-            expiry_date__gte=today
+            subcategory=food.sub_cat, is_active=True,
+            applied_date__lte=today, expiry_date__gte=today
         ).select_related('offer').first()
         if sub_offer and sub_offer.offer.is_currently_active():
             discount_percent = float(sub_offer.offer.discount_percentage)
-
     if discount_percent == 0:
         cat_offer = CategoryOfferDiscount.objects.filter(
-            category=food.sub_cat.food_item_cat,
-            is_active=True,
-            applied_date__lte=today,
-            expiry_date__gte=today
+            category=food.sub_cat.food_item_cat, is_active=True,
+            applied_date__lte=today, expiry_date__gte=today
         ).select_related('offer').first()
         if cat_offer and cat_offer.offer.is_currently_active():
             discount_percent = float(cat_offer.offer.discount_percentage)
 
+    # ================= VARIANTS =================
     variants = []
 
-    # ✅ Only add default "Regular" if there are NO variants in DB
-    if not food.variants.exists():
+    db_variant_names = [v.variant_name.lower() for v in food.variants.all()]
+    
+    # Determine base variant label
+    base_name = None
+    if any(name in ["small", "medium", "large"] for name in db_variant_names):
+        base_name = "Small"
+    elif any(name in ["half", "full"] for name in db_variant_names):
+        base_name = "Half"
+
+    # Add base price (original food.price) if base_name found
+    if base_name:
         regular_price = float(food.price)
-        discounted_price = round(regular_price * (1 - discount_percent / 100), 2) if discount_percent > 0 else None
+        regular_discounted = round(regular_price * (1 - discount_percent/100), 2) if discount_percent > 0 else None
         variants.append({
-            'id': None,
-            'name': "Regular",
-            'price': regular_price,
-            'discounted_price': discounted_price
+            "id": "regular",
+            "name": base_name,
+            "price": regular_price,
+            "discounted_price": regular_discounted
         })
 
-    # Add actual variants from DB
+    # Add DB variants after base
     for v in food.variants.all():
         price = float(v.price)
-        discounted_price = round(price * (1 - discount_percent / 100), 2) if discount_percent > 0 else None
+        discounted_price = round(price * (1 - discount_percent/100), 2) if discount_percent>0 else None
+        # Avoid duplicate of base price
+        if base_name and v.variant_name.lower() in ["small", "half"]:
+            continue
         variants.append({
-            'id': v.id,
-            'name': v.variant_name,
-            'price': price,
-            'discounted_price': discounted_price
+            "id": v.id,
+            "name": v.variant_name,
+            "price": price,
+            "discounted_price": discounted_price
         })
 
+    only_regular = len(variants) == 1 and variants[0]["id"] == "regular"
+
     data = {
-        'id': food.id,
-        'name': food.name,
-        'calories': food.calories,
-        'image': food.images.first().img_url.url if food.images.first() else '',
-        'variants': variants
+        "id": food.id,
+        "name": food.name,
+        "calories": food.calories,
+        "image": food.images.first().img_url.url if food.images.first() else "",
+        "variants": variants,
+        "only_regular": only_regular
     }
     return JsonResponse(data)
+
 
 from django.http import JsonResponse
 from django.contrib.auth.decorators import login_required
@@ -1471,32 +1187,198 @@ def remove_item_from_cart(request, food_id):
 from django.http import JsonResponse
 
 
+
+# @login_required
+# def get_variants(request, food_id):
+#     food = get_object_or_404(FoodItem, id=food_id)
+#     variants_qs = FoodItemVariant.objects.filter(food_item=food)
+
+#     variant_list = []
+#     db_variant_names = [v.variant_name.lower() for v in variants_qs]
+
+#     base_name = None
+#     if any(name in ["small", "medium", "large"] for name in db_variant_names):
+#         base_name = "Small"
+#     elif any(name in ["half", "full"] for name in db_variant_names):
+#         base_name = "Half"
+
+#     if base_name:
+#         variant_list.append({
+#             "id": "regular",
+#             "name": base_name,
+#             "price": float(food.price)
+#         })
+
+#     for v in variants_qs:
+#         if base_name and v.variant_name.lower() in ["small", "half"]:
+#             continue
+#         variant_list.append({
+#             "id": v.id,
+#             "name": v.variant_name,
+#             "price": float(v.price)
+#         })
+
+#     only_regular = len(variant_list) == 1 and variant_list[0]["id"] == "regular"
+
+#     return JsonResponse({"variants": variant_list, "only_regular": only_regular})
+
+# @login_required
+# def get_variants(request, food_id):
+#     food = get_object_or_404(FoodItem, id=food_id)
+#     variants_qs = FoodItemVariant.objects.filter(food_item=food)
+
+#     variant_list = []
+#     db_variant_names = [v.variant_name.lower() for v in variants_qs]
+
+#     # Determine base variant
+#     base_name = None
+#     if any(name in ["small", "medium", "large"] for name in db_variant_names):
+#         base_name = "Small"
+#     elif any(name in ["half", "full"] for name in db_variant_names):
+#         base_name = "Half"
+
+#     # Add regular variant
+#     if base_name:
+#         variant_list.append({
+#             "id": "regular",
+#             "name": base_name,
+#             "price": float(food.price),
+#             "discounted_price": float(food.price)  # fallback, no discounted_price
+#         })
+
+#     # Add other variants
+#     for v in variants_qs:
+#         if base_name and v.variant_name.lower() in ["small", "half"]:
+#             continue
+#         variant_list.append({
+#             "id": v.id,
+#             "name": v.variant_name,
+#             "price": float(v.price),
+#             "discounted_price": float(v.price)  # fallback
+#         })
+
+#     only_regular = len(variant_list) == 1 and variant_list[0]["id"] == "regular"
+
+#     return JsonResponse({"variants": variant_list, "only_regular": only_regular})
+from django.http import JsonResponse
+from django.shortcuts import get_object_or_404
+from .models import FoodItem, FoodItemVariant
+
+# @login_required
+# def get_variants(request, food_id):
+#     food = get_object_or_404(FoodItem, id=food_id)
+#     variants_qs = FoodItemVariant.objects.filter(food_item=food)
+
+#     variant_list = []
+#     db_variant_names = [v.variant_name.lower() for v in variants_qs]
+
+#     # Decide base variant name
+#     base_name = None
+#     if any(name in ["small", "medium", "large"] for name in db_variant_names):
+#         base_name = "Small"
+#     elif any(name in ["half", "full"] for name in db_variant_names):
+#         base_name = "Half"
+
+#     # Calculate discounted price for food item
+#     discounted_price = getattr(food, 'discounted_price', None)
+#     if discounted_price is None:
+#         # Example: if you have offer logic, calculate here
+#         discounted_price = float(food.price)  # no offer by default
+
+#     if base_name:
+#         variant_list.append({
+#             "id": "regular",
+#             "name": base_name,
+#             "price": float(food.price),
+#             "discounted_price": discounted_price
+#         })
+
+#     # Variants
+#     for v in variants_qs:
+#         if base_name and v.variant_name.lower() in ["small", "half"]:
+#             continue
+#         # Example: variant discount logic (if any)
+#         variant_discounted_price = float(v.price)  # currently same as price
+#         variant_list.append({
+#             "id": v.id,
+#             "name": v.variant_name,
+#             "price": float(v.price),
+#             "discounted_price": variant_discounted_price
+#         })
+
+#     only_regular = len(variant_list) == 1 and variant_list[0]["id"] == "regular"
+
+#     return JsonResponse({"variants": variant_list, "only_regular": only_regular})
+# @login_required
+# def get_variants(request, food_id):
+#     food = get_object_or_404(FoodItem, id=food_id)
+#     variants_qs = FoodItemVariant.objects.filter(food_item=food)
+
+#     variant_list = []
+
+#     # Regular/base variant
+#     discounted_price = getattr(food, 'discounted_price', None) or float(food.price)
+#     variant_list.append({
+#         "id": "regular",
+#         "name": food.name,  # Use food name as base
+#         "price": float(food.price),
+#         "discounted_price": discounted_price
+#     })
+
+#     # Other variants
+#     for v in variants_qs:
+#         # Calculate discounted price if you have any offer logic
+#         variant_discounted_price = getattr(v, 'discounted_price', None) or float(v.price)
+#         variant_list.append({
+#             "id": v.id,
+#             "name": v.variant_name,
+#             "price": float(v.price),
+#             "discounted_price": variant_discounted_price
+#         })
+
+#     only_regular = len(variant_list) == 1
+
+#     return JsonResponse({"variants": variant_list, "only_regular": only_regular})
+
 @login_required
 def get_variants(request, food_id):
     food = get_object_or_404(FoodItem, id=food_id)
-
-    variants = FoodItemVariant.objects.filter(food_item=food)
+    variants_qs = FoodItemVariant.objects.filter(food_item=food)
 
     variant_list = []
+    db_variant_names = [v.variant_name.lower() for v in variants_qs]
 
-    # If variants exist → include base price as "Regular"
-    if variants.exists():
+    # ===== BASE LABEL LOGIC =====
+    base_label = "Regular"
+
+    if "full" in db_variant_names:
+        base_label = "Half"
+    elif "medium" in db_variant_names or "large" in db_variant_names:
+        base_label = "Small"
+
+    # ===== ALWAYS ADD BASE =====
+    variant_list.append({
+        "id": "regular",
+        "name": base_label,
+        "price": float(food.price),
+        "discounted_price": float(food.price)
+    })
+
+    # ===== ADD OTHER VARIANTS =====
+    for v in variants_qs:
         variant_list.append({
-            "id": "regular",
-            "name": "Regular",
-            "price": float(food.price)
+            "id": v.id,
+            "name": v.variant_name,
+            "price": float(v.price),
+            "discounted_price": float(v.price)
         })
 
-        for v in variants:
-            variant_list.append({
-                "id": v.id,
-                "name": v.variant_name,
-                "price": float(v.price)
-            })
+    only_regular = not variants_qs.exists()
 
-    # If no variants → return empty list
-    return JsonResponse({"variants": variant_list})
-
+    return JsonResponse({
+        "variants": variant_list,
+        "only_regular": only_regular
+    })
 
 import razorpay
 from django.conf import settings
@@ -1661,108 +1543,7 @@ def refund_razorpay_payment(payment_id, amount):
     except Exception as e:
         return False, f"Refund Failed: {str(e)}"
 
-from decimal import Decimal
-from django.db import transaction
-import json
 
-# @login_required
-# @csrf_exempt
-# def cancel_order(request, order_id):
-#     if request.method != "POST":
-#         return JsonResponse({"success": False, "message": "Invalid request method."})
-
-#     order = get_object_or_404(Order, id=order_id, user=request.user)
-
-#     # Only allow cancel for PLACED or CONFIRMED orders
-#     if order.order_status not in ["PLACED", "CONFIRMED"]:
-#         return JsonResponse({"success": False, "message": "Cannot cancel this order now."})
-
-#     # Update order status
-#     order.order_status = "CANCELLED"
-#     order.save()
-
-#     refund_message = ""
-#     refund_amount = 0
-
-#     # Handle online payment refund
-#     payment_obj = OrderHasPayment.objects.filter(order=order).last()
-
-#     if payment_obj and payment_obj.payment.method != "COD" and payment_obj.payment.status == "PAID":
-#         razorpay_payment_id = payment_obj.transaction_no  # should be Razorpay payment ID
-#         refund_amount = payment_obj.amount
-
-#         success, refund_message = refund_razorpay_payment(razorpay_payment_id, refund_amount)
-#         if success:
-#             payment_obj.payment.status = "REFUNDED"
-#             payment_obj.payment.save()
-#         else:
-#             refund_message = f"Refund Failed: {refund_message}"
-
-#     # Log admin notification
-#     AdminNotification.objects.create(
-#         order=order,
-#         message=f"Order Cancelled by User. {refund_message}. Refund Amount: ₹{refund_amount:.2f}" if refund_amount else "Order Cancelled by User.",
-#         created_at=timezone.now()
-#     )
-
-#     return JsonResponse({
-#         "success": True,
-#         "order_status": order.order_status,
-#         "refund_message": refund_message or None,
-#         "message": f"Order cancelled. {refund_message}" if refund_message else "Order cancelled successfully."
-#     })
-
-# # ================ahiya sudhi====================
-from decimal import Decimal
-from django.db import transaction
-
-# @login_required
-# @csrf_exempt
-# @transaction.atomic
-# def cancel_order(request, order_id):
-
-#     if request.method != "POST":
-#         return JsonResponse({"success": False, "message": "Invalid request method."})
-
-#     order = get_object_or_404(Order, id=order_id, user=request.user)
-
-#     if order.order_status not in ["PLACED", "CONFIRMED"]:
-#         return JsonResponse({"success": False, "message": "Cannot cancel this order now."})
-
-#     order_details = OrderDetail.objects.filter(order=order)
-
-#     for detail in order_details:
-
-#         try:
-#             prepared_item = PreparedItem.objects.get(product_name=detail.food_item.name)
-
-#             usages = IngredientUsage.objects.filter(production=prepared_item)
-
-#             for usage in usages:
-
-#                 if prepared_item.quantity_produced > 0:
-
-#                     # 🔥 per pizza raw
-#                     per_unit_raw = usage.qty_used / prepared_item.quantity_produced
-
-#                     # 🔥 restore only cancelled qty
-#                     restore_qty = per_unit_raw * Decimal(detail.qty)
-
-#                     ingredient = usage.raw
-#                     ingredient.available_qty += restore_qty
-#                     ingredient.save()
-
-#         except PreparedItem.DoesNotExist:
-#             pass
-
-#     order.order_status = "CANCELLED"
-#     order.save()
-
-#     return JsonResponse({
-#         "success": True,
-#         "order_status": order.order_status,
-#         "message": "Order cancelled and correct ingredient restored."
-#     })
 from decimal import Decimal
 from django.db import transaction
 import json
@@ -1827,3 +1608,20 @@ def cancel_order(request, order_id):
         "order_status": order.order_status,
         "message": f"Order cancelled. Reason: {reason}"
     })
+
+from django.db.models import Sum
+from django.http import JsonResponse
+
+@login_required
+def food_cart_summary(request, food_id):
+
+    total_qty = (
+        Cart.objects
+        .filter(user=request.user, food_item_id=food_id)
+        .aggregate(total=Sum("quantity"))["total"] or 0
+    )
+
+    return JsonResponse({
+        "total_quantity": total_qty
+    })
+

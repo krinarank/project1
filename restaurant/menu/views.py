@@ -405,19 +405,211 @@ def profile_page(request):
 from django.shortcuts import render, get_object_or_404
 from adminpanel.models import FoodItem
 
+# def food_detail(request, food_id):
+#     food = get_object_or_404(FoodItem, id=food_id)
+
+#     # variants
+#     variants = food.variants.all().order_by('price')
+
+#     # first image (because images separate table me hai)
+#     food_image = food.images.first()
+
+#     context = {
+#         'food': food,
+#         'variants': variants,
+#         'food_image': food_image
+#     }
+
+#     return render(request, 'menu/food_detail.html', context)
+
+
+# def food_detail(request, food_id):
+#     food = get_object_or_404(FoodItem, id=food_id)
+#     variants = []
+
+#     # Always Regular
+#     variants.append({
+#         "id": "regular",
+#         "name": "Regular",
+#         "price": float(food.price)
+#     })
+
+#     # Add DB variants
+#     for v in food.variants.all():
+#         variants.append({
+#             "id": v.id,
+#             "name": v.variant_name,
+#             "price": float(v.price)
+#         })
+
+#     context = {
+#         "food": food,
+#         "variants": variants,
+#         "food_image": food.images.first()
+#     }
+
+#     return render(request, "menu/food_detail.html", context)
+
+from django.shortcuts import get_object_or_404, render
+from django.db.models import Sum
+
+# def food_detail(request, food_id):
+#     food = get_object_or_404(FoodItem, id=food_id)
+#     variants = []
+
+#     # Always Regular
+#     variants.append({
+#         "id": "regular",
+#         "name": "Regular",
+#         "price": float(food.price)
+#     })
+
+#     # Add DB variants
+#     for v in food.variants.all():
+#         variants.append({
+#             "id": v.id,
+#             "name": v.variant_name,
+#             "price": float(v.price)
+#         })
+
+#     # ✅ NEW: initial quantity from cart
+#     total_qty = 0
+#     if request.user.is_authenticated:
+#         total_qty = (
+#             Cart.objects
+#             .filter(user=request.user, food_item=food)
+#             .aggregate(total=Sum("quantity"))["total"] or 0
+#         )
+
+#     context = {
+#         "food": food,
+#         "variants": variants,
+#         "food_image": food.images.first(),
+#         "initial_qty": total_qty,  # ✅ send to template
+#     }
+
+#     return render(request, "menu/food_detail.html", context)
+
+# def food_detail(request, food_id):
+#     food = get_object_or_404(FoodItem, id=food_id)
+#     variants = list(food.variants.all())
+
+#     variant_list = []
+
+#     # Always Regular
+#     variant_list.append({
+#         "id": "regular",
+#         "name": "Regular",
+#         "price": float(food.price)
+#     })
+
+#     for v in variants:
+#         variant_list.append({
+#             "id": v.id,
+#             "name": v.variant_name,
+#             "price": float(v.price)
+#         })
+
+#     only_regular = len(variants) == 0
+
+#     total_qty = 0
+#     if request.user.is_authenticated:
+#         total_qty = Cart.objects.filter(user=request.user, food_item=food).aggregate(total=Sum("quantity"))["total"] or 0
+
+#     context = {
+#         "food": food,
+#         "variants": variant_list,
+#         "food_image": food.images.first(),
+#         "initial_qty": total_qty,
+#         "only_regular": only_regular  # ✅ new
+#     }
+
+#     return render(request, "menu/food_detail.html", context)
+
+from django.shortcuts import render, get_object_or_404
+from django.db.models import Sum
+from orders.models import  FoodItemOfferDiscount
+from django.utils import timezone
+
 def food_detail(request, food_id):
     food = get_object_or_404(FoodItem, id=food_id)
+    variants = list(food.variants.all())
 
-    # variants
-    variants = food.variants.all().order_by('price')
+    variant_list = []
 
-    # first image (because images separate table me hai)
-    food_image = food.images.first()
+    today = timezone.now().date()
+
+    # ================= DISCOUNT CALCULATION =================
+    discount_price = None
+    food_offer = FoodItemOfferDiscount.objects.filter(
+        food_item=food, is_active=True,
+        applied_date__lte=today, expiry_date__gte=today
+    ).select_related('offer').first()
+
+    if food_offer and food_offer.offer.is_currently_active():
+        discount_price = round(float(food.price) * (1 - food_offer.offer.discount_percentage/100), 2)
+
+    # Always add Regular variant first
+   # ================= BASE LABEL LOGIC =================
+
+    regular_label = "Regular"
+
+    variant_names = [v.variant_name.lower() for v in variants]
+
+    if "full" in variant_names:
+        regular_label = "Half"
+    elif "medium" in variant_names or "large" in variant_names:
+        regular_label = "Small"
+    elif not variants:
+        regular_label = "Regular"
+
+# Add base option first
+    variant_list.append({
+    "id": "regular",
+    "name": regular_label,
+    "price": float(food.price),
+    "discounted_price": discount_price
+})
+
+
+    for v in variants:
+        price = float(v.price)
+        discounted_price = None
+        if food_offer and food_offer.offer.is_currently_active():
+            discounted_price = round(price * (1 - food_offer.offer.discount_percentage/100), 2)
+
+        variant_list.append({
+            "id": v.id,
+            "name": v.variant_name,
+            "price": price,
+            "discounted_price": discounted_price
+        })
+
+    only_regular = len(variants) == 0
+
+    # ================= CURRENT USER CART QTY =================
+    total_qty = 0
+    if request.user.is_authenticated:
+        total_qty = Cart.objects.filter(user=request.user, food_item=food).aggregate(total=Sum("quantity"))["total"] or 0
+        # ================= WISHLIST CHECK =================
+    if request.user.is_authenticated:
+        is_in_wishlist = Wishlist.objects.filter(
+            user=request.user,
+            food_item=food
+        ).exists()
+    else:
+        wishlist = request.session.get("wishlist", [])
+        is_in_wishlist = food.id in wishlist
 
     context = {
-        'food': food,
-        'variants': variants,
-        'food_image': food_image
+        "food": food,
+        "variants": variant_list,
+        "food_image": food.images.first(),
+        "initial_qty": total_qty,
+        "only_regular": only_regular,
+        "is_in_wishlist": is_in_wishlist,
+        "food_offer": {"discounted_price": discount_price} if discount_price else None
     }
 
-    return render(request, 'menu/food_detail.html', context)
+    return render(request, "menu/food_detail.html", context)
+

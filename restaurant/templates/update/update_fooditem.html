@@ -26,6 +26,9 @@
     <label>Calories</label>
     <input type="number" name="calories" value="{{ fooditem.calories }}" required>
 
+    <label>Description</label>
+    <textarea name="description" rows="3">{{ fooditem.description }}</textarea>
+
     <label style="display:flex; align-items:center; gap:8px;">
     <input type="checkbox" name="is_available"
            {% if fooditem.is_available %}checked{% endif %}>
