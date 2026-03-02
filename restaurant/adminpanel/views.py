@@ -714,6 +714,7 @@ def admin_inquiry_list(request):
 #         'inquiry': inquiry
 #     })
 
+
 from django.shortcuts import render, get_object_or_404, redirect
 from django.contrib.auth.decorators import login_required
 from django.core.mail import send_mail
@@ -1723,7 +1724,7 @@ def customer_report_pdf(request):
         context,
         "customer_report.pdf"
     )
-
+    
 
 # ================= ORDER PDF =================
 def order_report_pdf(request):

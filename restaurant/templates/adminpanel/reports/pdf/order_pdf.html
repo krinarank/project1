@@ -7,11 +7,45 @@
         th, td { border: 1px solid #000; padding: 6px; text-align: left; }
         th { background-color: #343a40; color: #fff; }
         tr:nth-child(even) { background-color: #f2f2f2; }
+        
+@page {
+    size: A4;
+
+    margin-top: 60px;      /* Reduced */
+    margin-bottom: 50px;   /* Reduced */
+    margin-left: 40px;
+    margin-right: 40px;
+
+    @frame footer_frame {
+        -pdf-frame-content: footer_content;
+        left:10px;
+        width: 515px;
+        top: 1090px;        /* Move footer lower */
+        height: 30px;
+    }
+#footer_content {
+    font-size: 10px;
+    width: 100%;
+    text-align: right;   /* Align content to right */
+    padding-right: 10px; /* Optional, space from edge */
+}
+}
     </style>
 </head>
 <body>
-<h2>Order Report</h2>
-<p>Generated On: {{ date }}</p>
+ <div style="text-align:center;">
+        <h2>My Restaurant Pvt Ltd</h2>
+        <div>
+            123 Food Street, Ahmedabad<br>
+            Contact: 9876543210 | Email: info@myrestaurant.com
+        </div>
+         <h3 style="text-align:center;">Customer Report</h3>
+
+    <div style="text-align:center; margin-bottom:15px;">
+        From: {{ from_date }} &nbsp;&nbsp; To: {{ to_date }}
+    </div>
+        <hr>
+    </div>
 <table>
     <thead>
         <tr>
@@ -31,5 +65,9 @@
         {% endfor %}
     </tbody>
 </table>
+
+<div id="footer_content" style="font-size:10px; width:100%; text-align:right; padding-right:10px;">
+      Generated on {{ date|date:"Y-m-d" }} |Page <pdf:pagenumber/> of <pdf:pagecount/>
+</div>
 </body>
 </html>
