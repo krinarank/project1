@@ -31,17 +31,19 @@
             <!-- <a href="{% url 'my_orders' %}">
                 📦 My Orders
             </a> -->
+            
+            <a href="{% url 'home' %}">Home</a>
+            <a href="{% url 'menu_page' %}">Menu</a>
+            <a href="{% url 'about' %}">About Us</a>
+            <a href="{% url 'contact' %}">Contact Us</a>
             {% if user.is_authenticated %}
             <a href="{% url 'my_orders' %}">
                 📦 My Orders
             </a>
             {% endif %}
-            <a href="{% url 'home' %}">Home</a>
-            <a href="{% url 'menu_page' %}">Menu</a>
-            <a href="{% url 'about' %}">About Us</a>
-            <a href="{% url 'contact' %}">Contact Us</a>
 
             <a href="{% url 'my_wishlist' %}">❤️</a>
+            
 
 
             <a href="{% url 'customer_notifications' %}" class="notification-bell">

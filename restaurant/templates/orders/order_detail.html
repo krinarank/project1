@@ -3,7 +3,7 @@
 
 {% block content %}
 <link rel="stylesheet" href="{% static 'orders/css/combin_orders.css' %}">
-
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
 <style>
     /* ================= PAGE BACKGROUND ================= */
     body {
@@ -63,25 +63,27 @@
         z-index: 1;
     }
 
-    .progressbar li::before {
-        content: "";
-        width: 32px;
-        height: 32px;
-        border-radius: 50%;
-        background: #d1d5db;
-        display: block;
-        margin: 0 auto 8px;
-        transition: 0.3s;
-    }
+    .progressbar li .circle {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    background: #d1d5db;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto 8px;
+    transition: 0.3s;
+}
 
-    .progressbar li.active {
-        color: #16a34a;
-        font-weight: 600;
-    }
+/* Active step */
+.progressbar li.active .circle {
+    background: #16a34a !important;
+}
 
-    .progressbar li.active::before {
-        background: #16a34a;
-    }
+.progressbar li.active .circle i {
+    color: #ffffff !important;
+}
+    
 
     .progressbar li:not(:last-child)::after {
         content: "";
@@ -330,15 +332,40 @@
 
     <h2>Order #{{ order.id }} Details</h2>
 
+
     <h3>Order Status</h3>
     <ul class="progressbar">
         {% for step in steps %}
-        <li class="{% if forloop.counter0 <= current_index %}active{% endif %}">
-            {{ step|title }}
-        </li>
-        {% endfor %}
-    </ul>
+<li class="{% if forloop.counter0 <= current_index %}active{% endif %}">
+    
+    <div class="circle">
+        {% if step == "placed" %}
+            <i class="fas fa-box"></i>
 
+        {% elif step == "confirmed" %}
+            <i class="fas fa-check-circle"></i>
+
+        {% elif step == "preparing" %}
+            <i class="fas fa-fire"></i>
+
+        {% elif step == "out_for_delivery" %}
+            <i class="fas fa-truck"></i>
+
+        {% elif step == "delivered" %}
+            <i class="fas fa-gift"></i>
+
+        {% endif %}
+    </div>
+
+    <div class="step-label">{{ step|title }}</div>
+
+</li>
+{% endfor %}
+    </ul>
+    <p>
+<strong>⏱ Estimated Delivery Time:</strong>
+{{ delivery_display }} 
+</p>
     {% if order.order_status|upper == 'DELIVERED' %}
     {% if feedback %}
     <div class="feedback-box">

@@ -26,6 +26,10 @@
                     <option value="{{ c.id }}" {% if area.city.id == c.id %}selected{% endif %}>{{ c.name }} ({{ c.state.name }})</option>
                 {% endfor %}
             </select>
+             <input type="number"
+       name="delivery_time"
+       value="{{ area.delivery_time }}"
+       required>
 
             <div class="form-buttons">
                 <button type="submit" class="btn btn-save">Update</button><br><br>

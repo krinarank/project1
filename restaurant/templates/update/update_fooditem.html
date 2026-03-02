@@ -25,6 +25,14 @@
 
     <label>Calories</label>
     <input type="number" name="calories" value="{{ fooditem.calories }}" required>
+    <label>Preparation Time (Minutes)</label>
+<input type="number"
+       name="preparation_time"
+       value="{{ fooditem.preparation_time}}"
+       required>
+
+    <label>Description</label>
+    <textarea name="description" rows="3">{{ fooditem.description }}</textarea>
 
     <label style="display:flex; align-items:center; gap:8px;">
     <input type="checkbox" name="is_available"
