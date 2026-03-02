@@ -10,8 +10,9 @@
     <h4>{{ customer.username }}</h4>
     <ul class="profile-menu">
       <li><a href="#profile-info">👤 Profile Info</a></li>
-      <li><a href="#orders">📦 My Orders</a></li>
+      <!-- <li><a href="#orders">📦 My Orders</a></li> -->
       <li><a href="#wishlist">❤️ Wishlist</a></li>
+      <li><a href="#wallet">💰 My Wallet</a></li>
       <li><a href="#reviews">⭐ Reviews</a></li>
       <li><a href="#tips">ℹ️ Profile Tips</a></li>
       <li><a href="#change-password">🔐 Change Password</a></li>
@@ -44,8 +45,14 @@
     <div id="change-password" class="profile-section">
       {% include 'profile/change_password.html' %}
     </div>
+    
+      <div id="wallet" class="profile-section">
+      {% include 'profile/my_wallet.html' %}
+    </div>
   </div>
 </div>
+
+
 
 {% if success_msg %}
 <div id="successToast" class="toast-msg">

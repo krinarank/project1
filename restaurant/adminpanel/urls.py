@@ -80,5 +80,6 @@ path('profile/', views.admin_profile, name='admin_profile'),
 path('admin/profile/edit/', views.admin_profile_edit, name='admin_profile_edit'),  # edit page
 path('admin/profile/change-password/', views.admin_change_password, name='admin_change_password'),
 
-
+# urls.py
+path('admin/complaints/', views.admin_complaint_list, name='admin_complaint_list'),
 ]

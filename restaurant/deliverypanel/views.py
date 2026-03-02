@@ -116,7 +116,7 @@ def delivery_dashboard(request):
       status__in=['ACCEPTED', 'DELIVERED']
     ).select_related('order', 'user').prefetch_related(
       'order__orderhaspayment_set__payment'
-    )
+    ).order_by('-id')
 
     # 🔹 Delivered Orders
     delivered_assignments = AssignOrder.objects.filter(
@@ -205,9 +205,8 @@ def delivery_mark_delivered(request, order_id):
 
     order = assignment.order
     order.order_status = 'DELIVERED'
+    order.delivered_at = timezone.now()
     order.save()
-
-    messages.success(request, f"Order #{order.id} marked as delivered.")
     return redirect('delivery_dashboard')
 def delivery_forgot_password(request):
     if request.method == 'POST':

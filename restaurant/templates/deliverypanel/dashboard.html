@@ -27,9 +27,12 @@
 <!-- ================= NEW REQUESTS ================= -->
 <h4 class="mb-2 mt-4">🆕 New Order Requests</h4>
 
-<table class="table table-bordered table-striped">
-    <thead class="table-dark">
+<div style="max-height:200px; overflow-y:auto; border:1px solid #ddd; border-radius:8px;">
 
+        <table style="width:100%; border-collapse:collapse;">
+            
+            <thead style="position:sticky; top:0; background:#212529; color:white; z-index:10;">
+        
         <tr>
             <th>Order ID</th>
             <th>Customer</th>
@@ -66,18 +69,21 @@
         {% endfor %}
     </tbody>
 </table>
-
+</div>
 
 <!-- ================= ACTIVE ORDERS ================= -->
 <h4 class="mb-2">🚚 Delivery Orders</h4>
 
-<table class="table table-bordered table-striped">
-    <thead class="table-dark">
+<div style="max-height:200px; overflow-y:auto; border:1px solid #ddd; border-radius:8px;">
 
+        <table style="width:100%; border-collapse:collapse;">
+            
+            <thead style="position:sticky; top:0; background:#212529; color:white; z-index:10;">
         <tr>
             <th>Order ID</th>
             <th>Customer</th>
             <th>Address</th>
+            <th>Remaining Amount</th>
             <th>Payment</th>
             <th>Action</th>
         </tr>
@@ -88,7 +94,20 @@
         <td>#{{ a.order.id }}</td>
         <td>{{ a.user.firstname }} {{ a.user.lastname }}</td>
         <td>{{ a.user.address }}</td>
-
+        <!-- ================= REMAINING COLUMN ================= -->
+<td>
+    {% for op in a.order.orderhaspayment_set.all %}
+        {% if op.payment.status == "PAID" %}
+            ₹0
+        {% elif op.payment.status == "PENDING" %}
+            ₹{{ op.payment.remaining_amount }}
+        {% else %}
+            ₹0
+        {% endif %}
+    {% empty %}
+        ₹0
+    {% endfor %}
+</td>
         <!-- ================= PAYMENT COLUMN ================= -->
         <td>
             {% for op in a.order.orderhaspayment_set.all %}
@@ -159,7 +178,7 @@
     {% endfor %}
 </tbody>
 </table>
-
+</div>
 
 
 {% endblock %}
