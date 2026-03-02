@@ -416,7 +416,9 @@
             <div>
                 <p><strong>{{ item.food_item.name }}</strong></p>
                 <p>Qty: {{ item.qty }}</p>
-                <p style="font-size:14px; color:#777;">Original: ₹{{ item.food_item.price|floatformat:2 }}</p>
+                <p style="font-size:14px; color:#777;">
+Original: ₹ {{ item.price|floatformat:2 }}
+</p>
                 <p style="font-size:15px;">Price after discount: <strong
                         style="font-size:20px; color:green;">₹{{item.total_amount|floatformat:2 }}</strong></p>
                 {% if item.item_discount > 0 %}

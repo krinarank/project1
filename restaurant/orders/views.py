@@ -605,7 +605,11 @@ def checkout(request):
 
     for item in cart_items:
         food = item.food_item
-        base_price = food.price
+        if item.variant:
+            base_price = item.variant.price
+        else:
+             base_price = food.price
+
         final_price = base_price
 
         # 1️⃣ Food Item Offer
@@ -1874,9 +1878,24 @@ def order_detail(request, order_id):
         else:
              delivery_display = " Calculating..."
 
-    original_total = sum(item.food_item.price * item.qty for item in order_items)
-    item_total = sum(item.total_amount for item in order_items)
+    
+
+    original_total = Decimal("0.00")
+    item_total = Decimal("0.00")
+
+    for item in order_items:
+
+    # display mate original price
+        base_price = item.price
+
+        original_total += base_price * item.qty
+
+    # 🔥 checkout time ni saved value
+        item_total += item.total_amount
+
     total_discount = original_total - item_total
+
+    
 
     tax = (item_total * Decimal("0.05")).quantize(Decimal("0.01"))
     delivery_charge = Decimal("50.00")
@@ -1939,10 +1958,10 @@ def order_detail(request, order_id):
         "steps": steps,
         "current_index": current_index,
         "feedback": feedback,
-        "complaint_status": complaint_status,
-        "has_complaint": has_complaint,
         "total_time": total_time,
         "delivery_display": delivery_display, 
+        "complaint_status": complaint_status,
+        "has_complaint": has_complaint,
     })
 
 from .models import Order
