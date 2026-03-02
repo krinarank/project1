@@ -43,18 +43,27 @@
 
 </div>
 
-<div style="background:#fff; margin-top:20px; padding:15px; max-width:700px;">
-    <h4>📊 Recent Purchases</h4>
-    <canvas id="purchaseChart"></canvas>
+<!-- Purchase + Revenue Side By Side -->
+<div style="display:flex; gap:20px; margin-top:20px;">
+
+    <!-- Purchase Chart -->
+    <div style="background:#fff; padding:15px; flex:2; max-width:700px;">
+        <h4>📊 Recent Purchases</h4>
+        <canvas id="purchaseChart"></canvas>
+    </div>
+
+    <!-- Revenue Chart -->
+    <div style="background:#fff; padding:15px; flex:1; max-width:400px;">
+        <h4>📊 Revenue (Last 7 Days)</h4>
+        <canvas id="revenueChart"></canvas>
+    </div>
+
 </div>
+
+<!-- Orders Chart (Same Old Size) -->
 <div style="background:#fff; margin-top:20px; padding:15px; max-width:700px;">
     <h4>📊 Recent Orders</h4>
     <canvas id="ordersChart"></canvas>
-</div>
-
-<div style="background:#fff; margin-top:20px; padding:15px; max-width:400px;">
-    <!-- <h4>📊 Revenue (Last 7 Days)</h4> -->
-    <canvas id="revenueChart"></canvas>
 </div>
 <div id="lowStockModal" class="lowstock-modal">
     <div class="lowstock-content">
@@ -93,6 +102,8 @@
 {{ purchase_totals|json_script:"purchase-totals" }}
 {{ order_daily_labels|json_script:"order-daily-labels" }}
 {{ order_daily_totals|json_script:"order-daily-totals" }}
+{{ revenue_labels|json_script:"revenue-labels" }}
+{{ revenue_data|json_script:"revenue-data" }}
 
 
 <script>
@@ -156,23 +167,58 @@ if (canvas && labels.length > 0) {
     });
 }
 
-// ------------------- Revenue Pie Chart -------------------
+// ------------------- Professional Revenue Doughnut Chart -------------------
+
 const revenueLabels = JSON.parse(document.getElementById("revenue-labels").textContent);
 const revenueData = JSON.parse(document.getElementById("revenue-data").textContent);
 const revenueCanvas = document.getElementById("revenueChart");
 
-// Fill zero days so chart always has 7 slices
+// Ensure 7 days
 while (revenueLabels.length < 7) {
-    revenueLabels.push("");          // empty label
-    revenueData.push(0);             // zero revenue
+    revenueLabels.push("");
+    revenueData.push(0);
 }
 
+// 💎 Professional Color Palette
 const colors = [
-    "#198754", "#0d6efd", "#fd7e14",
-    "#dc3545", "#6f42c1", "#20c997", "#ffc107"
+    "#4e73df",
+    "#1cc88a",
+    "#36b9cc",
+    "#f6c23e",
+    "#e74a3b",
+    "#858796",
+    "#5a5c69"
 ];
 
+// 💎 Professional Center Text Plugin
+const centerTextPlugin = {
+    id: "centerText",
+    beforeDraw(chart) {
+        const { width, height, ctx } = chart;
+
+        const total = chart.data.datasets[0].data
+            .reduce((a, b) => a + b, 0);
+
+        ctx.save();
+
+        // Title text
+        ctx.font = "14px sans-serif";
+        ctx.fillStyle = "#6c757d";
+        ctx.textAlign = "center";
+        ctx.textBaseline = "middle";
+        ctx.fillText("Total Revenue", width / 2, height / 2 - 10);
+
+        // Amount text
+        ctx.font = "bold 22px sans-serif";
+        ctx.fillStyle = "#2c3e50";
+        ctx.fillText("₹ " + total.toLocaleString(), width / 2, height / 2 + 12);
+
+        ctx.restore();
+    }
+};
+
 if (revenueCanvas && revenueLabels.length > 0) {
+
     Chart.getChart(revenueCanvas)?.destroy();
 
     new Chart(revenueCanvas, {
@@ -180,28 +226,43 @@ if (revenueCanvas && revenueLabels.length > 0) {
         data: {
             labels: revenueLabels,
             datasets: [{
-                label: "Revenue (₹)",
                 data: revenueData,
                 backgroundColor: colors,
-                borderColor: "#fff",
-                borderWidth: 2
+                borderWidth: 0,
+                hoverOffset: 12
             }]
         },
         options: {
             responsive: true,
+            cutout: "65%",  // thicker donut
+            animation: {
+                animateRotate: true,
+                duration: 1000
+            },
             plugins: {
-                legend: { display: true, position: "right" },
+                legend: {
+                    display: true,
+                    position: "center",
+                    labels: {
+                        boxWidth: 14,
+                        padding: 15,
+                        font: {
+                            size: 12
+                        }
+                    }
+                },
                 tooltip: {
                     callbacks: {
                         label: function(context) {
                             let value = context.raw;
                             let label = context.label || "";
-                            return (!value || value === 0) ? label + ": ₹0" : label + " : ₹" + value;
+                            return "Total" + " : ₹" + value;
                         }
                     }
                 }
             }
-        }
+        },
+        plugins: [centerTextPlugin]
     });
 }
 </script>
@@ -230,7 +291,7 @@ if (orderCanvas && orderDailyLabels.length > 0) {
     new Chart(orderCanvas, {
         type: "bar",   // BAR / STAMBH
         data: {
-            labels: orderDailyLabels,
+            labels: orderDailyLabels,   
             datasets: [{
                 label: "Daily Orders",
                 data: orderDailyTotals,

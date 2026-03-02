@@ -32,8 +32,17 @@
     <!-- RIGHT : TABLE -->
     <div class="right">
         <u><h3>Uploaded Food Images</h3></u>
+        <div style="display:flex; justify-content:flex-end; margin-bottom:10px;">
+    <input type="text" id="imageSearch" 
+           placeholder="🔍 Search Food..."
+           style="width:250px; padding:8px; border-radius:6px; border:1px solid #ccc;" >
+</div>
 
-        <table>
+        <div style="max-height:300px; overflow-y:auto; border:1px solid #ddd; border-radius:8px;">
+
+        <table style="width:100%; border-collapse:collapse;">
+            
+            <thead style="position:sticky; top:0; background:#212529; color:white; z-index:10;">
             <tr>
                 <th>Food</th>
                 <th>Category</th>
@@ -41,6 +50,8 @@
                 <th>Image</th>
                 <th>Action</th>
             </tr>
+            </thead>
+            <tbody>
 
             {% for img in images %}
             <tr>
@@ -64,11 +75,30 @@
             </tr>
             {% endfor %}
         </table>
+        </div>
     </div>
 
 </div>
 
-<a href="{% url 'dashboard' %}">⬅ Back to dashboard</a>
+<a href="{% url 'dashboard' %}" style="display:inline-flex;align-items:center;gap:5px;margin-top:20px;padding:8px 14px;background-color:#28343b;color:#fff;text-decoration:none;font-weight:500;border-radius:5px;transition:0.3s;">⬅ Back to Dashboard</a>
 
+<script>
+const imageSearch = document.getElementById("imageSearch");
 
+imageSearch.addEventListener("keyup", function () {
+
+    let filter = this.value.toLowerCase();
+    let rows = document.querySelectorAll(".right table tbody tr");
+
+    rows.forEach(row => {
+
+        // Skip empty row
+        if (row.querySelector("td[colspan]")) return;
+
+        let text = row.innerText.toLowerCase();
+        row.style.display = text.includes(filter) ? "" : "none";
+    });
+
+});
+</script>
 {% endblock %}

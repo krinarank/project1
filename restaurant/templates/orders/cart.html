@@ -4,7 +4,7 @@
 {% block content %}
 <link rel="stylesheet" href="{% static 'menu/css/cart.css' %}">
  <h2 class="cart-title">🛒 Cart ({{ cart_items|length }} items)</h2>
- {% if messages %}
+ <!-- {% if messages %}
   {% for message in messages %}
     <div style="margin:10px 0; padding:10px; border-radius:6px;
                 background-color:#ffe6e6; color:#cc0000;
@@ -12,7 +12,7 @@
         {{ message }}
     </div>
   {% endfor %}
-{% endif %}
+{% endif %} -->
 <div class="cart-page">
 
     <!-- LEFT : CART ITEMS -->
@@ -47,17 +47,27 @@
             <a href="{% url 'increase_qty' item.id %}">+</a>
         </div>
 
-        <!-- <div class="item-price">₹ {{ item.total_price }}</div> -->
-         <div class="item-price">
-    {% if item.final_price < item.food_item.price %}
-        <!-- <del style="color:#999">₹ {{ item.original_total_price|floatformat:2}}</del><br> -->
-        <strong style="color:green">
-            ₹ {{ item.total_price|floatformat:2 }}
-        </strong>
+        <div class="item-price">
 
-    {% else %}
-     <strong style="color:green"> ₹ {{ item.total_price|floatformat:2 }} </strong>
-    {% endif %}
+{% if item.original_total_price > item.total_price %}
+
+    <del style="color:#999; font-size:14px;">
+        ₹ {{ item.original_total_price|floatformat:2 }}
+    </del>
+    <br>
+
+    <strong style="color:green; font-size:16px;">
+        ₹ {{ item.total_price|floatformat:2 }}
+    </strong>
+
+{% else %}
+
+    <strong style="color:green; font-size:16px;">
+        ₹ {{ item.total_price|floatformat:2 }}
+    </strong>
+
+{% endif %}
+
 </div>
 
 

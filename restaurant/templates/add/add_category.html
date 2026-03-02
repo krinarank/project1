@@ -17,11 +17,16 @@
         <input type="text" id="categorySearch" placeholder="🔍 Search categories...">
     </div>
 
-        <table>
+        <div style="max-height:300px; overflow-y:auto; border:1px solid #ddd; border-radius:8px;">
+
+        <table style="width:100%; border-collapse:collapse;">
+            
+            <thead style="position:sticky; top:0; background:#212529; color:white; z-index:10;">
             <tr>
                 <th>Category Name</th>
                 <th>Action</th>
             </tr>
+            </thead>
 
             {% for cat in categories %}
             <tr>
@@ -38,6 +43,7 @@
             </tr>
             {% endfor %}
         </table>
+        </div>
     </div>
 
     <!-- FORM (RIGHT SIDE) -->
@@ -53,7 +59,7 @@
 
 </div>
 
-<a href="{% url 'dashboard' %}">⬅ Back to dashboard</a>
+<a href="{% url 'add_subcategory' %}" style="display:inline-flex;align-items:center;gap:5px;margin-top:20px;padding:8px 14px;background-color:#28343b;color:#fff;text-decoration:none;font-weight:500;border-radius:5px;transition:0.3s;">⬅ Back to Subcategory</a>
 
 
 <!-- JS SEARCH -->

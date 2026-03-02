@@ -3,9 +3,11 @@
 
 <h4>📦 My Delivered Orders (History)</h4>
 
-<table class="table table-bordered table-striped mt-3">
-    <thead class="table-dark">
+<div style="max-height:550px; overflow-y:auto; border:1px solid #ddd; border-radius:8px;">
 
+        <table style="width:100%; border-collapse:collapse;">
+            
+            <thead style="position:sticky; top:0; background:#212529; color:white; z-index:10;">
         <tr>
             <th>Order ID</th>
             <th>Customer</th>
@@ -32,5 +34,6 @@
         {% endfor %}
     </tbody>
 </table>
+</div>
 
 {% endblock %}

@@ -58,8 +58,17 @@
     <div class="offer-list-box">
 
         <h3>Offer List</h3>
+        <div style="display:flex; justify-content:flex-end; margin-bottom:10px;">
+    <input type="text" id="offerSearch"
+           placeholder="🔍 Search offer..."
+           style="width:240px; padding:6px; border-radius:6px; border:1px solid #ccc;">
+</div>
 
-        <table>
+        <div style="max-height:300px; overflow-y:auto; border:1px solid #ddd; border-radius:8px;">
+
+        <table style="width:100%; border-collapse:collapse;">
+            
+            <thead style="position:sticky; top:0; background:#212529; color:white; z-index:10;">
             <tr>
                 <th>Code</th>
                 <th>Description</th>
@@ -69,6 +78,7 @@
                 <th>Status</th>
                 <th>Action</th>
             </tr>
+            </thead>
 
             {% for o in offers %}
             <tr>
@@ -101,6 +111,7 @@
             </tr>
             {% endfor %}
         </table>
+        </div>
 
     </div>
 </div>
@@ -164,6 +175,21 @@ startDate.addEventListener("input", () => {
 
 endDate.addEventListener("input", validateDates);
 </script>
+<script>
+const offerSearch = document.getElementById("offerSearch");
 
+offerSearch.addEventListener("keyup", function () {
+
+    let filter = this.value.toLowerCase();
+    let rows = document.querySelectorAll(".offer-list-box table tbody tr");
+
+    rows.forEach(row => {
+
+        let text = row.innerText.toLowerCase();
+        row.style.display = text.includes(filter) ? "" : "none";
+    });
+
+});
+</script>
 {% endblock %}
  

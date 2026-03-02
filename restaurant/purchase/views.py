@@ -629,26 +629,24 @@ def prepared_item_add(request):
 
 @transaction.atomic
 def prepared_item_edit(request, item_id):
+
     prepared_item = get_object_or_404(PreparedItem, id=item_id)
     ingredients = Ingredient.objects.all()
-    item_usages = prepared_item.ingredientusage_set.all()  # ✅ only this item
+    item_usages = prepared_item.ingredientusage_set.all()
 
     if request.method == 'POST':
+
         prepared_item.product_name = request.POST.get('product_name')
         prepared_item.production_date = request.POST.get('production_date')
         prepared_item.quantity_produced = int(request.POST.get('quantity_produced'))
         prepared_item.save()
 
-        # 🔴 Reverse old stock
-        for usage in item_usages:
-            ing = usage.raw
-            ing.available_qty = F('available_qty') + usage.qty_used
-            ing.save()
+        # ❌ No stock reverse
+        # ❌ No stock minus
 
-        # 🔴 Delete old usages
+        # Just delete old usage
         item_usages.delete()
 
-        # 🔴 Add new usages
         raw_ids = request.POST.getlist('raw[]')
         qty_list = request.POST.getlist('qty_used[]')
         unit_list = request.POST.getlist('unit[]')
@@ -656,6 +654,7 @@ def prepared_item_edit(request, item_id):
         for i in range(len(raw_ids)):
             if not raw_ids[i]:
                 continue
+
             ing = get_object_or_404(Ingredient, id=raw_ids[i])
             qty = float(qty_list[i])
             unit = unit_list[i]
@@ -667,10 +666,6 @@ def prepared_item_edit(request, item_id):
                 unit=unit
             )
 
-            # 🔴 Update stock
-            ing.available_qty = F('available_qty') - qty
-            ing.save()
-
         messages.success(request, 'Prepared item updated successfully!')
         return redirect('prepared_item_add')
 
@@ -679,7 +674,6 @@ def prepared_item_edit(request, item_id):
         'ingredients': ingredients,
         'item_usages': item_usages
     })
-
 def prepared_item_delete(request, item_id):
     prepared_item = get_object_or_404(PreparedItem, id=item_id)
 
@@ -784,3 +778,4 @@ def preparing_order(request, prepared_item_id, order_qty):
 
     messages.success(request, f"Prepared item updated successfully! {order_qty} unit(s) processed.")
     return redirect('order_list')
+

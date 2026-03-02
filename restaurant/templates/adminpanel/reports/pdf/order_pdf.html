@@ -1,13 +1,15 @@
-<!DOCTYPE html>
 <html>
 <head>
-    <style>
-        body { font-family: Arial, sans-serif; }
-        table { width: 100%; border-collapse: collapse; margin-top: 10px; }
-        th, td { border: 1px solid #000; padding: 6px; text-align: left; }
-        th { background-color: #343a40; color: #fff; }
-        tr:nth-child(even) { background-color: #f2f2f2; }
-        
+<style>
+body { font-family: Helvetica; font-size: 11px; }
+table { width:100%; border-collapse:collapse; }
+th, td { border:1px solid black; padding:5px; }
+th { background:#333; color:white; }
+h2 { text-align:center; }
+/* Header Box */ .header-box { width: 100%; border: 2px solid #000; border-collapse: collapse; margin: 0 0 8px 0; }
+ .header-box td { border: none; padding: 6px; /* reduced from 12px */ text-align: center; line-height: 1.1; /* tighter spacing */ } 
+ .header-box div { margin: 0; /* remove all default div gaps */ }
+         
 @page {
     size: A4;
 
@@ -30,44 +32,47 @@
     padding-right: 10px; /* Optional, space from edge */
 }
 }
-    </style>
+</style>
 </head>
 <body>
- <div style="text-align:center;">
-        <h2>My Restaurant Pvt Ltd</h2>
-        <div>
-            123 Food Street, Ahmedabad<br>
-            Contact: 9876543210 | Email: info@myrestaurant.com
-        </div>
-         <h3 style="text-align:center;">Customer Report</h3>
 
-    <div style="text-align:center; margin-bottom:15px;">
-        From: {{ from_date }} &nbsp;&nbsp; To: {{ to_date }}
-    </div>
-        <hr>
-    </div>
+<table class="header-box"> 
+    <tr> 
+        <td> 
+            <div style="font-size:18px; font-weight:bold;"> Leela Restaurant </div> 
+            <div style="font-size:11px;"> Dehgam Road, Ahmedabad </div> 
+            <div style="font-size:11px;"> 📞 +91 9876543210 | ✉️ leelarestaurant.official@gmail.com </div>
+             <div style="font-size:14px; font-weight:bold; margin-top:4px;"> ORDER REPORT </div> 
+             <div style="font-size:10px;"> Generated On: {{ date }} </div> 
+        </td>
+        </tr>
+        </table>
+
 <table>
-    <thead>
-        <tr>
-            <th>Order ID</th><th>Customer</th><th>Total Qty</th><th>Total Amount</th><th>Status</th><th>Order Date</th>
-        </tr>
-    </thead>
-    <tbody>
-        {% for o in orders %}
-        <tr>
-            <td>{{ o.id }}</td>
-            <td>{{ o.user.username }}</td>
-            <td>{{ o.total_qty }}</td>
-            <td>{{ o.total_amount }}</td>
-            <td>{{ o.order_status }}</td>
-            <td>{{ o.order_date|date:"Y-m-d H:i" }}</td>
-        </tr>
-        {% endfor %}
-    </tbody>
+<tr>
+    <th>ID</th>
+    <th>Customer</th>
+    <th>Status</th>
+    <th>Total</th>
+    <th>Date</th>
+</tr>
+
+{% for order in orders %}
+<tr>
+    <td>{{ order.id }}</td>
+    <td>{{ order.user.username }}</td>
+    <td>{{ order.order_status }}</td>
+    <td>{{ order.total_amount }}</td>
+    <td>{{ order.order_date }}</td>
+</tr>
+{% endfor %}
+
 </table>
+
 
 <div id="footer_content" style="font-size:10px; width:100%; text-align:right; padding-right:10px;">
       Generated on {{ date|date:"Y-m-d" }} |Page <pdf:pagenumber/> of <pdf:pagecount/>
 </div>
+
 </body>
-</html>
+</html>  

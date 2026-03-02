@@ -3,7 +3,7 @@
 
 {% block content %}
 <link rel="stylesheet" href="{% static 'orders/css/combin_orders.css' %}">
-
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
 <style>
     /* ================= PAGE BACKGROUND ================= */
     body {
@@ -31,6 +31,19 @@
         font-weight: 600;
     }
 
+    .summary-row {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 8px;
+        font-size: 15px;
+    }
+
+    .total-row {
+        font-size: 18px;
+        font-weight: 600;
+    }
+
     /* ================= PROGRESS BAR ================= */
     .progressbar {
         display: flex;
@@ -50,25 +63,27 @@
         z-index: 1;
     }
 
-    .progressbar li::before {
-        content: "";
-        width: 32px;
-        height: 32px;
-        border-radius: 50%;
-        background: #d1d5db;
-        display: block;
-        margin: 0 auto 8px;
-        transition: 0.3s;
-    }
+    .progressbar li .circle {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    background: #d1d5db;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto 8px;
+    transition: 0.3s;
+}
 
-    .progressbar li.active {
-        color: #16a34a;
-        font-weight: 600;
-    }
+/* Active step */
+.progressbar li.active .circle {
+    background: #16a34a !important;
+}
 
-    .progressbar li.active::before {
-        background: #16a34a;
-    }
+.progressbar li.active .circle i {
+    color: #ffffff !important;
+}
+    
 
     .progressbar li:not(:last-child)::after {
         content: "";
@@ -211,21 +226,146 @@
     .star-rating input:checked~label {
         color: gold;
     }
+
+    /* ================= MODAL OVERLAY ================= */
+    .modal-overlay {
+        display: none;
+        position: fixed;
+        inset: 0;
+        backdrop-filter: blur(6px);
+        background: rgba(0, 0, 0, 0.35);
+        z-index: 999;
+        justify-content: center;
+        align-items: center;
+    }
+
+    /* ================= CENTER MODAL BOX ================= */
+    .modal-content-custom {
+        background: linear-gradient(135deg, #ffffff, #f8fafc);
+        padding: 25px;
+        border-radius: 18px;
+        width: 95%;
+        max-width: 420px;
+        box-shadow: 0 25px 60px rgba(0, 0, 0, 0.25);
+        animation: popIn 0.25s ease;
+        position: relative;
+    }
+
+    /* Close Button */
+    .modal-close-btn {
+        position: absolute;
+        top: 10px;
+        right: 14px;
+        font-size: 20px;
+        cursor: pointer;
+        font-weight: bold;
+        color: #555;
+    }
+
+    .modal-close-btn:hover {
+        color: red;
+    }
+
+    /* Animation */
+    @keyframes popIn {
+        from {
+            transform: scale(0.9);
+            opacity: 0;
+        }
+
+        to {
+            transform: scale(1);
+            opacity: 1;
+        }
+    }
+
+    .custom-alert {
+        display: none;
+        position: fixed;
+        inset: 0;
+        backdrop-filter: blur(5px);
+        background: rgba(0, 0, 0, 0.35);
+        z-index: 2000;
+        justify-content: center;
+        align-items: center;
+    }
+
+    .alert-box {
+        background: white;
+        padding: 25px;
+        border-radius: 18px;
+        width: 90%;
+        max-width: 360px;
+        text-align: center;
+        box-shadow: 0 20px 50px rgba(0, 0, 0, 0.2);
+        animation: popIn 0.25s ease;
+    }
+
+    .alert-box p {
+        font-weight: 500;
+        margin-bottom: 15px;
+    }
+
+    .alert-box button {
+        padding: 8px 18px;
+        border-radius: 10px;
+        border: none;
+        background: linear-gradient(90deg, #ef4444, #dc2626);
+        color: white;
+    }
+
+    .btn-return {
+        background: #f59e0b;
+        /* amber */
+        color: white;
+        border: 1px solid #d97706;
+        transition: 0.2s;
+    }
+
+    .btn-return:hover {
+        background: #d97706;
+        border-color: #b45309;
+    }
 </style>
 
 <div class="order-wrapper">
 
     <h2>Order #{{ order.id }} Details</h2>
 
+
     <h3>Order Status</h3>
     <ul class="progressbar">
         {% for step in steps %}
-        <li class="{% if forloop.counter0 <= current_index %}active{% endif %}">
-            {{ step|title }}
-        </li>
-        {% endfor %}
-    </ul>
+<li class="{% if forloop.counter0 <= current_index %}active{% endif %}">
+    
+    <div class="circle">
+        {% if step == "placed" %}
+            <i class="fas fa-box"></i>
 
+        {% elif step == "confirmed" %}
+            <i class="fas fa-check-circle"></i>
+
+        {% elif step == "preparing" %}
+            <i class="fas fa-fire"></i>
+
+        {% elif step == "out_for_delivery" %}
+            <i class="fas fa-truck"></i>
+
+        {% elif step == "delivered" %}
+            <i class="fas fa-gift"></i>
+
+        {% endif %}
+    </div>
+
+    <div class="step-label">{{ step|title }}</div>
+
+</li>
+{% endfor %}
+    </ul>
+    <p>
+<strong>⏱ Estimated Delivery Time:</strong>
+{{ delivery_display }} 
+</p>
     {% if order.order_status|upper == 'DELIVERED' %}
     {% if feedback %}
     <div class="feedback-box">
@@ -276,9 +416,11 @@
             <div>
                 <p><strong>{{ item.food_item.name }}</strong></p>
                 <p>Qty: {{ item.qty }}</p>
-                <p style="font-size:14px; color:#777;">Original: ₹{{ item.food_item.price|floatformat:2 }}</p>
-                <p style="font-size:15px;">Price after discount: <strong>₹{{ item.discounted_price|floatformat:2
-                        }}</strong></p>
+                <p style="font-size:14px; color:#777;">
+Original: ₹ {{ item.price|floatformat:2 }}
+</p>
+                <p style="font-size:15px;">Price after discount: <strong
+                        style="font-size:20px; color:green;">₹{{item.total_amount|floatformat:2 }}</strong></p>
                 {% if item.item_discount > 0 %}
                 <p style="font-size:13px; color:green;">You saved ₹{{ item.item_discount|floatformat:2 }}</p>
                 {% endif %}
@@ -301,6 +443,7 @@
                 <span>- ₹ {{ total_discount|floatformat:2 }}</span>
             </div>
             {% endif %}
+            <hr>
             <div class="summary-row">
                 <span>Subtotal</span>
                 <span>₹ {{ item_total|floatformat:2 }}</span>
@@ -329,93 +472,310 @@
             <a href="{% url 'download_invoice' order.id %}" class="btn btn-secondary">Download Invoice</a>
         </div>
 
-       
-        <!-- CANCEL ORDER (Popup style) -->
-        <!-- {% if order.order_status == "PLACED" or order.order_status == "CONFIRMED" %}
-        <div style="position:relative; display:inline-block;">
-            <button id="cancel-btn-{{ order.id }}" class="btn btn-cancel"
-                onclick="toggleCancelBox('{{ order.id }}')">Cancel Order</button>
 
-            <div id="cancel-box-{{ order.id }}"
-                style="display:none; position:absolute; top:-160px; right:0; background:#f5f5f5; padding:15px; border-radius:8px; min-width:250px; box-shadow:0 5px 15px rgba(0,0,0,0.2); z-index:10;">
-                <label for="reason-select-{{ order.id }}">Select Cancellation Reason:</label>
-                <select id="reason-select-{{ order.id }}"
-                    style="width:100%; padding:6px; margin-top:5px; border-radius:4px; border:1px solid #ccc;"
-                    onchange="toggleOtherReason('{{ order.id }}')">
-                    <option value="">--Select Reason--</option>
-                    <option value="Found better price">Found better price</option>
-                    <option value="Change of mind">Change of mind</option>
-                    <option value="Order delayed">Order delayed</option>
-                    <option value="Other">Other</option>
-                </select> -->
-
-                <!-- Only visible if Other is selected -->
-                <!-- <textarea id="other-reason-{{ order.id }}" placeholder="Enter your reason"
-                    style="display:none; width:100%; margin-top:8px; padding:6px; border-radius:4px; border:1px solid #ccc;"></textarea>
-
-                <button type="button" class="btn btn-cancel mt-2" onclick="submitCancel('{{ order.id }}')">Confirm
-                    Cancel</button>
-                <div id="cancel-message-{{ order.id }}" style="margin-top:8px; font-size:14px;"></div>
-            </div>
-        </div>
-        {% endif %}-->
-       <div style="position:relative; display:inline-block;">
-
-    {% if order.order_status == "PLACED" or order.order_status == "CONFIRMED" %}
-        
-        <!-- ACTIVE CANCEL BUTTON -->
-        <button id="cancel-btn-{{ order.id }}" class="btn btn-cancel"
-            onclick="toggleCancelBox('{{ order.id }}')">
-            Cancel Order
-        </button>
-
-        <div id="cancel-box-{{ order.id }}"
-            style="display:none; position:absolute; top:-160px; right:0; background:#f5f5f5; padding:15px; border-radius:8px; min-width:250px; box-shadow:0 5px 15px rgba(0,0,0,0.2); z-index:10;">
-
-            <label>Select Cancellation Reason:</label>
-
-            <select id="reason-select-{{ order.id }}"
-                style="width:100%; padding:6px; margin-top:5px; border-radius:4px; border:1px solid #ccc;"
-                onchange="toggleOtherReason('{{ order.id }}')">
-
-                <option value="">--Select Reason--</option>
-                <option value="Found better price">Found better price</option>
-                <option value="Change of mind">Change of mind</option>
-                <option value="Order delayed">Order delayed</option>
-                <option value="Other">Other</option>
-            </select>
-
-            <textarea id="other-reason-{{ order.id }}"
-                placeholder="Enter your reason"
-                style="display:none; width:100%; margin-top:8px; padding:6px; border-radius:4px; border:1px solid #ccc;">
-            </textarea>
-
-            <button type="button" class="btn btn-cancel mt-2"
-                onclick="submitCancel('{{ order.id }}')">
-                Confirm Cancel
+        <div style="position:relative; display:inline-block; margin-right: 0px;">
+            {% if order.order_status == "DELIVERED" %}
+            <!-- RETURN / COMPLAINT BUTTON -->
+            <button id="return-btn-{{ order.id }}" class="btn btn-secondary"
+                style="background-color: #28a745; color: white; border: none;">
+                Order Issue
             </button>
 
-            <div id="cancel-message-{{ order.id }}"
-                style="margin-top:8px; font-size:14px;">
+            <div id="return-modal-{{ order.id }}" class="modal-overlay">
+
+                <div class="modal-content-custom">
+
+                    <span class="modal-close-btn" onclick="closeReturnModal('{{ order.id }}')">✖</span>
+
+                    <h5 style="margin-bottom:15px; font-weight:700;">
+                        🚨 Report Order Issue
+                    </h5>
+
+                    <label style="font-weight:600;">Issue Type</label>
+                    <select id="issue-type-{{ order.id }}" class="form-control mt-1">
+                        <option value="">-- Select Issue --</option>
+                        <option value="WRONG_ITEM">Wrong Item</option>
+                        <option value="MISSING_ITEM">Missing Item</option>
+                    </select>
+
+                    <div style="margin-top:14px;">
+                        <input type="checkbox" id="full-return-{{ order.id }}"
+                            onchange="toggleFullReturn('{{ order.id }}')">
+                        <label for="full-return-{{ order.id }}">
+                            Return Full Order
+                        </label>
+                    </div>
+
+                    <div style="margin-top:15px;">
+                        <p style="font-weight:600;">Select Items</p>
+                        {% for item in order_items %}
+                        <div style="margin-bottom:6px;">
+                            <input type="checkbox" class="return-item-{{ order.id }}" value="{{ item.id }}">
+                            {{ item.food_item.name }} (Qty: {{ item.qty }})
+                        </div>
+                        {% endfor %}
+                    </div>
+
+                    <label style="margin-top:15px; font-weight:600;">
+                        Upload Proof Image
+                    </label>
+                    <input type="file" id="return-image-{{ order.id }}" accept="image/*" class="form-control mt-1">
+
+                    <button type="button" onclick="submitReturn('{{ order.id }}')" class="btn btn-cancel mt-3"
+                        style="width:100%;">
+                        Submit Complaint
+                    </button>
+
+                    <div id="return-message-{{ order.id }}" style="margin-top:10px;"></div>
+
+                </div>
+
+            </div>
+            {% endif %}
+
+            <div id="custom-alert-{{ order.id }}" class="custom-alert">
+                <div class="alert-box">
+                    <p id="alert-message-{{ order.id }}"></p>
+                    <button onclick="closeAlert('{{ order.id }}')">OK</button>
+                </div>
+            </div>
+
+            <div style="position:relative; display:inline-block;">
+
+                {% if order.order_status == "PLACED" or order.order_status == "CONFIRMED" %}
+
+                <!-- ACTIVE CANCEL BUTTON -->
+                <button id="cancel-btn-{{ order.id }}" class="btn btn-cancel"
+                    onclick="toggleCancelBox('{{ order.id }}')">
+                    Cancel Order
+                </button>
+
+                <div id="cancel-box-{{ order.id }}"
+                    style="display:none; position:absolute; top:-160px; right:0; background:#f5f5f5; padding:15px; border-radius:8px; min-width:250px; box-shadow:0 5px 15px rgba(0,0,0,0.2); z-index:10;">
+
+                    <label>Select Cancellation Reason:</label>
+
+                    <select id="reason-select-{{ order.id }}"
+                        style="width:100%; padding:6px; margin-top:5px; border-radius:4px; border:1px solid #ccc;"
+                        onchange="toggleOtherReason('{{ order.id }}')">
+
+                        <option value="">--Select Reason--</option>
+                        <option value="Found better price">Found better price</option>
+                        <option value="Change of mind">Change of mind</option>
+                        <option value="Order delayed">Order delayed</option>
+                        <option value="Other">Other</option>
+                    </select>
+
+                    <textarea id="other-reason-{{ order.id }}" placeholder="Enter your reason"
+                        style="display:none; width:100%; margin-top:8px; padding:6px; border-radius:4px; border:1px solid #ccc;">
+            </textarea>
+
+                    <button type="button" class="btn btn-cancel mt-2" onclick="submitCancel('{{ order.id }}')">
+                        Confirm Cancel
+                    </button>
+
+                    <div id="cancel-message-{{ order.id }}" style="margin-top:8px; font-size:14px;">
+                    </div>
+                </div>
+
+                {% else %}
+
+                <!-- DISABLED BUTTON FOR ALL OTHER STATES -->
+                <button class="btn btn-disabled" disabled>
+                    {% if order.order_status == "CANCELLED" %}
+                    Cancelled
+                    {% else %}
+                    Cannot Cancel ({{ order.order_status|title }})
+                    {% endif %}
+                </button>
+
+                {% endif %}
+
             </div>
         </div>
 
-    {% else %}
-        
-        <!-- DISABLED BUTTON FOR ALL OTHER STATES -->
-        <button class="btn btn-disabled" disabled>
-            {% if order.order_status == "CANCELLED" %}
-                Cancelled
-            {% else %}
-                Cannot Cancel ({{ order.order_status|title }})
-            {% endif %}
-        </button>
 
-    {% endif %}
+        <script>
+            document.addEventListener("DOMContentLoaded", function () {
 
-</div>
-    </div> 
-    <script>
+                const orderId = "{{ order.id }}";
+                const returnBtn = document.getElementById("return-btn-" + orderId);
+                const returnModal = document.getElementById("return-modal-" + orderId);
+                const returnMessage = document.getElementById("return-message-" + orderId);
+
+                // Template-provided variables
+                const complaintStatus = "{{ complaint_status|default:'' }}"; // OPEN / APPROVED / REJECTED
+                const hasComplaint = "{{ has_complaint|yesno:'true,false' }}" === "true";
+
+                const deliveredAtStr = "{{ order.delivered_at|default:''|date:'c' }}";
+                const deliveredAt = deliveredAtStr ? new Date(deliveredAtStr) : null;
+
+                function getCookie(name) {
+                    let cookieValue = null;
+                    if (document.cookie && document.cookie !== '') {
+                        document.cookie.split(';').forEach(cookie => {
+                            cookie = cookie.trim();
+                            if (cookie.startsWith(name + '=')) {
+                                cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                            }
+                        });
+                    }
+                    return cookieValue;
+                }
+
+                // ================= DISABLE BUTTON =================
+                function disableOrderIssueButton(status) {
+                    if (!returnBtn) return;
+
+                    returnBtn.disabled = true;
+                    returnBtn.style.color = "white"; // Always text white
+
+                    if (status === "APPROVED") {
+                        returnBtn.innerText = "✅ Approved";
+                        returnBtn.style.backgroundColor = "#16a34a"; // green
+                        returnBtn.style.border = "1px solid #16a34a";
+                    } else if (status === "REJECTED") {
+                        returnBtn.innerText = "❌ Rejected";
+                        returnBtn.style.backgroundColor = "#dc2626"; // red
+                        returnBtn.style.border = "1px solid #dc2626";
+                    } else {
+                        returnBtn.innerText = "✅ Already Refunded";
+                        returnBtn.style.backgroundColor = "#6c757d"; // gray
+                        returnBtn.style.border = "1px solid #6c757d";
+                    }
+                }
+
+                // ================= ALERT FUNCTION =================
+                function showComplaintAlert(message, disableButtonOnOk = true) {
+                    const alertBox = document.getElementById("custom-alert-" + orderId);
+                    const alertMessage = document.getElementById("alert-message-" + orderId);
+                    if (!alertBox || !alertMessage) return;
+
+                    alertMessage.innerText = message;
+                    alertBox.style.display = "flex";
+
+                    const okBtn = alertBox.querySelector("button");
+                    okBtn.replaceWith(okBtn.cloneNode(true)); // remove old listeners
+                    const newOkBtn = alertBox.querySelector("button");
+                    newOkBtn.addEventListener("click", () => {
+                        alertBox.style.display = "none";
+                        if (disableButtonOnOk) disableOrderIssueButton();
+                    });
+                }
+
+                // ================= CLOSE MODAL =================
+                window.closeReturnModal = function () {
+                    if (returnModal) {
+                        returnModal.style.display = "none";
+                        document.body.style.overflow = "auto";
+                    }
+                }
+
+                // ================= FULL RETURN TOGGLE =================
+                window.toggleFullReturn = function () {
+                    const fullReturnCheckbox = document.getElementById("full-return-" + orderId);
+                    if (!fullReturnCheckbox) return;
+                    const fullReturn = fullReturnCheckbox.checked;
+                    const items = document.querySelectorAll(".return-item-" + orderId);
+                    items.forEach(item => {
+                        item.disabled = fullReturn;
+                        if (fullReturn) item.checked = false;
+                    });
+                }
+
+                // ================= INITIAL BUTTON STATE =================
+                if (hasComplaint) {
+                    if (complaintStatus === "APPROVED") {
+                        disableOrderIssueButton("APPROVED");
+                    } else if (complaintStatus === "REJECTED") {
+                        disableOrderIssueButton("REJECTED");
+                    } else {
+                        disableOrderIssueButton("REFUNDED"); // already refunded case
+                    }
+                }
+
+                // ================= RETURN BUTTON CLICK =================
+                if (returnBtn && returnModal) {
+                    returnBtn.addEventListener("click", function () {
+                        const now = new Date();
+
+                        if (complaintStatus === "APPROVED") {
+                            showComplaintAlert("✅ This order has already been refunded / resolved.", true);
+                            return;
+                        }
+                        if (complaintStatus === "REJECTED") {
+                            showComplaintAlert("❌ Your complaint was rejected.", true);
+                            return;
+                        }
+                        if (hasComplaint && complaintStatus === "OPEN") {
+                            showComplaintAlert("⚠️ You have already submitted a complaint for this order.", false);
+                            return;
+                        }
+
+                        if (deliveredAt && (now - deliveredAt) > 15 * 60 * 1000) {
+                            showComplaintAlert("⏳ Time is out! You can only return your food within 15 minutes after delivery.", false);
+                            return;
+                        }
+
+                        returnModal.style.display = "flex";
+                        document.body.style.overflow = "hidden";
+                    });
+                }
+
+                // ================= SUBMIT RETURN =================
+                window.submitReturn = function () {
+                    if (!confirm("Submit complaint request?")) return;
+
+                    const issueType = document.getElementById("issue-type-" + orderId)?.value;
+                    const fullReturn = document.getElementById("full-return-" + orderId)?.checked;
+                    const checkboxes = document.querySelectorAll(".return-item-" + orderId + ":checked");
+                    const imageInput = document.getElementById("return-image-" + orderId);
+
+                    if (!issueType) { alert("Please select issue type"); return; }
+                    if (!fullReturn && checkboxes.length === 0) { alert("Please select items or choose full return"); return; }
+                    if (!imageInput || imageInput.files.length === 0) { alert("Proof image is required"); return; }
+
+                    const formData = new FormData();
+                    formData.append("order_id", orderId);
+                    formData.append("reason", issueType);
+                    formData.append("is_full_return", fullReturn);
+                    formData.append("proof_image", imageInput.files[0]);
+                    checkboxes.forEach(cb => formData.append("item_ids", cb.value));
+
+                    fetch("/orders/complaints/", {
+                        method: "POST",
+                        headers: { "X-CSRFToken": getCookie("csrftoken") },
+                        body: formData
+                    })
+                        .then(res => res.json())
+                        .then(data => {
+                            if (data.id) {
+                                returnMessage.innerHTML = "<span style='color:green;'>Complaint submitted successfully!</span>";
+                                closeReturnModal();
+
+                                // ✅ Only show alert, do NOT disable button
+                                showComplaintAlert("⚠️ Complaint submitted successfully! Wait for admin approval.", false);
+
+                            } else if (data.error) {
+                                const errorMsg = {
+                                    "TIME_EXPIRED": "⏳ Time is out! You can only return your food within 15 minutes after delivery.",
+                                    "Complaint already exists for this order": "⚠️ You have already submitted a complaint for this order.",
+                                    "Complaint already resolved": "✅ This order has already been refunded / resolved."
+                                };
+                                const disableBtn = false; // Never disable on submit error
+                                showComplaintAlert(errorMsg[data.error] || "Complaint already registered! Wait for admin approval!", disableBtn);
+                            }
+                        })
+                        .catch(() => { returnMessage.innerHTML = "<span style='color:red;'>Request failed!</span>"; });
+                };
+            });
+
+         
+         
+        </script>
+
+
+ <script>
         function showCancelBox(orderId) {
             const box = document.getElementById("cancel-box-" + orderId);
             if (box) box.style.display = "block";
@@ -570,4 +930,4 @@ function getCookie(name){
     return cookieValue;
 }
 </script>
-    {% endblock %}
+        {% endblock %}
