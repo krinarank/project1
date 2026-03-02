@@ -58,55 +58,6 @@ def get_best_offer(item):
 
 
 
-# def get_discounted_price(food_item):
-#     today = timezone.now().date()
-#     original_price = Decimal(food_item.price)
-#     discount = Decimal('0.00')
-
-#     # 1️⃣ Food item level offer
-#     food_offer = FoodItemOfferDiscount.objects.filter(
-#         food_item=food_item,
-#         is_active=True,
-#         applied_date__lte=today,
-#         expiry_date__gte=today,
-#         offer__isactive=True
-#     ).select_related('offer').first()
-
-#     if food_offer:
-#         discount = Decimal(food_offer.offer.discount_percentage)
-
-#     # 2️⃣ Sub category level offer
-#     if discount == 0 and food_item.sub_cat:
-#         sub_offer = SubCategoryOfferDiscount.objects.filter(
-#             subcategory=food_item.sub_cat,
-#             is_active=True,
-#             applied_date__lte=today,
-#             expiry_date__gte=today,
-#             offer__isactive=True
-#         ).select_related('offer').first()
-
-#         if sub_offer:
-#             discount = Decimal(sub_offer.offer.discount_percentage)
-
-#     # 3️⃣ Category level offer
-#     if discount == 0 and food_item.sub_cat and food_item.sub_cat.food_item_cat:
-#         cat_offer = CategoryOfferDiscount.objects.filter(
-#             category=food_item.sub_cat.food_item_cat,
-#             is_active=True,
-#             applied_date__lte=today,
-#             expiry_date__gte=today,
-#             offer__isactive=True
-#         ).select_related('offer').first()
-
-#         if cat_offer:
-#             discount = Decimal(cat_offer.offer.discount_percentage)
-
-#     if discount > 0:
-#         discounted_price = original_price - (original_price * discount / Decimal('100'))
-#         return discounted_price.quantize(Decimal('0.01'))
-
-#     return original_price.quantize(Decimal('0.01'))
-
 from decimal import Decimal
 from django.utils import timezone
 

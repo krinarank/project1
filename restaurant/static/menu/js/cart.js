@@ -1,4 +1,6 @@
-// // // CSRF helper
+// // // ===============================
+// // // HELPER FUNCTION
+// // // ===============================
 // // function getCookie(name) {
 // //     let cookieValue = null;
 // //     if (document.cookie && document.cookie !== '') {
@@ -14,22 +16,27 @@
 // //     return cookieValue;
 // // }
 
-
+// // // ===============================
+// // // MAIN SCRIPT
+// // // ===============================
 // // $(document).ready(function () {
+
+// //     let selectedVariant = null;
+// //     let currentFoodCard = null;
+// //     window.removeMode = false;
+// //     let onlyRegular = false; // ✅ new flag for each card
 
 // //     // ===============================
 // //     // UPDATE BUTTON UI
 // //     // ===============================
 // //     function updateButton(card, qty) {
-
 // //         const cartAction = card.find('.cart-action');
-// //         const foodId = card.attr('data-food-id');   // IMPORTANT
-// //         const hasVariant = card.attr('data-has-variant'); // IMPORTANT
+// //         const foodId = card.attr('data-food-id');
+// //         const hasVariant = card.attr('data-has-variant') === "true";
 
 // //         cartAction.empty();
 
 // //         if (qty > 0) {
-
 // //             cartAction.append(`
 // //                 <div class="d-flex align-items-center gap-1">
 // //                     <button class="btn btn-sm btn-outline-danger decrease-btn">-</button>
@@ -38,45 +45,40 @@
 // //                     <a href="/orders/cart/" class="btn btn-sm btn-primary">Go to Cart</a>
 // //                 </div>
 // //             `);
-
 // //         } else {
-
 // //             cartAction.append(`
-// //                 <button 
-// //                     class="add-cart-btn btn btn-success btn-sm"
-// //                     data-food-id="${foodId}"
-// //                     data-has-variant="${hasVariant}">
-// //                     🛒 Add
+// //                 <button class="add-cart-btn btn btn-success btn-sm"
+// //                         data-food-id="${foodId}"
+// //                         data-has-variant="${hasVariant}">
+// //                         🛒 Add
 // //                 </button>
 // //             `);
 // //         }
 // //     }
 
-
 // //     // ===============================
 // //     // LOAD CART ON PAGE LOAD
 // //     // ===============================
 // //     function loadCart() {
-// //         $.ajax({
-// //             url: '/orders/get_cart/',
-// //             type: 'GET',
-// //             success: function(response) {
-// //                 response.items.forEach(item => {
-// //                     const card = $(`.food-card[data-food-id="${item.food_id}"]`);
-// //                     updateButton(card, item.quantity);
-// //                 });
+// //         $.get('/orders/get_cart/', function(response){
+// //             const foodQtyMap = {};
+// //             response.items.forEach(item => {
+// //                 if (!foodQtyMap[item.food_id]) foodQtyMap[item.food_id] = 0;
+// //                 foodQtyMap[item.food_id] += item.quantity;
+// //             });
+
+// //             for (const foodId in foodQtyMap) {
+// //                 const card = $(`.food-card[data-food-id="${foodId}"]`);
+// //                 updateButton(card, foodQtyMap[foodId]);
 // //             }
 // //         });
 // //     }
-
 // //     loadCart();
-
 
 // //     // ===============================
 // //     // UNIVERSAL CHANGE QTY FUNCTION
 // //     // ===============================
-// //     function changeQty(card, qtyChange){
-
+// //     function changeQty(card, qtyChange, variantId=null){
 // //         const foodId = card.attr('data-food-id');
 
 // //         $.ajax({
@@ -85,95 +87,172 @@
 // //             headers: {'X-CSRFToken': getCookie('csrftoken')},
 // //             data: {
 // //                 quantity: qtyChange,
-// //                 variant_id: ""
+// //                 variant_id: variantId
 // //             },
 // //             success: function(response){
-
 // //                 if(response.status === "success"){
-// //                     updateButton(card, response.total_quantity);
+// //                     const totalQty = response.total_quantity;
+// //                     updateButton(card, totalQty);
 // //                 }
 // //             }
 // //         });
 // //     }
 
-
 // //     // ===============================
-// //     // ADD BUTTON CLICK
+// //     // OPEN BOTTOM SHEET (if variants exist)
 // //     // ===============================
-// //     $(document).on('click', '.add-cart-btn', function () {
+// //     function openVariantSheet(card, variantsData, isIncrease=true){
+// //         const foodName = card.find('.food-name').text() || card.find('h2').text();
+// //         $("#sheetFoodName").text(foodName);
+// //         selectedVariant = null;
 
-// //         const btn = $(this);
-// //         const card = btn.closest('.food-card');
+// //         const container = $("#variantList");
+// //         container.empty();
 
-// //         const foodId = card.attr('data-food-id');
-// //         const hasVariant = card.attr('data-has-variant') === "true";
+// //         // ✅ Render variants
+// //         // variantsData.forEach(v => {
+// //         //     const id = v.id || 'regular';
+// //         //     const html = `<div class="variant-item" data-id="${id}">
+// //         //                     <strong>${v.name}</strong>
+// //         //                     <span style="float:right">₹${v.price.toFixed(2)}</span>
+// //         //                   </div>`;
+// //         //     container.append(html);
+// //         // });
 
-// //         // Case 1: No Variant → Direct Add
-// //         if (!hasVariant) {
-// //             changeQty(card, 1);
-// //         }
+// //         // ✅ Render variants with discount
+// // variantsData.forEach(v => {
+// //     const id = v.id || 'regular';
+// //     let priceHtml = '';
 
-// //         // Case 2: Has Variant → Alert for now
-// //         else {
-// //             alert("This item has variants. Bottom sheet will open here.");
-// //         }
+// //     if (v.discounted_price && v.discounted_price !== v.price) {
+// //         priceHtml = `<span style="text-decoration:line-through;color:#999;">₹${v.price.toFixed(2)}</span> 
+// //                      <span style="color:#28a745;font-weight:600;">₹${v.discounted_price.toFixed(2)}</span>`;
+// //     } else {
+// //         priceHtml = `<span>₹${v.price.toFixed(2)}</span>`;
+// //     }
+// // const html = $('<div class="variant-item"></div>').attr('data-id', id);
+// // html.append($('<strong></strong>').text(v.name));
 
-// //     });
-
-
-// //     // ===============================
-// //     // INCREASE BUTTON
-// //     // ===============================
-// //     $(document).on('click', '.increase-btn', function(){
-
-// //         const card = $(this).closest('.food-card');
-// //         changeQty(card, 1);
-
-// //     });
-
-
-// //     // ===============================
-// //     // DECREASE BUTTON
-// //     // ===============================
-// //     $(document).on('click', '.decrease-btn', function(){
-
-// //         const card = $(this).closest('.food-card');
-// //         changeQty(card, -1);
-
-// //     });
-
-// // });
-
-
-// // function changeQty(card, foodId, qtyChange, variantId=null){
-// //     $.ajax({
-// //         url: `/orders/add_variant/${foodId}/`,
-// //         type: 'POST',
-// //         headers: {'X-CSRFToken': getCookie('csrftoken')},
-// //         data: {
-// //             quantity: qtyChange,
-// //             variant_id: variantId
-// //         },
-// //         success: function(response){
-// //             updateButton(card, response.total_quantity);
-// //         }
-// //     });
+// // const priceSpan = $('<span style="float:right"></span>');
+// // if(v.discounted_price && v.discounted_price !== v.price){
+// //     priceSpan.html(`<span style="text-decoration:line-through;color:#999;">₹${v.price.toFixed(2)}</span>
+// //                     <span style="color:#28a745;font-weight:600;"> ₹${v.discounted_price.toFixed(2)}</span>`);
+// // } else {
+// //     priceSpan.text(`₹${v.price.toFixed(2)}`);
 // // }
 
-// // $(document).on('click', '.increase-btn', function(){
-// //     const card = $(this).closest('.food-card');
-// //     const foodId = card.data('food-id');
-// //     changeQty(card, foodId, 1);
+// // html.append(priceSpan);
+// // container.append(html);
+
+// //     container.append(html);
 // // });
 
-// // $(document).on('click', '.decrease-btn', function(){
-// //     const card = $(this).closest('.food-card');
-// //     const foodId = card.data('food-id');
-// //     changeQty(card, foodId, -1);
+// //         // ✅ Select first by default
+// //         $(".variant-item").first().addClass("selected");
+// //         selectedVariant = $(".variant-item.selected").data("id");
+
+// //         $("#variantSheet").addClass("active");
+// //         $("#sheetOverlay").show();
+// //     }
+
+// //     // ===============================
+// //     // ADD TO CART CLICK
+// //     // ===============================
+// //     $(document).on('click', '.add-cart-btn', function () {
+// //         const card = $(this).closest('.food-card');
+// //         currentFoodCard = card;
+// //         const foodId = card.data('food-id');
+
+// //         $.get(`/orders/get-variants/${foodId}/`, function(res){
+// //             onlyRegular = res.only_regular;
+
+// //             // ✅ NEW: check if any real variant besides regular
+// //             const hasRealVariants = res.variants.some(v => v.id !== "regular");
+
+// //             if(onlyRegular || !hasRealVariants){
+// //                 changeQty(card, 1, "regular");
+// //                 return;
+// //             }
+
+// //             openVariantSheet(card, res.variants);
+// //         });
+// //     });
+
+// //     // ===============================
+// //     // INCREASE / DECREASE BUTTONS
+// //     // ===============================
+// //     $(document).on('click', '.increase-btn, .decrease-btn', function(){
+// //         const card = $(this).closest('.food-card');
+// //         const foodId = card.data('food-id');
+// //         const isIncrease = $(this).hasClass('increase-btn');
+
+// //         $.get(`/orders/get-variants/${foodId}/`, function(res){
+// //             onlyRegular = res.only_regular;
+
+// //             // ✅ NEW: check if any real variant besides regular
+// //             const hasRealVariants = res.variants.some(v => v.id !== "regular");
+
+// //             if(onlyRegular || !hasRealVariants){
+// //                 changeQty(card, isIncrease ? 1 : -1, "regular");
+// //                 return;
+// //             }
+
+// //             currentFoodCard = card;
+// //             window.removeMode = !isIncrease;
+
+// //             openVariantSheet(card, res.variants, isIncrease);
+// //         });
+// //     });
+
+// //     // ===============================
+// //     // VARIANT SELECTION
+// //     // ===============================
+// //     $(document).on('click', '.variant-item', function(){
+// //         $('.variant-item').removeClass('selected');
+// //         $(this).addClass('selected');
+// //         selectedVariant = $(this).data('id');
+// //     });
+
+// //     // ===============================
+// //     // CLOSE VARIANT SHEET
+// //     // ===============================
+// //     $(document).on('click', '#closeSheet, #sheetOverlay', function() {
+// //         $("#variantSheet").removeClass("active");
+// //         $("#sheetOverlay").hide();
+// //         selectedVariant = null;
+// //         window.removeMode = false;
+// //         $(".qty-number").text(1);
+// //     });
+
+// //     // ===============================
+// //     // CONFIRM ADD / REMOVE FROM SHEET
+// //     // ===============================
+// //     $(document).on('click', '#addVariantToCart', function(){
+// //         const qty = parseInt($(".qty-number").text()) || 1;
+
+// //         if(!currentFoodCard) return;
+
+// //         if(onlyRegular || !selectedVariant){
+// //             changeQty(currentFoodCard, window.removeMode ? -qty : qty, "regular");
+// //         } else {
+// //             changeQty(currentFoodCard, window.removeMode ? -qty : qty, selectedVariant);
+// //         }
+
+// //         $("#variantSheet").removeClass("active");
+// //         $("#sheetOverlay").hide();
+// //         window.removeMode = false;
+// //     });
+
 // // });
 
 
-// // CSRF helper
+// // ===============================
+// // HELPER FUNCTION
+// // ===============================
+// // ===============================
+// // ===============================
+// // HELPER FUNCTION
+// // ===============================
 // function getCookie(name) {
 //     let cookieValue = null;
 //     if (document.cookie && document.cookie !== '') {
@@ -189,21 +268,27 @@
 //     return cookieValue;
 // }
 
+// // ===============================
+// // MAIN SCRIPT
+// // ===============================
 // $(document).ready(function () {
+
+//     let selectedVariant = null;
+//     let currentFoodCard = null;
+//     window.removeMode = false;
+//     let onlyRegular = false;
 
 //     // ===============================
 //     // UPDATE BUTTON UI
 //     // ===============================
 //     function updateButton(card, qty) {
-
 //         const cartAction = card.find('.cart-action');
 //         const foodId = card.attr('data-food-id');
-//         const hasVariant = card.attr('data-has-variant');
+//         const hasVariant = card.attr('data-has-variant') === "true";
 
 //         cartAction.empty();
 
 //         if (qty > 0) {
-
 //             cartAction.append(`
 //                 <div class="d-flex align-items-center gap-1">
 //                     <button class="btn btn-sm btn-outline-danger decrease-btn">-</button>
@@ -212,67 +297,40 @@
 //                     <a href="/orders/cart/" class="btn btn-sm btn-primary">Go to Cart</a>
 //                 </div>
 //             `);
-
 //         } else {
-
 //             cartAction.append(`
-//                 <button 
-//                     class="add-cart-btn btn btn-success btn-sm"
-//                     data-food-id="${foodId}"
-//                     data-has-variant="${hasVariant}">
-//                     🛒 Add
+//                 <button class="add-cart-btn btn btn-success btn-sm"
+//                         data-food-id="${foodId}"
+//                         data-has-variant="${hasVariant}">
+//                         🛒 Add
 //                 </button>
 //             `);
 //         }
 //     }
 
-
 //     // ===============================
 //     // LOAD CART ON PAGE LOAD
 //     // ===============================
-//     // function loadCart() {
-//     //     $.ajax({
-//     //         url: '/orders/get_cart/',
-//     //         type: 'GET',
-//     //         success: function(response) {
-//     //             response.items.forEach(item => {
-//     //                 const card = $(`.food-card[data-food-id="${item.food_id}"]`);
-//     //                 updateButton(card, item.quantity);
-//     //             });
-//     //         }
-//     //     });
-//     // }
-
 //     function loadCart() {
-//     $.ajax({
-//         url: '/orders/get_cart/',
-//         type: 'GET',
-//         success: function(response) {
+//         $.get('/orders/get_cart/', function(response){
 //             const foodQtyMap = {};
-
-//             // Sum quantities for all variants of each food
 //             response.items.forEach(item => {
 //                 if (!foodQtyMap[item.food_id]) foodQtyMap[item.food_id] = 0;
 //                 foodQtyMap[item.food_id] += item.quantity;
 //             });
 
-//             // Update menu card buttons
 //             for (const foodId in foodQtyMap) {
 //                 const card = $(`.food-card[data-food-id="${foodId}"]`);
 //                 updateButton(card, foodQtyMap[foodId]);
 //             }
-//         }
-//     });
-// }
-
+//         });
+//     }
 //     loadCart();
-
 
 //     // ===============================
 //     // UNIVERSAL CHANGE QTY FUNCTION
 //     // ===============================
 //     function changeQty(card, qtyChange, variantId=null){
-
 //         const foodId = card.attr('data-food-id');
 
 //         $.ajax({
@@ -284,338 +342,168 @@
 //                 variant_id: variantId
 //             },
 //             success: function(response){
-//     if(response.status === "success"){
+//                 if(response.status === "success"){
+//                     const totalQty = response.total_quantity;
+//                     updateButton(card, totalQty);
+//                 }
+//             }
+//         });
+//     }
 
-//         if(response.total_quantity <= 0){
-//             updateButton(card, 0);
-//         }else{
-//             updateButton(card, response.total_quantity);
+//     // ===============================
+//     // OPEN VARIANT BOTTOM SHEET
+//     // ===============================
+//     function openVariantSheet(card, variantsData, isIncrease=true){
+//         const foodName = card.find('.food-name').text() || card.find('h6').text();
+//         $("#sheetFoodName").text(foodName);
+//         selectedVariant = null;
+
+//         const container = $("#variantList");
+//         container.empty();
+
+//         // Render variants with strike + discounted price
+//         variantsData.forEach(v => {
+//             const id = v.id || 'regular';
+//             const html = $('<div class="variant-item"></div>').attr('data-id', id);
+
+//             html.append($('<strong></strong>').text(v.name));
+
+//             const priceSpan = $('<span style="float:right"></span>');
+
+//             if(v.discounted_price && v.discounted_price < v.price){
+//                 priceSpan.html(`
+//                     <span style="text-decoration:line-through;color:#999;">₹${v.price.toFixed(2)}</span>
+//                     <span style="color:#28a745;font-weight:600;"> ₹${v.discounted_price.toFixed(2)}</span>
+//                 `);
+//             } else {
+//                 priceSpan.text(`₹${v.price.toFixed(2)}`);
+//             }
+
+//             html.append(priceSpan);
+//             container.append(html);
+//         });
+
+//         // Select first variant by default
+//         if($(".variant-item").length){
+//             $(".variant-item").first().addClass("selected");
+//             selectedVariant = $(".variant-item.selected").data("id");
 //         }
 
-//     }
-// }
+//         // Pre-fill qty from card
+//         const currentQty = parseInt(card.find('.quantity').text()) || 1;
+//         $(".qty-number").text(currentQty);
 
-//         });
-//     }
-
-
-//     // // ===============================
-//     // // ADD BUTTON CLICK
-//     // // ===============================
-//     // $(document).on('click', '.add-cart-btn', function () {
-
-//     //     const btn = $(this);
-//     //     const card = btn.closest('.food-card');
-//     //     const hasVariant = card.attr('data-has-variant') === "true";
-
-//     //     // No Variant → Direct Add
-//     //     if (!hasVariant) {
-//     //         changeQty(card, 1);
-//     //     }
-
-//     //     // Has Variant → next step (bottom sheet)
-//     //     else {
-//     //         alert("Variant selector will open here");
-//     //     }
-//     // });
-
-
-//     // ===============================
-//     // INCREASE BUTTON
-//     // ===============================
-// $(document).on('click', '.increase-btn', function(){
-
-//     const card = $(this).closest('.food-card');
-//     const hasVariant = card.attr('data-has-variant') === "true";
-
-//     if (!hasVariant) {
-//         changeQty(card, 1);
-//         return;
-//     }
-
-//     // open bottom sheet again
-//     currentFoodCard = card;
-//     const foodId = card.attr('data-food-id');
-//     const foodName = card.find('h6').text();
-
-//     $("#sheetFoodName").text(foodName);
-
-//     $.get(`/orders/get-variants/${foodId}/`, function(res){
-
-//         let html = "";
-//         res.variants.forEach(v => {
-//             html += `
-//                 <div class="variant-item" data-id="${v.id}">
-//                     <strong>${v.name}</strong>
-//                     <span style="float:right">₹${v.price}</span>
-//                 </div>
-//             `;
-//         });
-
-//         $("#variantList").html(html);
+//         // Show sheet + overlay + lock body scroll
 //         $("#variantSheet").addClass("active");
-//         $("#sheetOverlay").show();
-//     });
-// });
-
-
-
-//     // ===============================
-//     // DECREASE BUTTON
-//     // ===============================
-//   $(document).on('click', '.decrease-btn', function(){
-
-//     const card = $(this).closest('.food-card');
-//     const hasVariant = card.attr('data-has-variant') === "true";
-
-//     // Non variant food → normal decrease
-//     if (!hasVariant) {
-//         changeQty(card, -1);
-//         return;
+//         $("#sheetOverlay").addClass("active");
+//         $("body").addClass("no-scroll");
 //     }
 
-//     // Variant food → open selector
-//     currentFoodCard = card;
-//     const foodId = card.attr('data-food-id');
-//     const foodName = card.find('h6').text();
-
-//     $("#sheetFoodName").text("Remove Item");
-
-//     $.get(`/orders/get-variants/${foodId}/`, function(res){
-
-//         let html = "";
-//         res.variants.forEach(v => {
-//             html += `
-//                 <div class="variant-item remove-mode" data-id="${v.id}">
-//                     <strong>${v.name}</strong>
-//                     <span style="float:right">Remove</span>
-//                 </div>
-//             `;
-//         });
-
-//         $("#variantList").html(html);
-//         $("#variantSheet").addClass("active");
-//         $("#sheetOverlay").show();
-
-//         window.removeMode = true;
-//     });
-// });
-
-
-// let selectedVariant = null;
-// let currentFoodCard = null;
-
-// // /* OPEN SHEET */
-// // $(document).on('click', '.add-cart-btn', function () {
-
-// //     const card = $(this).closest('.food-card');
-// //     const hasVariant = card.attr('data-has-variant') === "true";
-
-// //     if (!hasVariant) return;
-
-// //     currentFoodCard = card;
-// //     const foodId = card.attr('data-food-id');
-// //     const foodName = card.find('.food-name').text();
-
-// //     $("#sheetFoodName").text(foodName);
-
-// //     $.get(`/orders/get-variants/${foodId}/`, function(res){
-
-// //         let html = "";
-// //         res.variants.forEach(v => {
-// //             html += `
-// //                 <div class="variant-item" data-id="${v.id}">
-// //                     <strong>${v.name}</strong>
-// //                     <span style="float:right">₹${v.price}</span>
-// //                 </div>
-// //             `;
-// //         });
-
-// //         $("#variantList").html(html);
-// //         $("#variantSheet").addClass("active");
-// //         $("#sheetOverlay").show();
-// //     });
-
-// // });
-
-
-// // let currentFoodCard = null;
-
-// $(document).on('click', '.add-cart-btn', function () {
-//     const card = $(this).closest('.food-card');
-//     const hasVariant = card.attr('data-has-variant') === "true";
-
-//     // Add `data-force-regular="true"` to cards that are regular
-//     if (!hasVariant || card.data('force-regular')) {
-//         // Directly add Regular variant without bottom sheet
-//         changeQty(card, 1);
-//     } else {
-//         // Show bottom sheet for variant selection
+//     // ===============================
+//     // ADD TO CART CLICK
+//     // ===============================
+//     $(document).on('click', '.add-cart-btn', function () {
+//         const card = $(this).closest('.food-card');
 //         currentFoodCard = card;
-//         const foodId = card.attr('data-food-id');
-//         const foodName = card.find('.card-body h6').text() || card.find('.food-name').text();
-//         $("#sheetFoodName").text(foodName);
+//         const foodId = card.data('food-id');
 
 //         $.get(`/orders/get-variants/${foodId}/`, function(res){
-//             let html = "";
-//             res.variants.forEach(v => {
-//                 html += `
-//                     <div class="variant-item" data-id="${v.id}">
-//                         <strong>${v.name}</strong>
-//                         <span style="float:right">₹${v.price.toFixed(2)}</span>
-//                     </div>
-//                 `;
-//             });
+//             onlyRegular = res.only_regular;
+//             const hasRealVariants = res.variants.some(v => v.id !== "regular");
 
-//             $("#variantList").html(html);
-//             $("#variantSheet").addClass("active");
-//             $("#sheetOverlay").show();
-//             selectedVariant = null; // reset selection every time
+//             if(onlyRegular || !hasRealVariants){
+//                 changeQty(card, 1, "regular");
+//                 return;
+//             }
+
+//             openVariantSheet(card, res.variants);
 //         });
-//     }
-// });
-
-
-
-
-// // Select variant
-// $(document).on('click', '.variant-item', function(){
-//     $('.variant-item').removeClass('selected');
-//     $(this).addClass('selected');
-//     selectedVariant = $(this).data('id');
-// });
-
-// // Quantity buttons
-// $(document).on('click', '.qty-minus', function() {
-//     let qty = parseInt($('.qty-number').text());
-//     if(qty > 1) $('.qty-number').text(qty - 1);
-// });
-// $(document).on('click', '.qty-plus', function() {
-//     let qty = parseInt($('.qty-number').text());
-//     $('.qty-number').text(qty + 1);
-// });
-
-// // Confirm add to cart
-// $(document).on('click', '#addVariantToCart', function() {
-//     if (!selectedVariant) {
-//         alert("Please select a variant!");
-//         return;
-//     }
-//     const qty = parseInt($('.qty-number').text());
-//     $.post('/orders/add_variant_to_cart/', {
-//         variant_id: selectedVariant,
-//         quantity: qty,
-//         csrfmiddlewaretoken: csrfToken
-//     }, function(response) {
-//         closeVariantSheet();
-//         loadCart(); // update menu/cart
 //     });
-// });
 
-// // Close bottom sheet
-// $(document).on('click', '#closeSheet, #sheetOverlay', function() {
-//     closeVariantSheet();
-// });
+//     // ===============================
+//     // INCREASE / DECREASE BUTTONS
+//     // ===============================
+//     $(document).on('click', '.increase-btn, .decrease-btn', function(){
+//         const card = $(this).closest('.food-card');
+//         const foodId = card.data('food-id');
+//         const isIncrease = $(this).hasClass('increase-btn');
 
-// function closeVariantSheet(){
-//     $("#variantSheet").removeClass('active');
-//     $("#sheetOverlay").hide();
-//     selectedVariant = null;
-//     $(".qty-number").text(1);
-// }
+//         $.get(`/orders/get-variants/${foodId}/`, function(res){
+//             onlyRegular = res.only_regular;
+//             const hasRealVariants = res.variants.some(v => v.id !== "regular");
 
+//             if(onlyRegular || !hasRealVariants){
+//                 changeQty(card, isIncrease ? 1 : -1, "regular");
+//                 return;
+//             }
 
+//             currentFoodCard = card;
+//             window.removeMode = !isIncrease;
 
-
-// $("#confirmAddBtn").click(function(){
-
-//     if(selectedVariant === undefined){
-//         alert("Please select variant");
-//         return;
-//     }
-
-//     const qtyChange = window.removeMode ? -1 : 1;
-
-//     changeQty(currentFoodCard, qtyChange, selectedVariant);
-
-//     $("#variantSheet").removeClass("active");
-//     $("#sheetOverlay").hide();
-
-//     selectedVariant = undefined;
-//     window.removeMode = false;
-// });
-
-
-// });
-// let selectedVariant = null;
-
-// // Open bottom sheet for variants
-// function openVariantSheet(card, variants) {
-//     const foodName = card.find('.food-name').text();
-//     $("#sheetFoodName").text(foodName);
-
-//     let html = '';
-//     variants.forEach(v => {
-//         html += `<div class="variant-item" data-id="${v.id}">
-//                     <strong>${v.name}</strong>
-//                     <span>₹${v.price.toFixed(2)}</span>
-//                  </div>`;
+//             openVariantSheet(card, res.variants, isIncrease);
+//         });
 //     });
-//     $("#variantList").html(html);
 
-//     selectedVariant = null; // reset previous selection
-//     $("#variantSheet").fadeIn();
-//     $("#sheetOverlay").fadeIn();
-// }
-
-// // Close bottom sheet
-// function closeVariantSheet() {
-//     $("#variantSheet").fadeOut();
-//     $("#sheetOverlay").fadeOut();
-// }
-
-// // Variant selection
-// $(document).on('click', '.variant-item', function() {
-//     $('.variant-item').removeClass('selected');
-//     $(this).addClass('selected');
-//     selectedVariant = $(this).data('id');
-// });
-
-// // Quantity buttons
-// $(document).on('click', '.qty-minus', function() {
-//     let qty = parseInt($('.qty-number').text());
-//     if(qty > 1) $('.qty-number').text(qty - 1);
-// });
-// $(document).on('click', '.qty-plus', function() {
-//     let qty = parseInt($('.qty-number').text());
-//     $('.qty-number').text(qty + 1);
-// });
-
-// // Add to Cart from bottom sheet
-// $(document).on('click', '#addVariantToCart', function() {
-//     if (!selectedVariant) {
-//         alert("Please select a variant!");
-//         return;
-//     }
-//     const qty = parseInt($('.qty-number').text());
-//     $.post('/orders/add_variant_to_cart/', {
-//         variant_id: selectedVariant,
-//         quantity: qty,
-//         csrfmiddlewaretoken: csrfToken
-//     }, function(response) {
-//         closeVariantSheet();
-//         loadCart(); // update menu/cart
+//     // ===============================
+//     // VARIANT SELECTION
+//     // ===============================
+//     $(document).on('click', '.variant-item', function(){
+//         $('.variant-item').removeClass('selected');
+//         $(this).addClass('selected');
+//         selectedVariant = $(this).data('id');
 //     });
+
+//     // ===============================
+//     // CLOSE VARIANT SHEET
+//     // ===============================
+//     $(document).on('click', '#closeSheet, #sheetOverlay', function() {
+//         $("#variantSheet").removeClass("active");
+//         $("#sheetOverlay").removeClass("active");
+//         $("body").removeClass("no-scroll");
+//         selectedVariant = null;
+//         window.removeMode = false;
+//         $(".qty-number").text(1);
+//     });
+
+//     // ===============================
+//     // CONFIRM ADD / REMOVE FROM SHEET
+//     // ===============================
+//     $(document).on('click', '#addVariantToCart', function(){
+//         const qty = parseInt($(".qty-number").text()) || 1;
+
+//         if(!currentFoodCard) return;
+
+//         if(onlyRegular || !selectedVariant){
+//             changeQty(currentFoodCard, qty, "regular");
+//         } else {
+//             changeQty(currentFoodCard, qty, selectedVariant);
+//         }
+
+//         $("#variantSheet").removeClass("active");
+//         $("#sheetOverlay").removeClass("active");
+//         $("body").removeClass("no-scroll");
+//         window.removeMode = false;
+//         $(".qty-number").text(1);
+//     });
+
+//     // ===============================
+//     // QTY BUTTONS IN SHEET
+//     // ===============================
+//     $(document).on('click', '.qty-minus', function(){
+//         let qtyElem = $(".qty-number");
+//         let qty = parseInt(qtyElem.text());
+//         if(qty > 1) qty--;
+//         qtyElem.text(qty);
+//     });
+//     $(document).on('click', '.qty-plus', function(){
+//         let qtyElem = $(".qty-number");
+//         let qty = parseInt(qtyElem.text());
+//         qty++;
+//         qtyElem.text(qty);
+//     });
+
 // });
 
-// // Close button
-// $(document).on('click', '#closeVariantSheet, #sheetOverlay', function() {
-//     closeVariantSheet();
-// });
-//------------------------------------------------------------------------------------->>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-//==============================
-//HELPER FUNCTION
-//===============================
 function getCookie(name) {
     let cookieValue = null;
     if (document.cookie && document.cookie !== '') {
@@ -636,12 +524,10 @@ function getCookie(name) {
 // ===============================
 $(document).ready(function () {
 
-    // -------------------------------
-    // VARIABLES
-    // -------------------------------
     let selectedVariant = null;
     let currentFoodCard = null;
     window.removeMode = false;
+    let onlyRegular = false;
 
     // ===============================
     // UPDATE BUTTON UI
@@ -649,7 +535,7 @@ $(document).ready(function () {
     function updateButton(card, qty) {
         const cartAction = card.find('.cart-action');
         const foodId = card.attr('data-food-id');
-        const hasVariant = card.attr('data-has-variant');
+        const hasVariant = card.attr('data-has-variant') === "true";
 
         cartAction.empty();
 
@@ -664,11 +550,10 @@ $(document).ready(function () {
             `);
         } else {
             cartAction.append(`
-                <button 
-                    class="add-cart-btn btn btn-success btn-sm"
-                    data-food-id="${foodId}"
-                    data-has-variant="${hasVariant}">
-                    🛒 Add
+                <button class="add-cart-btn btn btn-success btn-sm"
+                        data-food-id="${foodId}"
+                        data-has-variant="${hasVariant}">
+                        🛒 Add
                 </button>
             `);
         }
@@ -678,20 +563,16 @@ $(document).ready(function () {
     // LOAD CART ON PAGE LOAD
     // ===============================
     function loadCart() {
-        $.ajax({
-            url: '/orders/get_cart/',
-            type: 'GET',
-            success: function(response) {
-                const foodQtyMap = {};
-                response.items.forEach(item => {
-                    if (!foodQtyMap[item.food_id]) foodQtyMap[item.food_id] = 0;
-                    foodQtyMap[item.food_id] += item.quantity;
-                });
+        $.get('/orders/get_cart/', function(response){
+            const foodQtyMap = {};
+            response.items.forEach(item => {
+                if (!foodQtyMap[item.food_id]) foodQtyMap[item.food_id] = 0;
+                foodQtyMap[item.food_id] += item.quantity;
+            });
 
-                for (const foodId in foodQtyMap) {
-                    const card = $(`.food-card[data-food-id="${foodId}"]`);
-                    updateButton(card, foodQtyMap[foodId]);
-                }
+            for (const foodId in foodQtyMap) {
+                const card = $(`.food-card[data-food-id="${foodId}"]`);
+                updateButton(card, foodQtyMap[foodId]);
             }
         });
     }
@@ -713,132 +594,123 @@ $(document).ready(function () {
             },
             success: function(response){
                 if(response.status === "success"){
-                    if(response.total_quantity <= 0){
-                        updateButton(card, 0);
-                    } else {
-                        updateButton(card, response.total_quantity);
-                    }
+                    const totalQty = response.total_quantity;
+                    updateButton(card, totalQty);
                 }
             }
         });
     }
 
-$(document).on('click', '.add-cart-btn', function () {
-    const card = $(this).closest('.food-card');
-    const foodId = card.data('food-id');
-
-    $.get(`/orders/get-variants/${foodId}/`, function(res){
-
-        // ✅ If no variants → direct add
-        if(res.variants.length === 0){
-            changeQty(card, 1, null);
-            return;
-        }
-
-        // ✅ Otherwise open bottomsheet
-        window.removeMode = false;
-        currentFoodCard = card;
-
-        const foodName = card.find('.food-name').text();
+    // ===============================
+    // OPEN VARIANT BOTTOM SHEET
+    // ===============================
+    function openVariantSheet(card, variantsData, isIncrease=true){
+        const foodName = card.find('.food-name').text() || card.find('h6').text();
         $("#sheetFoodName").text(foodName);
+        selectedVariant = null;
 
-        let html = "";
-        res.variants.forEach(v => {
-            html += `
-                <div class="variant-item" data-id="${v.id}">
-                    <strong>${v.name}</strong>
-                    <span style="float:right">₹${v.price.toFixed(2)}</span>
-                </div>
-            `;
-        });
+        const container = $("#variantList");
+        container.empty();
 
-        $("#variantList").html(html);
+        // Render variants with strike + discounted price
+//         variantsData.forEach(v => {
+//     const id = v.id || 'regular';
+//     const html = $('<div class="variant-item"></div>').attr('data-id', id);
 
-        // ✅ VERY IMPORTANT: Auto select first variant
+//     html.append($('<strong></strong>').text(v.name));
+
+//     const priceSpan = $('<span style="float:right"></span>');
+
+//     // ✅ Strike-through logic
+//     if (v.discounted_price && v.discounted_price !== v.price) {
+//         priceSpan.html(`
+//             <span style="text-decoration:line-through;color:#999;">₹${v.price.toFixed(2)}</span>
+//             <span style="color:#28a745;font-weight:600;"> ₹${v.discounted_price.toFixed(2)}</span>
+//         `);
+//     } else {
+//         priceSpan.text(`₹${v.price.toFixed(2)}`);
+//     }
+
+//     html.append(priceSpan);
+//     container.append(html);
+// });
+
+// Inside openVariantSheet function
+variantsData.forEach(v => {
+    const id = v.id || 'regular';
+    const html = $('<div class="variant-item"></div>').attr('data-id', id);
+
+    html.append($('<strong></strong>').text(v.name));
+
+    const priceSpan = $('<span style="float:right"></span>');
+
+    // Strike + discounted price logic
+    if(v.discounted_price && v.discounted_price < v.price){
+        priceSpan.html(`
+            <span style="text-decoration:line-through;color:#999;">₹${v.price.toFixed(2)}</span>
+            <span style="color:#28a745;font-weight:600;"> ₹${v.discounted_price.toFixed(2)}</span>
+        `);
+    } else {
+        priceSpan.text(`₹${v.price.toFixed(2)}`);
+    }
+
+    html.append(priceSpan);
+    container.append(html);
+});
+
+        // Select first variant by default
         $(".variant-item").first().addClass("selected");
+        selectedVariant = $(".variant-item.selected").data("id");
 
         $("#variantSheet").addClass("active");
         $("#sheetOverlay").show();
-    });
-});
-
+        updateSheetButton(); // <- new line
+    }
 
     // ===============================
-    // INCREASE BUTTON
+    // ADD TO CART CLICK
     // ===============================
-    $(document).on('click', '.increase-btn', function(){
+    $(document).on('click', '.add-cart-btn', function () {
         const card = $(this).closest('.food-card');
-        const hasVariant = card.attr('data-has-variant') === "true";
-
-        if (!hasVariant) {
-            changeQty(card, 1);
-            return;
-        }
-
-        // Variant → open bottom sheet again
         currentFoodCard = card;
-        const foodId = card.attr('data-food-id');
-        const foodName = card.find('h6').text();
-        $("#sheetFoodName").text(foodName);
+        const foodId = card.data('food-id');
 
         $.get(`/orders/get-variants/${foodId}/`, function(res){
-            let html = "";
-            res.variants.forEach(v => {
-                html += `
-                    <div class="variant-item" data-id="${v.id}">
-                        <strong>${v.name}</strong>
-                        <span style="float:right">₹${v.price}</span>
-                    </div>
-                `;
-            });
+            onlyRegular = res.only_regular;
+            const hasRealVariants = res.variants.some(v => v.id !== "regular");
 
-            $("#variantList").html(html);
-            $("#variantSheet").addClass("active");
-            $("#sheetOverlay").show();
-            selectedVariant = null;
+            if(onlyRegular || !hasRealVariants){
+                changeQty(card, 1, "regular");
+                return;
+            }
+
+            openVariantSheet(card, res.variants);
         });
     });
 
-    
+    // ===============================
+    // INCREASE / DECREASE BUTTONS
+    // ===============================
+    $(document).on('click', '.increase-btn, .decrease-btn', function(){
+        const card = $(this).closest('.food-card');
+        const foodId = card.data('food-id');
+        const isIncrease = $(this).hasClass('increase-btn');
 
-$(document).on('click', '.decrease-btn', function(){
-    const card = $(this).closest('.food-card');
-    const foodId = card.attr('data-food-id');
+        $.get(`/orders/get-variants/${foodId}/`, function(res){
+            onlyRegular = res.only_regular;
+            const hasRealVariants = res.variants.some(v => v.id !== "regular");
 
-    $.get(`/orders/get-variants/${foodId}/`, function(res){
+            if(onlyRegular || !hasRealVariants){
+                changeQty(card, isIncrease ? 1 : -1, "regular");
+                return;
+            }
 
-        // ✅ If no variants → direct remove
-        if(res.variants.length === 0){
-            changeQty(card, -1, null);
-            return;
-        }
+            currentFoodCard = card;
+            window.removeMode = !isIncrease;
 
-        // ✅ Otherwise open remove sheet
-        currentFoodCard = card;
-        window.removeMode = true;
-
-        $("#sheetFoodName").text("Remove Item");
-
-        let html = "";
-        res.variants.forEach(v => {
-            html += `
-                <div class="variant-item" data-id="${v.id}">
-                    <strong>${v.name}</strong>
-                    <span style="float:right">Remove</span>
-                </div>
-            `;
+            openVariantSheet(card, res.variants, isIncrease);
         });
-
-        $("#variantList").html(html);
-
-        // ✅ Auto select first variant
-        $(".variant-item").first().addClass("selected");
-
-        $("#variantSheet").addClass("active");
-        $("#sheetOverlay").show();
     });
-});
-
 
     // ===============================
     // VARIANT SELECTION
@@ -850,48 +722,95 @@ $(document).on('click', '.decrease-btn', function(){
     });
 
     // ===============================
-    // QUANTITY BUTTONS INSIDE SHEET
+    // CLOSE VARIANT SHEET
     // ===============================
-    $(document).on('click', '.qty-minus', function() {
-        let qty = parseInt($('.qty-number').text());
-        if(qty > 1) $('.qty-number').text(qty - 1);
-    });
-    $(document).on('click', '.qty-plus', function() {
-        let qty = parseInt($('.qty-number').text());
-        $('.qty-number').text(qty + 1);
-    });
-
-   
-
-
-//     // ===============================
-//     // CLOSE VARIANT SHEET
-//     // ===============================
     $(document).on('click', '#closeSheet, #sheetOverlay', function() {
-        $("#variantSheet").removeClass('active');
+        $("#variantSheet").removeClass("active");
         $("#sheetOverlay").hide();
         selectedVariant = null;
-        $(".qty-number").text(1);
         window.removeMode = false;
+        $(".qty-number").text(1);
     });
 
+    // ===============================
+    // CONFIRM ADD / REMOVE FROM SHEET
+    // ===============================
+    $(document).on('click', '#addVariantToCart', function(){
+        const qty = parseInt($(".qty-number").text()) || 1;
 
+        if(!currentFoodCard) return;
 
+        if(onlyRegular || !selectedVariant){
+            changeQty(currentFoodCard, window.removeMode ? -qty : qty, "regular");
+        } else {
+            changeQty(currentFoodCard, window.removeMode ? -qty : qty, selectedVariant);
+        }
 
-$(document).on('click', '#addVariantToCart', function(){
-    const selectedVariant = $(".variant-item.selected").data("id");
-    const qty = parseInt($(".qty-number").text());
+        $("#variantSheet").removeClass("active");
+        $("#sheetOverlay").hide();
+        window.removeMode = false;
+        $(".qty-number").text(1);
+    });
 
-    if (window.removeMode === true) {
-        changeQty(currentFoodCard, -qty, selectedVariant);
+//     function updateSheetButton() {
+//     if (!currentFoodCard) return;
+
+//     const qty = parseInt($(".qty-number").text()) || 1;
+//     let btn = $("#addVariantToCart");
+
+//     if(window.removeMode || qty === 0){
+//         btn.text("Remove");
+//         btn.removeClass("btn-success").addClass("btn-danger");
+//     } else {
+//         const inCartQty = parseInt(currentFoodCard.find('.quantity').text()) || 0;
+//         if(inCartQty > 0){
+//             btn.text("Update Cart");
+//             btn.removeClass("btn-danger").addClass("btn-success");
+//         } else {
+//             btn.text("Add to Cart");
+//             btn.removeClass("btn-danger").addClass("btn-success");
+//         }
+//     }
+// }
+
+function updateSheetButton() {
+    if (!currentFoodCard) return;
+
+    const qty = parseInt($(".qty-number").text()) || 1;
+    let btn = $("#addVariantToCart");
+    let qtyArea = $(".sheet-qty");
+
+    if(window.removeMode || qty === 0){
+        btn.text("Remove");
+        btn.removeClass("btn-success").addClass("btn-danger");
+        qtyArea.hide(); // <-- hide qty when removing
     } else {
-        changeQty(currentFoodCard, qty, selectedVariant);
+        const inCartQty = parseInt(currentFoodCard.find('.quantity').text()) || 0;
+        if(inCartQty > 0){
+            btn.text("Update Cart");
+            btn.removeClass("btn-danger").addClass("btn-success");
+        } else {
+            btn.text("Add to Cart");
+            btn.removeClass("btn-danger").addClass("btn-success");
+        }
+        qtyArea.show(); // <-- show qty when adding/updating
+    }
+}
+
+$(document).on('click', '.qty-plus, .qty-minus', function(){
+    const qtyElem = $(".qty-number");
+    let qty = parseInt(qtyElem.text()) || 1;
+
+    if($(this).hasClass('qty-plus')){
+        qty += 1;
+        window.removeMode = false;
+    } else {
+        qty = Math.max(0, qty - 1);
+        window.removeMode = (qty === 0);
     }
 
-    $("#variantSheet").removeClass("active");
-    $("#sheetOverlay").hide();
-    window.removeMode = false;
+    qtyElem.text(qty);
+    updateSheetButton(); // <- dynamically update button
 });
-
 
 });

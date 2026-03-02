@@ -3,9 +3,7 @@ from . import views
 from .views import toggle_wishlist
 
 urlpatterns = [
-   # path('add/<int:food_id>/', views.add_to_cart, name='add_to_cart'),
-    #path("add-to-cart/", views.add_to_cart, name="add_to_cart"),
-   # path('update/<int:food_id>/<str:action>/', views.update_cart_quantity, name='update_cart_quantity'),
+  
     path('get_cart/', views.get_cart, name='get_cart'),
     path('cart/', views.cart_page, name='cart_page'),
     path('cart/', views.cart_view, name='cart'),
@@ -14,16 +12,14 @@ urlpatterns = [
     path('checkout/', views.checkout, name='checkout'),
     path('order-success/<int:order_id>/', views.order_success, name='order_success'),
     path('place-order/', views.place_order, name='place_order'),
-   # path('remove-item/<int:item_id>/', views.remove_item, name='remove_item'),
-    # orders/urls.py
-#path('remove_item/<int:food_id>/', views.remove_item_from_cart, name='remove_item'),
+
 
    # urls.py
    path('variants/<int:food_id>/', views.get_food_variants_ajax, name='get_food_variants_ajax'),
    path('add_variant/<int:food_id>/', views.add_variant_to_cart, name='add_variant_to_cart'),
    path("get-variants/<int:food_id>/", views.get_variants, name="get_variants"),
 
-    # path('offers/', views.create_and_list_offer, name='create_and_list_offer'),
+ 
     path('offers/delete/<int:id>/', views.offer_delete, name='offer_delete'), 
     path('offers/update/<int:offer_id>/', views.offer_update, name='offer_update'),
     path('apply-offer/', views.apply_offer, name='apply_offer'),
@@ -49,6 +45,8 @@ urlpatterns = [
     path("create-razorpay-order/", views.create_razorpay_order, name="create_razorpay_order"),
 # Invoice download URL
     path("order/<int:order_id>/invoice/", views.download_invoice, name="download_invoice"),
+
+path('cart/food-summary/<int:food_id>/', views.food_cart_summary, name='food_cart_summary'),
 
 # ========================krisha ae add karelu================
     path('cancel/<int:order_id>/', views.cancel_order, name='cancel_order'),

@@ -53,65 +53,96 @@
     color: #27ae60;
     font-weight: bold;
 }
+/* -------------------- Reply Inquiry Page CSS -------------------- */
 
-/* RESET */
+/* Reset basic styles */
 * {
-    margin: 0;
-    padding: 0;
     box-sizing: border-box;
     font-family: Arial, sans-serif;
 }
 
-/* PAGE TITLE */
+/* Page Title */
 h2 {
-    margin-bottom: 20px;
+    text-align: center;
+    margin-bottom: 30px;
+    font-size: 28px;
     color: #333;
 }
 
-/* Inquiry Details Card */
+/* ---------------- Inquiry Details Card ---------------- */
 .inquiry-detail-card {
-    background-color: #f8f8f8;
-    padding: 20px;
+    background-color: #f8f9fa;
+    padding: 25px 20px;
     border-radius: 12px;
-    box-shadow: 0 6px 15px rgba(0,0,0,0.1);
-    margin-bottom: 20px;
+    box-shadow: 0 8px 20px rgba(0,0,0,0.08);
+    margin: 20px auto;
+    max-width: 650px;
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.inquiry-detail-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 12px 25px rgba(0,0,0,0.12);
 }
 
 .inquiry-detail-card h3 {
     margin-bottom: 15px;
-    color: #555;
+    font-size: 20px;
+    color: #2c3e50;
+    border-bottom: 1px solid #ddd;
+    padding-bottom: 8px;
 }
 
 .inquiry-detail-card p {
-    margin-bottom: 8px;
+    margin-bottom: 10px;
     font-size: 15px;
+    line-height: 1.5;
 }
 
-/* Status Styling */
+/* Status Badges */
 .status-pending {
-    color: #ff6b00;
+    color: #e67e22;
     font-weight: bold;
+    background: #fff3e0;
+    padding: 3px 8px;
+    border-radius: 6px;
+    font-size: 13px;
 }
 
 .status-responded {
-    color: #00b894;
+    color: #27ae60;
     font-weight: bold;
+    background: #e6f9f0;
+    padding: 3px 8px;
+    border-radius: 6px;
+    font-size: 13px;
 }
 
-/* Reply Form Card */
+/* ---------------- Reply Form Card ---------------- */
 .reply-form-card {
-    background-color: #fff;
-    padding: 20px;
+    background-color: #ffffff;
+    padding: 25px 20px;
     border-radius: 12px;
-    box-shadow: 0 6px 15px rgba(0,0,0,0.1);
-    margin-bottom: 20px;
+    box-shadow: 0 8px 20px rgba(0,0,0,0.08);
+    margin: 20px auto;
+    max-width: 650px;
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.reply-form-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 12px 25px rgba(0,0,0,0.12);
 }
 
 .reply-form-card h3 {
     margin-bottom: 15px;
-    color: #555;
+    font-size: 20px;
+    color: #2c3e50;
+    border-bottom: 1px solid #ddd;
+    padding-bottom: 8px;
 }
 
+/* Textarea */
 .reply-form-card textarea {
     width: 100%;
     min-height: 120px;
@@ -121,21 +152,65 @@ h2 {
     resize: vertical;
     margin-bottom: 15px;
     font-size: 14px;
+    display: block;
 }
 
-.reply-btn {
-    background-color: #ff4d00;
-    color: #fff;
-    padding: 10px 20px;
+/* Send Reply Button */
+.reply-form-card .reply-btn {
+    display: inline-block;
+    padding: 8px 16px;
+    font-size: 14px;
     border-radius: 8px;
     border: none;
     cursor: pointer;
-    font-size: 14px;
-    transition: background 0.3s ease;
+    background-color: #ff4d00;
+    color: #fff;
+    transition: background 0.3s ease, transform 0.2s ease;
+    margin: 0 auto;
 }
 
-.reply-btn:hover {
+.reply-form-card .reply-btn:hover {
     background-color: #e04300;
+    transform: translateY(-1px);
+}
+
+/* Center button inside form */
+.reply-form-card form {
+    text-align: center;
+}
+
+/* Already Replied Card */
+.reply-form-card p {
+    font-size: 15px;
+    line-height: 1.5;
+}
+
+/* Back Link */
+.back-link {
+    display: inline-block;
+    margin-top: 15px;
+    font-size: 14px;
+    color: #555;
+    text-decoration: none;
+    transition: color 0.2s ease;
+}
+
+.back-link:hover {
+    color: #ff4d00;
+    text-decoration: underline;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .inquiry-detail-card,
+    .reply-form-card {
+        padding: 20px 15px;
+        max-width: 90%;
+    }
+
+    h2 {
+        font-size: 24px;
+    }
 }
 
 /* Back Link */
