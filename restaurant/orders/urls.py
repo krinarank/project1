@@ -1,6 +1,9 @@
 from django.urls import path
 from . import views
 from .views import toggle_wishlist
+from rest_framework.routers import DefaultRouter
+from .views import ComplaintViewSet, ComplaintResolutionViewSet
+
 
 urlpatterns = [
   
@@ -53,8 +56,16 @@ path('cart/food-summary/<int:food_id>/', views.food_cart_summary, name='food_car
     path("check-stock/<int:food_id>/", views.check_stock, name="check_stock"),
      
 #    ==================ahiya sudhi==============
-]
-   
 
+]
+router = DefaultRouter()
+router.register(r'complaints', ComplaintViewSet, basename='complaint')
+router.register(r'complaint-resolve', ComplaintResolutionViewSet, basename='complaint-resolve')
+
+urlpatterns += router.urls
+
+urlpatterns += [
+    path('check-complaint-alert/', views.check_complaint_alert, name='check_complaint_alert'),
+]
 
 

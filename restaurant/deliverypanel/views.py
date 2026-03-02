@@ -41,6 +41,7 @@ from django.shortcuts import get_object_or_404, redirect
 from django.contrib.auth import authenticate, login, logout
 from accounts.models import Customer
 from .models import DeliveryPerson
+from orders.models import *
 
 def delivery_login(request):
     if request.method == 'POST':
@@ -111,9 +112,11 @@ def delivery_dashboard(request):
 
     # 🔹 Active Orders (ACCEPTED)
     active_assignments = AssignOrder.objects.filter(
-        delivery_person=delivery,
-        status='ACCEPTED'
-    ).select_related('order', 'user')
+      delivery_person=delivery,
+      status__in=['ACCEPTED', 'DELIVERED']
+    ).select_related('order', 'user').prefetch_related(
+      'order__orderhaspayment_set__payment'
+    ).order_by('-id')
 
     # 🔹 Delivered Orders
     delivered_assignments = AssignOrder.objects.filter(
@@ -202,6 +205,7 @@ def delivery_mark_delivered(request, order_id):
 
     order = assignment.order
     order.order_status = 'DELIVERED'
+    order.delivered_at = timezone.now()
     order.save()
     return redirect('delivery_dashboard')
 def delivery_forgot_password(request):
@@ -285,6 +289,27 @@ def verify_otp(request):
     return render(request, 'accounts/verify_otp.html', {
        'verify_url': 'verify_otp'
     })
+
+def delivery_mark_paid(request, order_id):
+    if 'delivery_id' not in request.session:
+        return redirect('/delivery/login/')
+
+    order = get_object_or_404(Order, id=order_id)
+
+    order_payment = OrderHasPayment.objects.filter(order=order).select_related('payment').first()
+
+    if order_payment:
+        payment = order_payment.payment
+
+        if payment.method == 'COD' and payment.status == 'PENDING':
+            payment.status = 'PAID'
+            payment.amount_paid = payment.remaining_amount
+            payment.remaining_amount = 0
+            payment.save()
+
+            messages.success(request, "COD Payment received successfully.")
+
+    return redirect('delivery_dashboard')
 
 def reset_password(request):
     if request.method == 'POST':

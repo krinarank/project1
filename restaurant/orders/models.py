@@ -157,7 +157,7 @@ class Order(models.Model):
     total_qty = models.PositiveIntegerField()
     dis_amount = models.DecimalField(max_digits=10, decimal_places=2, default=0)
     total_amount = models.DecimalField(max_digits=10, decimal_places=2)
-
+    
     delivery_address = models.TextField()
 
     order_status = models.CharField(
@@ -165,7 +165,7 @@ class Order(models.Model):
         choices=ORDER_STATUS,
         default='PLACED'
     )
-
+    delivered_at = models.DateTimeField(null=True, blank=True)
     area = models.ForeignKey(
         'location.Area',
         on_delete=models.SET_NULL,
@@ -289,3 +289,84 @@ class AdminNotification(models.Model):
     is_read = models.BooleanField(default=False)
     created_at = models.DateTimeField(auto_now_add=True)
 # ===============ahiya sudhi========================
+
+
+from django.db import models
+from accounts.models import Customer
+from adminpanel.models import FoodItem
+from django.utils import timezone
+
+class Complaint(models.Model):
+    REASON_CHOICES = [
+        ('WRONG_ITEM', 'Wrong Item'),
+        ('MISSING_ITEM', 'Missing Item'),
+    ]
+    STATUS_CHOICES = [
+        ('OPEN', 'Open'),
+        ('APPROVED', 'Approved'),
+        ('REJECTED', 'Rejected'),
+    ]
+
+    order = models.ForeignKey('Order', on_delete=models.CASCADE)
+    user = models.ForeignKey(Customer, on_delete=models.CASCADE)
+    reason = models.CharField(max_length=20, choices=REASON_CHOICES)
+    description = models.TextField(blank=True, null=True)
+    is_full_return = models.BooleanField(default=False)
+    is_notified = models.BooleanField(default=False)
+    returned_items = models.ManyToManyField("OrderDetail", blank=True)
+
+    proof_image = models.ImageField(upload_to="complaint_proofs/", null=True, blank=True)
+
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='OPEN')
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"Complaint #{self.id} - Order {self.order.id}"
+
+class ComplaintResolution(models.Model):
+    ACTION_CHOICES = [
+        ('REFUND', 'Refund'),
+        ('REJECT', 'Reject'),
+    ]
+
+    complaint = models.OneToOneField(Complaint, on_delete=models.CASCADE)
+    action = models.CharField(max_length=20, choices=ACTION_CHOICES)
+    refund_amount = models.DecimalField(max_digits=10, decimal_places=2, default=0.00)
+    note = models.TextField(blank=True, null=True)
+    resolved_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,  # ✅ points to Customer model
+        on_delete=models.CASCADE
+    )
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"Resolution for Complaint #{self.complaint.id}"
+
+class ReturnOrder(models.Model):
+    STATUS_CHOICES = [
+        ('INITIATED', 'Initiated'),
+        ('PROCESSED', 'Processed'),
+        ('COMPLETED', 'Completed'),
+    ]
+
+    complaint = models.OneToOneField(Complaint, on_delete=models.CASCADE)
+    order = models.ForeignKey('Order', on_delete=models.CASCADE)
+    user = models.ForeignKey(Customer, on_delete=models.CASCADE)
+    total_refund_amount = models.DecimalField(max_digits=10, decimal_places=2)
+    refund_type = models.CharField(max_length=20, default='WALLET')
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='INITIATED')
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"ReturnOrder #{self.id} - Order {self.order.id}"
+
+class ReturnOrderDetail(models.Model):
+    return_order = models.ForeignKey(ReturnOrder, on_delete=models.CASCADE, related_name='details')
+    order_item = models.ForeignKey('OrderDetail', on_delete=models.CASCADE)
+    qty = models.PositiveIntegerField()
+    amount = models.DecimalField(max_digits=10, decimal_places=2)
+    reason = models.CharField(max_length=20, choices=Complaint.REASON_CHOICES)
+
+    def __str__(self):
+        return f"ReturnItem {self.order_item.food_item.name} - ReturnOrder {self.return_order.id}"
+    

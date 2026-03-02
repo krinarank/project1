@@ -2112,3 +2112,39 @@ def admin_change_password(request):
         return redirect('admin_profile')
 
     return redirect('admin_profile')
+
+
+# views.py
+from django.shortcuts import render
+from orders.models import Complaint
+from decimal import Decimal
+
+from decimal import Decimal
+
+def calculate_refund(complaint):
+    order = complaint.order
+
+    order_subtotal = sum(
+        item.price for item in order.order_details.all()
+    )
+
+    returned_total = sum(
+        item.price for item in complaint.returned_items.all()
+    )
+
+    # FULL RETURN
+    if complaint.is_full_return:
+        return order.total_amount
+
+    # PARTIAL RETURN
+    gst_refund = Decimal(returned_total) * Decimal("0.05")
+
+    refund = Decimal(returned_total) + gst_refund
+
+    return round(refund, 2)
+def admin_complaint_list(request):
+    complaints = Complaint.objects.all().order_by('-created_at')
+    for complaint in complaints:
+        complaint.calculated_refund = calculate_refund(complaint)
+
+    return render(request, 'adminpanel/complaint_list.html', {'complaints': complaints})

@@ -16,7 +16,11 @@ urlpatterns = [
         views.delivery_mark_delivered,
         name='delivery_mark_delivered'
     ),
-
+    path(
+    'mark-paid/<int:order_id>/',
+    views.delivery_mark_paid,
+    name='delivery_mark_paid'
+),
     path('forgot-password/', views.delivery_forgot_password, name='delivery_forgot_password'),
     path('verify-otp/', views.verify_otp, name='verify_otp'),
     path('reset-password/', views.reset_password, name='reset_password'),

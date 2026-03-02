@@ -5,35 +5,204 @@
 {% block extra_css %}
 <link rel="stylesheet" href="{% static 'orders/checkout.css' %}">
 <style>
-.ck-input-error { border: 1.5px solid red !important; }
-.ck-error { color: red; font-size: 0.85em; margin-bottom: 5px; display: block; }
-.ck-place-btn[disabled] { opacity: 0.6; cursor: not-allowed; }
+    .ck-input-error {
+        border: 1.5px solid red !important;
+    }
+
+    .ck-error {
+        color: red;
+        font-size: 0.85em;
+        margin-bottom: 5px;
+        display: block;
+    }
+
+    .ck-place-btn[disabled] {
+        opacity: 0.6;
+        cursor: not-allowed;
+    }
+
+    #walletOptions {
+        margin-left: 25px;
+        margin-top: 8px;
+    }
+
+    #partialBox {
+        margin-top: 8px;
+    }
+
+    /* Wallet Options Container */
+    #walletOptions {
+        margin-top: 12px;
+    }
+
+    /* Custom Wallet Radio Card */
+    .wallet-option {
+        display: flex;
+        align-items: center;
+        padding: 10px 14px;
+        border: 1.5px solid #ddd;
+        border-radius: 10px;
+        cursor: pointer;
+        margin-bottom: 8px;
+        transition: 0.3s ease;
+        font-weight: 500;
+        background: #f9f9f9;
+    }
+
+    .wallet-option:hover {
+        border-color: #16a34a;
+        background: #f0fdf4;
+    }
+
+    .wallet-option input {
+        display: none;
+    }
+
+    /* Circle */
+    .wallet-circle {
+        width: 16px;
+        height: 16px;
+        border: 2px solid #16a34a;
+        border-radius: 50%;
+        margin-right: 10px;
+        position: relative;
+    }
+
+    .wallet-option input:checked+.wallet-circle::after {
+        content: "";
+        width: 8px;
+        height: 8px;
+        background: #16a34a;
+        border-radius: 50%;
+        position: absolute;
+        top: 2px;
+        left: 2px;
+    }
+
+    /* Partial Amount Box */
+    #partialBox input {
+        margin-top: 8px;
+        padding: 6px;
+        border-radius: 6px;
+        border: 1px solid #ccc;
+    }
+
+    /* Partial Wallet Box */
+    .partial-box {
+        margin-top: 12px;
+        padding: 12px;
+        background: #f8fafc;
+        border-radius: 10px;
+        border: 1px solid #e2e8f0;
+        animation: fadeIn 0.3s ease-in-out;
+    }
+
+    /* Wallet Amount Input */
+    .wallet-input-group input {
+        width: 100%;
+        padding: 8px 10px;
+        border-radius: 8px;
+        border: 1.5px solid #ccc;
+        transition: 0.3s ease;
+        font-size: 14px;
+    }
+
+    .wallet-input-group input:focus {
+        border-color: #16a34a;
+        outline: none;
+        box-shadow: 0 0 0 2px rgba(22, 163, 74, 0.2);
+    }
+
+    /* Remaining Payment Methods */
+    .remaining-methods {
+        margin-top: 10px;
+        display: flex;
+        gap: 10px;
+    }
+
+    /* Custom Radio Card */
+    .remaining-option {
+        flex: 1;
+        display: flex;
+        align-items: center;
+        padding: 8px 10px;
+        border-radius: 8px;
+        border: 1.5px solid #ddd;
+        cursor: pointer;
+        transition: 0.3s ease;
+        font-weight: 500;
+        background: white;
+    }
+
+    .remaining-option:hover {
+        border-color: #16a34a;
+        background: #f0fdf4;
+    }
+
+    /* Hide default radio */
+    .remaining-option input {
+        display: none;
+    }
+
+    /* Custom circle */
+    .custom-circle {
+        width: 15px;
+        height: 15px;
+        border: 2px solid #16a34a;
+        border-radius: 50%;
+        margin-right: 8px;
+        position: relative;
+    }
+
+    /* Selected */
+    .remaining-option input:checked+.custom-circle::after {
+        content: "";
+        width: 7px;
+        height: 7px;
+        background: #16a34a;
+        border-radius: 50%;
+        position: absolute;
+        top: 2px;
+        left: 2px;
+    }
+
+    /* Smooth Fade */
+    @keyframes fadeIn {
+        from {
+            opacity: 0;
+            transform: translateY(-5px);
+        }
+
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
 </style>
 {% endblock %}
 
 <div class="ck-wrapper">
-    <!-- LEFT: Customer Details -->
+
+    <!-- LEFT SIDE SAME -->
     <div class="ck-card ck-left">
         <h2 class="ck-title">Customer Details</h2>
 
-        <form id="checkoutForm" method="post" action="{% url 'place_order' %}">
+        <form id="checkoutForm" method="post">
             {% csrf_token %}
-
-            <!-- AUTO-FILL -->
             <input class="ck-input" id="name" type="text" name="name" placeholder="Full Name" required
-                   value="{{ customer.firstname }} {{ customer.lastname }}">
+                value="{{ customer.firstname }} {{ customer.lastname }}">
             <small class="ck-error" id="nameError"></small>
 
             <input class="ck-input" id="email" type="email" name="email" placeholder="Email" required
-                   value="{{ customer.email }}">
+                value="{{ customer.email }}">
             <small class="ck-error" id="emailError"></small>
 
-            <input class="ck-input" id="phone" type="tel" name="phone" placeholder="Phone Number" maxlength="10" required
-                   value="{{ customer.contactno }}">
+            <input class="ck-input" id="phone" type="tel" name="phone" placeholder="Phone Number" maxlength="10"
+                required value="{{ customer.contactno }}">
             <small class="ck-error" id="phoneError"></small>
 
-            <!-- MANUAL FILL -->
-            <textarea class="ck-input" id="address" name="address" placeholder="Delivery Address" rows="3" required></textarea>
+            <textarea class="ck-input" id="address" name="address" placeholder="Delivery Address" rows="3"
+                required></textarea>
             <small class="ck-error" id="addressError"></small>
 
             <input class="ck-input" id="city" type="text" name="city" placeholder="City" required>
@@ -42,7 +211,8 @@
             <input class="ck-input" id="state" type="text" name="state" placeholder="State" required>
             <small class="ck-error" id="stateError"></small>
 
-            <input class="ck-input" id="pincode" type="text" name="pincode" placeholder="Pincode" maxlength="6" required>
+            <input class="ck-input" id="pincode" type="text" name="pincode" placeholder="Pincode" maxlength="6"
+                required>
             <small class="ck-error" id="pincodeError"></small>
 
             <select class="ck-input" id="area_id" name="area_id" required>
@@ -55,7 +225,7 @@
         </form>
     </div>
 
-    <!-- RIGHT: Order Summary + Payment -->
+    <!-- RIGHT SIDE -->
     <div class="ck-card ck-right">
         <h2 class="ck-title">Order Summary</h2>
 
@@ -65,24 +235,69 @@
             <span>Discount You Saved</span>
             <span>- ₹ {{ total_discount|floatformat:2 }}</span>
         </div>
-        {% endif %}<hr>
+        {% endif %}
+        <hr>
         <div class="ck-summary"><span>Subtotal</span><span>₹ {{ item_total|floatformat:2 }}</span></div>
         <div class="ck-summary"><span>GST (5%)</span><span>₹ {{ tax|floatformat:2 }}</span></div>
         <div class="ck-summary"><span>Delivery Charges</span><span>₹ {{ delivery_charge|floatformat:2 }}</span></div>
         <hr>
-        <div class="ck-summary"><span>Total (incl. tax & delivery)</span><span>₹ {{ grand_total|floatformat:2 }}</span></div>
+        <div class="ck-summary"><span>Total (incl. tax & delivery)</span><span>₹ {{ grand_total|floatformat:2 }}</span>
+        </div>
 
         <div class="ck-payments">
             <h4 class="pay-heading">Payment Method</h4>
-            <div class="pay-methods">
-                <label class="pay-card">
-                    <input type="radio" name="payment_method" value="COD" checked>
-                    <div class="pay-content"><span class="radio-dot"></span><span class="pay-text">Cash on Delivery</span></div>
+
+            <label class="pay-card">
+                <input type="radio" name="payment_method" value="COD" checked>
+                <span class="pay-text">Cash on Delivery</span>
+            </label><br><br>
+
+            <label class="pay-card">
+                <input type="radio" name="payment_method" value="UPI">
+                <span class="pay-text">UPI</span>
+            </label><br><br>
+
+            <label class="pay-card">
+                <input type="radio" id="walletBtn" name="payment_method" value="WALLET">
+                <span class="pay-text">Wallet (₹{{ wallet.balance|floatformat:2 }})</span>
+            </label>
+
+            <div id="walletOptions" style="display:none;">
+                <label class="wallet-option">
+                    <input type="radio" name="wallet_option" value="FULL">
+                    <span class="wallet-circle"></span>
+                    Full Payment (Pay Entire Amount from Wallet)
                 </label>
-                <label class="pay-card">
-                    <input type="radio" id="upiBtn" name="payment_method" value="UPI">
-                    <div class="pay-content"><span class="radio-dot"></span><span class="pay-text">UPI</span></div>
+
+                <label class="wallet-option">
+                    <input type="radio" name="wallet_option" value="PARTIAL">
+                    <span class="wallet-circle"></span>
+                    Partial Payment (Use Wallet + Other Method)
                 </label>
+
+                <div id="partialBox" class="partial-box">
+
+                    <div class="wallet-input-group">
+                        <input type="number" id="walletAmount" placeholder="Enter wallet amount" min="0"
+                            max="{{ wallet.balance }}">
+                        <small class="ck-error" id="walletError"></small>
+                    </div>
+
+                    <div class="remaining-methods">
+                        <label class="remaining-option">
+                            <input type="radio" name="remaining_payment" value="COD">
+                            <span class="custom-circle"></span>
+                            Remaining COD
+                        </label>
+
+                        <label class="remaining-option">
+                            <input type="radio" name="remaining_payment" value="UPI">
+                            <span class="custom-circle"></span>
+                            Remaining UPI
+                        </label>
+                    </div>
+
+                </div>
             </div>
         </div>
 
@@ -95,147 +310,319 @@
 <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
 
 <script>
-document.addEventListener("DOMContentLoaded", function(){
-    const form = document.getElementById("checkoutForm");
-    const placeBtn = document.getElementById("placeOrderBtn");
-    const upiBtn = document.getElementById("upiBtn");
+    document.addEventListener("DOMContentLoaded", function () {
 
-    const fields = {
-        name: document.getElementById("name"),
-        email: document.getElementById("email"),
-        phone: document.getElementById("phone"),
-        address: document.getElementById("address"),
-        city: document.getElementById("city"),
-        state: document.getElementById("state"),
-        pincode: document.getElementById("pincode"),
-        area_id: document.getElementById("area_id")
-    };
+        const placeBtn = document.getElementById("placeOrderBtn");
+        const walletBtn = document.getElementById("walletBtn");
+        const walletOptions = document.getElementById("walletOptions");
+        const partialBox = document.getElementById("partialBox");
+        const walletAmountInput = document.getElementById("walletAmount");
 
-    const errors = {
-        name: document.getElementById("nameError"),
-        email: document.getElementById("emailError"),
-        phone: document.getElementById("phoneError"),
-        address: document.getElementById("addressError"),
-        city: document.getElementById("cityError"),
-        state: document.getElementById("stateError"),
-        pincode: document.getElementById("pincodeError"),
-        area_id: document.getElementById("areaError")
-    };
+        const walletBalance = parseFloat("{{ wallet.balance|floatformat:2 }}");
+        const grandTotal = parseFloat("{{ grand_total|floatformat:2 }}");
 
-    const regex = {
-        name: /^[A-Za-z\s]+$/,
-        email: /^[^\s@]+@[^\s@]+\.[^\s@]+$/,
-        phone: /^\d{10}$/,
-        pincode: /^\d{6}$/
-    };
+        // ---------------- FIELD REFERENCES ----------------
+        const fields = {
+            name: document.getElementById("name"),
+            email: document.getElementById("email"),
+            phone: document.getElementById("phone"),
+            address: document.getElementById("address"),
+            city: document.getElementById("city"),
+            state: document.getElementById("state"),
+            pincode: document.getElementById("pincode"),
+            area_id: document.getElementById("area_id")
+        };
 
-    function validateField(name){
-        let value = fields[name].value.trim();
-        let valid = true;
-        switch(name){
-            case "name": case "city": case "state":
-                if(!regex.name.test(value)){ valid=false; errors[name].innerText="Only letters allowed"; }
-                else errors[name].innerText=""; break;
-            case "email":
-                if(!regex.email.test(value)){ valid=false; errors[name].innerText="Enter valid email"; }
-                else errors[name].innerText=""; break;
-            case "phone":
-                if(!regex.phone.test(value)){ valid=false; errors[name].innerText="Phone must be 10 digits"; }
-                else errors[name].innerText=""; break;
-            case "pincode":
-                if(!regex.pincode.test(value)){ valid=false; errors[name].innerText="Pincode must be 6 digits"; }
-                else errors[name].innerText=""; break;
-            case "address":
-                if(!value){ valid=false; errors[name].innerText="Address required"; }
-                else errors[name].innerText=""; break;
-            case "area_id":
-                if(!value){ valid=false; errors[name].innerText="Select area"; }
-                else errors[name].innerText=""; break;
+        const errors = {
+            name: document.getElementById("nameError"),
+            email: document.getElementById("emailError"),
+            phone: document.getElementById("phoneError"),
+            address: document.getElementById("addressError"),
+            city: document.getElementById("cityError"),
+            state: document.getElementById("stateError"),
+            pincode: document.getElementById("pincodeError"),
+            area_id: document.getElementById("areaError"),
+            wallet: document.getElementById("walletError")
+        };
+
+        const regex = {
+            name: /^[A-Za-z\s]+$/,
+            email: /^[^\s@]+@[^\s@]+\.[^\s@]+$/,
+            phone: /^\d{10}$/,
+            pincode: /^\d{6}$/
+        };
+
+        // ---------------- VALIDATION ----------------
+        function validateField(name) {
+            let value = fields[name].value.trim();
+            let valid = true;
+
+            switch (name) {
+                case "name": case "city": case "state":
+                    if (!regex.name.test(value)) {
+                        errors[name].innerText = "Only letters allowed";
+                        valid = false;
+                    } else errors[name].innerText = "";
+                    break;
+
+                case "email":
+                    if (!regex.email.test(value)) {
+                        errors[name].innerText = "Enter valid email";
+                        valid = false;
+                    } else errors[name].innerText = "";
+                    break;
+
+                case "phone":
+                    if (!regex.phone.test(value)) {
+                        errors[name].innerText = "Phone must be 10 digits";
+                        valid = false;
+                    } else errors[name].innerText = "";
+                    break;
+
+                case "pincode":
+                    if (!regex.pincode.test(value)) {
+                        errors[name].innerText = "Pincode must be 6 digits";
+                        valid = false;
+                    } else errors[name].innerText = "";
+                    break;
+
+                case "address":
+                    if (!value) {
+                        errors[name].innerText = "Address required";
+                        valid = false;
+                    } else errors[name].innerText = "";
+                    break;
+
+                case "area_id":
+                    if (!value) {
+                        errors[name].innerText = "Select area";
+                        valid = false;
+                    } else errors[name].innerText = "";
+                    break;
+            }
+
+            fields[name].classList.toggle("ck-input-error", !valid);
+            return valid;
         }
-        if(!valid) fields[name].classList.add("ck-input-error");
-        else fields[name].classList.remove("ck-input-error");
-        return valid;
-    }
 
-    function validateForm(){
-        let valid = true;
-        Object.keys(fields).forEach(f=>{
-            if(!validateField(f)) valid=false;
-        });
-        placeBtn.disabled = !valid;
-        return valid;
-    }
+        function validateWallet() {
+            const paymentMethod = document.querySelector("input[name='payment_method']:checked").value;
 
-    Object.keys(fields).forEach(f=>{
-        fields[f].addEventListener("input", validateForm);
-        fields[f].addEventListener("change", validateForm);
-    });
+            if (paymentMethod !== "WALLET") {
+                errors.wallet.innerText = "";
+                return true;
+            }
 
-    // ================= COD
-    placeBtn.addEventListener("click", function(){
-        if(!validateForm()){ alert("Please fix errors before placing order"); return; }
-        const paymentMethod = document.querySelector("input[name='payment_method']:checked").value;
-        if(paymentMethod==="COD"){
-            form.submit();
-        }
-    });
+            const walletOption = document.querySelector("input[name='wallet_option']:checked");
+            if (!walletOption) {
+                errors.wallet.innerText = "Select wallet option";
+                return false;
+            }
 
-    // ================= UPI → Razorpay
-    upiBtn.addEventListener("click", function(){
-        if(!validateForm()){ alert("Please fill all details before proceeding with UPI"); return; }
+            if (walletOption.value === "PARTIAL") {
+                let walletUsed = parseFloat(walletAmountInput.value) || 0;
 
-        fetch("{% url 'create_razorpay_order' %}",{
-            method:"POST",
-            headers:{
-                "X-CSRFToken":"{{ csrf_token }}",
-                "Content-Type":"application/x-www-form-urlencoded"
-            },
-            body:"amount={{ grand_total }}"
-        })
-        .then(res=>res.json())
-        .then(data=>{
-            var options = {
-                key: data.key,
-                order_id: data.order_id,
-                currency:"INR",
-                name:"Leela Restaurant",
-                description:"Food Order Payment",
-                handler: function(response){
-                    fetch("{% url 'place_order' %}",{
-                        method:"POST",
-                        headers:{
-                            "X-CSRFToken":"{{ csrf_token }}",
-                            "Content-Type":"application/x-www-form-urlencoded",
-                            "X-Requested-With":"XMLHttpRequest"
-                        },
-                        body:new URLSearchParams({
-                            payment_method:"UPI",
-                            razorpay_payment_id: response.razorpay_payment_id,
-                            name: fields.name.value,
-                            email: fields.email.value,
-                            phone: fields.phone.value,
-                            address: fields.address.value,
-                            city: fields.city.value,
-                            state: fields.state.value,
-                            pincode: fields.pincode.value,
-                            area_id: fields.area_id.value,
-                            final_subtotal:"{{ item_total }}",
-                            final_tax:"{{ tax }}",
-                            final_delivery:"{{ delivery_charge }}",
-                            final_grand_total:"{{ grand_total }}",
-                            final_discount:"{{ total_discount }}"
-                        })
-                    })
-                    .then(res=>res.json())
-                    .then(data=>{
-                        window.location.href="/orders/order-success/"+data.order_id+"/";
-                    });
+                if (walletUsed <= 0) {
+                    errors.wallet.innerText = "Enter wallet amount";
+                    return false;
                 }
-            };
-            new Razorpay(options).open();
+
+                if (walletUsed > walletBalance) {
+                    errors.wallet.innerText = "Exceeds wallet balance";
+                    return false;
+                }
+
+                if (walletUsed >= grandTotal) {
+                    errors.wallet.innerText = "Use FULL option instead";
+                    return false;
+                }
+
+                errors.wallet.innerText = "";
+            }
+
+            return true;
+        }
+
+        function validateForm() {
+            let valid = true;
+
+            Object.keys(fields).forEach(f => {
+                if (!validateField(f)) valid = false;
+            });
+
+            if (!validateWallet()) valid = false;
+
+            placeBtn.disabled = !valid;
+            return valid;
+        }
+
+        // Real-time validation
+        Object.keys(fields).forEach(f => {
+            fields[f].addEventListener("input", validateForm);
+            fields[f].addEventListener("change", validateForm);
         });
+
+        walletAmountInput.addEventListener("input", validateForm);
+        document.querySelectorAll("input[name='wallet_option']").forEach(r => r.addEventListener("change", validateForm));
+        document.querySelectorAll("input[name='payment_method']").forEach(r => r.addEventListener("change", validateForm));
+
+        // ---------------- WALLET SHOW/HIDE ----------------
+        document.querySelectorAll("input[name='payment_method']").forEach(radio => {
+            radio.addEventListener("change", function () {
+                if (this.value === "WALLET") {
+                    walletOptions.style.display = "block";
+                } else {
+                    walletOptions.style.display = "none";
+                    partialBox.style.display = "none";
+                }
+                validateForm();
+            });
+        });
+
+        document.querySelectorAll("input[name='wallet_option']").forEach(radio => {
+            radio.addEventListener("change", function () {
+                if (this.value === "PARTIAL") {
+                    partialBox.style.display = "block";
+                } else {
+                    partialBox.style.display = "none";
+                }
+                validateForm();
+            });
+        });
+
+        // ---------------- SUBMIT ----------------
+        function submitOrder(payment_method, extraData = {}) {
+            const data = new URLSearchParams({
+                payment_method,
+                name: fields.name.value,
+                email: fields.email.value,
+                phone: fields.phone.value,
+                address: fields.address.value,
+                city: fields.city.value,
+                state: fields.state.value,
+                pincode: fields.pincode.value,
+                area_id: fields.area_id.value,
+                final_subtotal: "{{ item_total }}",
+                final_tax: "{{ tax }}",
+                final_delivery: "{{ delivery_charge }}",
+                final_grand_total: "{{ grand_total }}",
+                final_discount: "{{ total_discount }}",
+                ...extraData
+            });
+
+            fetch("{% url 'place_order' %}", {
+                method: "POST",
+                headers: {
+                    "X-CSRFToken": "{{ csrf_token }}",
+                    "Content-Type": "application/x-www-form-urlencoded",
+                    "X-Requested-With": "XMLHttpRequest"
+                },
+                body: data
+            })
+                .then(res => res.json())
+                .then(res => {
+                    if (res.order_id)
+                        window.location.href = "/orders/order-success/" + res.order_id + "/";
+                    else
+                        alert("Error placing order.");
+                });
+        }
+
+        // ---------------- PLACE ORDER ----------------
+        placeBtn.addEventListener("click", function () {
+
+            if (!validateForm()) {
+                alert("Fix errors before placing order");
+                return;
+            }
+
+            const paymentMethod = document.querySelector("input[name='payment_method']:checked").value;
+
+            if (paymentMethod === "WALLET") {
+                const walletOption = document.querySelector("input[name='wallet_option']:checked");
+
+                if (walletOption.value === "FULL") {
+                    submitOrder("WALLET", { wallet_option: "FULL", wallet_amount: grandTotal });
+                    return;
+                }
+
+                if (walletOption.value === "PARTIAL") {
+                    let walletUsed = parseFloat(walletAmountInput.value) || 0;
+                    let remainingAmount = grandTotal - walletUsed;
+
+                    const remainingMethod = document.querySelector("input[name='remaining_payment']:checked");
+
+                    if (remainingMethod.value === "COD") {
+                        submitOrder("COD", { wallet_option: "PARTIAL", wallet_amount: walletUsed, remaining_amount: remainingAmount });
+                        return;
+                    }
+
+                    if (remainingMethod.value === "UPI") {
+                        fetch("{% url 'create_razorpay_order' %}", {
+                            method: "POST",
+                            headers: {
+                                "X-CSRFToken": "{{ csrf_token }}",
+                                "Content-Type": "application/x-www-form-urlencoded"
+                            },
+                            body: "amount=" + remainingAmount
+                        })
+                            .then(res => res.json())
+                            .then(data => {
+                                new Razorpay({
+                                    key: data.key,
+                                    order_id: data.order_id,
+                                    currency: "INR",
+                                    name: "Leela Restaurant",
+                                    handler: function (response) {
+                                        submitOrder("UPI", {
+                                            razorpay_payment_id: response.razorpay_payment_id,
+                                            wallet_option: "PARTIAL",
+                                            wallet_amount: walletUsed,
+                                            remaining_amount: remainingAmount
+                                        });
+                                    }
+                                }).open();
+                            });
+                    }
+                }
+                return;
+            }
+
+            // -------- NORMAL UPI --------
+if (paymentMethod === "UPI") {
+
+    fetch("{% url 'create_razorpay_order' %}", {
+        method: "POST",
+        headers: {
+            "X-CSRFToken": "{{ csrf_token }}",
+            "Content-Type": "application/x-www-form-urlencoded"
+        },
+        body: "amount=" + grandTotal
+    })
+    .then(res => res.json())
+    .then(data => {
+
+        new Razorpay({
+            key: data.key,
+            order_id: data.order_id,
+            currency: "INR",
+            name: "Leela Restaurant",
+            handler: function (response) {
+                submitOrder("UPI", {
+                    razorpay_payment_id: response.razorpay_payment_id
+                });
+            }
+        }).open();
+
     });
 
-});
+    return;
+}
+
+            submitOrder(paymentMethod);
+        });
+
+        validateForm(); // Initial check
+    });
 </script>
 {% endblock %}

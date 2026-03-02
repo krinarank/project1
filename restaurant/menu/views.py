@@ -318,7 +318,7 @@ from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 from django.utils import timezone
 import uuid, re
-
+from orders.models import Wallet
 
 @login_required(login_url='customer_login')
 def profile_page(request):
@@ -395,8 +395,10 @@ def profile_page(request):
     wishlist_items = FoodItem.objects.filter(wishlist__user=user).prefetch_related('images')
     feedbacks = FeedbackRating.objects.filter(user=user).select_related('order')
 
+    wallet, created = Wallet.objects.get_or_create(user=user)
     return render(request, 'profile/profile_page.html', {
         'customer': user,
+        'wallet': wallet, 
         'completed': completed,
         'errors': errors,
         'success_msg': success_msg,

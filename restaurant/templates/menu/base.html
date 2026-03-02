@@ -136,6 +136,17 @@
 <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 <script src="{% static 'menu/js/cart.js' %}"></script>
 
+<script>
+document.addEventListener("DOMContentLoaded", function() {
+    fetch("/orders/check-complaint-alert/")
+    .then(res => res.json())
+    .then(data => {
+        if(data.show_alert){
+            alert(data.message);
+        }
+    });
+});
+</script>
 </body>
 
 </html>

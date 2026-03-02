@@ -1,0 +1,179 @@
+{% extends 'adminpanel/base.html' %}
+{% load static %}
+{% load custom_filters %}
+{% block content %}
+<link rel="stylesheet" href="{% static 'complaints/adminpanel_complaint_list.css' %}">
+
+<h2>🧾 Complaint List</h2>
+<div style="display:flex; justify-content:flex-end; margin-bottom:10px;">
+    <input type="text"
+           id="menuSearch"
+           class="form-control"
+           placeholder="🔍 Search food..."
+           style="width:200px;">
+</div>
+<div style="max-height:600px; overflow-y:auto; border:1px solid #ddd; border-radius:8px;">
+
+        <table style="width:100%; border-collapse:collapse;">
+            
+            <thead style="position:sticky; top:0; background:#212529; color:white; z-index:10;">
+        
+        <tr>
+            <th>Order ID</th>
+            <th>Customer</th>
+            <th>Reason</th>
+            <th>Return Type</th>
+            <th>Items</th>
+            <th>Image</th>
+            <th>Status</th>
+            <th>Action</th>
+        </tr>
+    </thead>
+    
+    <tbody>
+        {% for complaint in complaints %}
+        <tr data-id="{{ complaint.id }}"
+              data-refund="{{ complaint.calculated_refund }}">
+
+            <td>{{ complaint.order.id }}</td>
+            <td>{{ complaint.user.username }}</td>
+            <td>{{ complaint.reason }}</td>
+            <td>
+                {% if complaint.is_full_return %}
+                <span style="color:red;font-weight:bold;">Full Order</span>
+                {% else %}
+                <span style="color:orange;font-weight:bold;">Partial</span>
+                {% endif %}
+            </td>
+
+            <td>
+                {% if complaint.is_full_return %}
+                All Items
+                {% else %}
+                <ul style="padding-left:15px;">
+                    {% for item in complaint.returned_items.all %}
+                    <li>{{ item.food_item.name }} (₹{{ item.price }})</li>
+                    {% empty %}
+                    No items
+                    {% endfor %}
+                </ul>
+                {% endif %}
+            </td>
+            <!-- ✅ IMAGE COLUMN -->
+            <td>
+                {% if complaint.proof_image %}
+                <img src="{{ complaint.proof_image.url }}" width="80" style="border-radius:8px; cursor:pointer;"
+                    onclick="window.open(this.src)">
+                {% else %}
+                No Image
+                {% endif %}
+            </td>
+
+            <td
+                class="status {% if complaint.status == 'OPEN' %}status-open{% elif complaint.status == 'APPROVED' %}status-approved{% elif complaint.status == 'REJECTED' %}status-rejected{% endif %}">
+                {{ complaint.status }}
+            </td>
+
+            <td class="action-cell">
+                {% if complaint.status == "OPEN" %}
+                <button class="btn approve-btn" data-action="APPROVED">Approve</button>
+                <button class="btn reject-btn" data-action="REJECTED">Reject</button>
+                {% else %}
+                <span class="resolved-text">Resolved</span>
+                {% endif %}
+            </td>
+
+        </tr>
+        {% empty %}
+        <tr>
+            <td colspan="6">No complaints found</td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+</div>
+
+<script>
+    document.addEventListener("DOMContentLoaded", function () {
+        const csrf_token = '{{ csrf_token }}';
+
+        document.querySelectorAll(".approve-btn, .reject-btn").forEach(btn => {
+            btn.addEventListener("click", function () {
+                const row = this.closest("tr");
+                const complaintId = row.dataset.id;
+                const action = this.dataset.action;
+                let refundAmount = 0;
+
+                // ✅ Auto-set refund amount for APPROVED complaints
+                if (action === "APPROVED") {
+                    // Default value comes from row dataset (order discounted total)
+                    const defaultRefund = row.dataset.refund || "0";
+                    const confirmedAmount = prompt(`Refund Amount for this complaint:`, defaultRefund);
+                    if (confirmedAmount === null) return; // User cancelled
+                    refundAmount = confirmedAmount;
+                }
+
+                fetch("/orders/complaint-resolve/", {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json",
+                        "X-CSRFToken": csrf_token
+                    },
+                    body: JSON.stringify({
+                        complaint_id: complaintId,
+                        action: action,
+                        refund_amount: refundAmount
+                    })
+                })
+                    .then(res => {
+                        // Try to parse JSON safely
+                        return res.text().then(text => {
+                            try { return JSON.parse(text); }
+                            catch (err) { throw new Error("Invalid JSON response: " + text); }
+                        });
+                    })
+                    .then(data => {
+                        if (data.success) {
+                            // Update status cell
+                            const statusCell = row.querySelector(".status");
+                            statusCell.innerText = action;
+                            statusCell.classList.remove("status-open");
+                            statusCell.classList.add(action === "APPROVED" ? "status-approved" : "status-rejected");
+
+                            // Remove action buttons
+                            const actionCell = row.querySelector(".action-cell");
+                            actionCell.innerHTML = '<span class="resolved-text">Resolved</span>';
+
+                            alert(`Complaint ${action} successfully!`);
+                        } else {
+                            alert("Error: " + (data.message || "Something went wrong!"));
+                        }
+                    })
+                    .catch(err => {
+                        console.error(err);
+                        alert("Request failed: " + err.message);
+                    });
+            });
+        });
+    });
+</script>
+<script>
+// 🔎 Table search functionality (starts-with)
+document.getElementById("menuSearch").addEventListener("keyup", function () {
+    const filter = this.value.toLowerCase().trim();
+    const rows = document.querySelectorAll("table tbody tr");
+
+    rows.forEach(row => {
+        // Check each cell in the row
+        let match = false;
+        row.querySelectorAll("td").forEach(cell => {
+            const cellText = cell.innerText.toLowerCase().trim();
+            if (cellText.startsWith(filter)) {
+                match = true;
+            }
+        });
+        row.style.display = match ? "" : "none";
+    });
+});
+</script>
+{% endblock %}
