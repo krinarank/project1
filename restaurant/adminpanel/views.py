@@ -634,6 +634,7 @@ def delete_foodimage(request, id):
 def delete_category(request, id):
     category = get_object_or_404(FoodItemCategory, id=id)
     category.delete()
+    messages.success(request, "Category deleted successfully")
     return redirect('add_category')
 
 
@@ -907,65 +908,92 @@ def add_delivery_person(request):
         contact = request.POST.get('contact', '').strip()
         address = request.POST.get('address', '').strip()
 
-        errors = []
+        errors = {}
 
-        # ===== Required Fields =====
-        if not all([fname, lname, username, email, password, confirm_password, contact, address]):
-            errors.append("All fields are required.")
+# Required
+        if not fname:
+            errors['fname'] = "First name is required."
 
-        # ===== Name Validation =====
-        if not fname.isalpha():
-            errors.append("First name must contain only letters.")
+        if not lname:
+            errors['lname'] = "Last name is required."
 
-        if not lname.isalpha():
-            errors.append("Last name must contain only letters.")
+        if not username:
+            errors['username'] = "Username is required."
 
-        # ===== Username Validation =====
-        if not re.match(r'^[A-Za-z0-9_]{4,20}$', username):
-            errors.append("Username must be 4-20 characters (letters, numbers, underscore).")
+        if not email:
+            errors['email'] = "Email is required."
 
-        # ===== Email Validation =====
-        if not re.match(r'^[\w\.-]+@[\w\.-]+\.\w+$', email):
-            errors.append("Invalid email format.")
+        if not password:
+            errors['password'] = "Password is required."
 
-        # ===== Contact Validation (Indian) =====
-        if not re.match(r'^[6-9]\d{9}$', contact):
-            errors.append("Enter valid 10 digit Indian mobile number.")
+        if not confirm_password:
+            errors['confirm_password'] = "Confirm password is required."
 
-        # ===== Password Validation =====
-        if len(password) < 8:
-            errors.append("Password must be at least 8 characters.")
+        if not contact:
+            errors['contact'] = "Contact number is required."
 
-        if not re.search(r'[A-Z]', password):
-            errors.append("Password must contain one uppercase letter.")
+        if not address:
+            errors['address'] = "Address is required."
 
-        if not re.search(r'[a-z]', password):
-            errors.append("Password must contain one lowercase letter.")
 
-        if not re.search(r'\d', password):
-            errors.append("Password must contain one number.")
+# Name validation
+        if fname and not fname.isalpha():
+            errors['fname'] = "First name must contain only letters."
 
-        if not re.search(r'[@$!%*?&]', password):
-            errors.append("Password must contain one special character.")
+        if lname and not lname.isalpha():
+            errors['lname'] = "Last name must contain only letters."
 
-        if password != confirm_password:
-            errors.append("Password and Confirm Password do not match.")
 
-        # ===== Duplicate Checks =====
-        if Customer.objects.filter(username=username).exists():
-            errors.append("Username already exists.")
+# Username validation
+        if username and not re.match(r'^[A-Za-z0-9_]{4,20}$', username):
+            errors['username'] = "Username must be 4-20 characters."
 
-        if Customer.objects.filter(email=email).exists():
-            errors.append("Email already exists.")
 
-        if DeliveryPerson.objects.filter(email=email).exists():
-            errors.append("Delivery email already exists.")
+# Email validation
+        if email and not re.match(r'^[\w\.-]+@[\w\.-]+\.\w+$', email):
+             errors['email'] = "Invalid email format."
 
-        # ===== Stop if errors =====
+
+# Contact validation
+        if contact and not re.match(r'^[6-9]\d{9}$', contact):
+             errors['contact'] = "Enter valid 10 digit mobile number."
+
+
+# Password validation
+        if password:
+            if len(password) < 8:
+                 errors['password'] = "Password must be at least 8 characters."
+            elif not re.search(r'[A-Z]', password):
+                errors['password'] = "Password must contain one uppercase letter."
+            elif not re.search(r'[a-z]', password):
+                errors['password'] = "Password must contain one lowercase letter."
+            elif not re.search(r'\d', password):
+                errors['password'] = "Password must contain one number."
+            elif not re.search(r'[@$!%*?&]', password):
+                errors['password'] = "Password must contain one special character."
+
+
+        if password and confirm_password and password != confirm_password:
+             errors['confirm_password'] = "Passwords do not match."
+
+
+# Duplicate check
+        if username and Customer.objects.filter(username=username).exists():
+              errors['username'] = "Username already exists."
+
+        if email and Customer.objects.filter(email=email).exists():
+            errors['email'] = "Email already exists."
+
+        if email and DeliveryPerson.objects.filter(email=email).exists():
+            errors['email'] = "Delivery email already exists."
+
+
+# Stop if errors
         if errors:
-            for error in errors:
-                messages.error(request, error)
-            return redirect('add_delivery_person')
+            return render(request, 'adminpanel/add_delivery_person.html', {
+                'errors': errors,
+                'delivery_list': DeliveryPerson.objects.all().order_by('id')
+    })
 
         # ===== Create Customer (Secure Way) =====
         customer = Customer.objects.create_user(

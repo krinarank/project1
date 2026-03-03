@@ -75,7 +75,7 @@ def edit_supplier(request, supplier_id):
 def delete_supplier(request, supplier_id):
     supplier = get_object_or_404(Supplier, id=supplier_id)
     supplier.delete()
-    messages.error(request, "Supplier deleted successfully")  # red message
+    messages.success(request, "Supplier deleted successfully")  # red message
 
     return redirect('supplier_page')
 
@@ -132,7 +132,7 @@ def edit_ingredient(request,id):
 def delete_ingredient(request,id):
     ingredient = get_object_or_404(Ingredient, id=id)
     ingredient.delete()
-    messages.error(request, "Ingredient deleted successfully")
+    messages.success(request, "Ingredient deleted successfully")
     return redirect('ingredient_page')
 
 # ------------------- Purchase -------------------
@@ -303,7 +303,7 @@ def purchase_delete(request, purchase_id):
         ing.save()
 
     purchase.delete()
-    messages.error(request, "Purchase deleted and stock adjusted!")
+    messages.success(request, "Purchase deleted and stock adjusted!")
     return redirect('purchase_add')
 
 # @transaction.atomic
@@ -689,7 +689,7 @@ def prepared_item_delete(request, item_id):
     # Delete prepared item
     prepared_item.delete()
 
-    messages.error(request, "Prepared item deleted and stock adjusted!")
+    messages.success(request, "Prepared item deleted and stock adjusted!")
     return redirect('prepared_item_add')
 
 from decimal import Decimal
@@ -779,3 +779,4 @@ def preparing_order(request, prepared_item_id, order_qty):
     messages.success(request, f"Prepared item updated successfully! {order_qty} unit(s) processed.")
     return redirect('order_list')
 
+    

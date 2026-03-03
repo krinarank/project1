@@ -3,11 +3,25 @@
 
 {% block content %}
 <link rel="stylesheet" href="{% static 'orders/order_success.css' %}">
+<style>.confetti {
+    position: fixed;
+    top: -10px;
+    width: 8px;
+    height: 14px;
+    background-color: red;
+    z-index: 9999;
+    animation: fall linear forwards;
+}
 
+@keyframes fall {
+    to {
+        transform: translateY(100vh) rotate(720deg);
+    }
+}</style>
 <div class="order-success-container">
 
     <div class="success-card">
-        <div class="success-icon">✅</div>
+        <div class="success-icon">🎉</div>
 
         <h2>Order Placed Successfully!</h2>
         <p class="success-msg">
@@ -43,4 +57,29 @@
     </div>
 
 </div>
+<script>
+function createConfetti() {
+    const colors = ["#ff6b00", "#28a745", "#007bff", "#ffc107", "#dc3545"];
+    const confettiCount = 120;
+
+    for (let i = 0; i < confettiCount; i++) {
+        let confetti = document.createElement("div");
+        confetti.classList.add("confetti");
+        document.body.appendChild(confetti);
+
+        confetti.style.left = Math.random() * window.innerWidth + "px";
+        confetti.style.backgroundColor = colors[Math.floor(Math.random() * colors.length)];
+        confetti.style.animationDuration = (Math.random() * 3 + 2) + "s";
+        confetti.style.opacity = Math.random();
+
+        setTimeout(() => {
+            confetti.remove();
+        }, 5000);
+    }
+}
+
+window.onload = function() {
+    createConfetti();
+};
+</script>
 {% endblock %}

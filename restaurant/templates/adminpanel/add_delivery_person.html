@@ -3,16 +3,6 @@
 
 {% block content %}
 
- {% if messages %}
-    <div id="error-container">
-        {% for message in messages %}
-            <div class="custom-error">
-                {{ message }}
-                <span class="close-btn" onclick="this.parentElement.style.display='none';">×</span>
-            </div>
-        {% endfor %}
-    </div>
-{% endif %}
 <div class="container-fluid">
   <div class="row">
 
@@ -29,15 +19,66 @@
           <form method="POST">
             {% csrf_token %}
 
-            <input type="text" name="fname" class="form-control mb-2" placeholder="First Name" required>
-            <input type="text" name="lname" class="form-control mb-2" placeholder="Last Name" required>
-            <input type="text" name="username" class="form-control mb-2" placeholder="Username" required>
-            <input type="email" name="email" class="form-control mb-2" placeholder="Email" required>
-            <input type="password" name="password" class="form-control mb-2" placeholder="Password" required>
-            <input type="password" name="confirm_password" class="form-control mb-2" placeholder="Confirm Password" required>
-            <input type="text" name="contact" class="form-control mb-2" placeholder="Contact No" required>
+         <!-- First Name -->
+<input type="text" name="fname" class="form-control mb-1"
+       placeholder="First Name"
+       value="{{ request.POST.fname }}">
+{% if errors.fname %}
+    <small class="text-danger">{{ errors.fname }}</small>
+{% endif %}
 
-            <textarea name="address" class="form-control mb-3" placeholder="Address" required></textarea>
+<!-- Last Name -->
+<input type="text" name="lname" class="form-control mb-1"
+       placeholder="Last Name"
+       value="{{ request.POST.lname }}">
+{% if errors.lname %}
+    <small class="text-danger">{{ errors.lname }}</small>
+{% endif %}
+
+<!-- Username -->
+<input type="text" name="username" class="form-control mb-1"
+       placeholder="Username"
+       value="{{ request.POST.username }}">
+{% if errors.username %}
+    <small class="text-danger">{{ errors.username }}</small>
+{% endif %}
+
+<!-- Email -->
+<input type="email" name="email" class="form-control mb-1"
+       placeholder="Email"
+       value="{{ request.POST.email }}">
+{% if errors.email %}
+    <small class="text-danger">{{ errors.email }}</small>
+{% endif %}
+
+<!-- Password -->
+<input type="password" name="password" class="form-control mb-1"
+       placeholder="Password">
+{% if errors.password %}
+    <small class="text-danger">{{ errors.password }}</small>
+{% endif %}
+
+<!-- Confirm Password -->
+<input type="password" name="confirm_password" class="form-control mb-1"
+       placeholder="Confirm Password">
+{% if errors.confirm_password %}
+    <small class="text-danger">{{ errors.confirm_password }}</small>
+{% endif %}
+
+<!-- Contact -->
+<input type="text" name="contact" class="form-control mb-1"
+       placeholder="Contact No"
+       value="{{ request.POST.contact }}">
+{% if errors.contact %}
+    <small class="text-danger">{{ errors.contact }}</small>
+{% endif %}
+
+<!-- Address -->
+<textarea name="address" class="form-control mb-1"
+          placeholder="Address">{{ request.POST.address }}</textarea>
+{% if errors.address %}
+    <small class="text-danger">{{ errors.address }}</small>
+{% endif %}
 
             <button class="btn btn-success w-100">Add Delivery Person</button>
           </form>
