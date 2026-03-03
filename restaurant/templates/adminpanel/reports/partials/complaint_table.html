@@ -1,0 +1,33 @@
+<table class="table table-bordered table-striped">
+
+    <thead>
+        <tr>
+            <th width="5%">ID</th>
+            <th>Order ID</th>
+            <th>User</th>
+            <th>Reason</th>
+          
+            <th>Status</th>
+            <th>Full Return</th>
+            <th>Created At</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for c in complaints %}
+        <tr>
+            <td>{{ c.id }}</td>
+            <td>{{ c.order.id }}</td>
+            <td>{{ c.user.username }}</td>
+            <td>{{ c.get_reason_display }}</td>
+            
+            <td>{{ c.get_status_display }}</td>
+            <td>{% if c.is_full_return %}Yes{% else %}No{% endif %}</td>
+            <td>{{ c.created_at|date:"Y-m-d H:i" }}</td>
+        </tr>
+        {% empty %}
+        <tr>
+            <td colspan="8" style="text-align:center;">No complaints found</td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>

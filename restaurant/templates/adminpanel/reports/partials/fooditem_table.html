@@ -1,0 +1,33 @@
+<table class="table table-bordered table-striped">
+    <thead>
+        <tr>
+            <th>ID</th>
+            <th>Name</th>
+            <th>Price</th>
+            <th>Available</th>
+           
+            <th>Calories</th>
+            <th>Subcategory</th>
+            <th>Category</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for item in food_items %}
+        <tr>
+            <td>{{ item.id }}</td>
+            <td>{{ item.name }}</td>
+            <td>{{ item.price }}</td>
+            <td>{{ item.is_available|yesno:"Yes,No" }}</td>
+         
+            <td>{{ item.calories }}</td>
+            <td>{{ item.sub_cat.subcategory_name }}</td>
+            <td>{{ item.sub_cat.food_item_cat.category_name }}</td>
+        </tr>
+        {% empty %}
+        <tr>
+            <td colspan="8" class="text-center">No Food Items found</td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+ 

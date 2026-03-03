@@ -1,18 +1,79 @@
-<h2>Payment Method Report</h2>
-<p>From {{ from_date }} To {{ to_date }}</p>
+<html>
+<head>
+<style>
+body { font-family: Helvetica, Arial; font-size: 11px; }
+table { width:100%; border-collapse:collapse; margin-bottom:10px;}
+th, td { border:1px solid black; padding:5px; text-align:left; }
+th { background:#333; color:white; }
+h2 { text-align:center; }
+.header-box { width: 100%; border: 2px solid #000; border-collapse: collapse; margin-bottom:8px; }
+.header-box td { border:none; text-align:center; padding:6px; line-height:1.1; }
+#footer_content { font-size:10px; width:100%; text-align:right; padding-right:10px; }
 
-<table border="1" cellspacing="0" cellpadding="4">
+/* Page layout */
+@page {
+    size: A4;
+    margin-top: 60px;
+    margin-bottom: 50px;
+    margin-left: 40px;
+    margin-right: 40px;
+
+    @frame footer_frame {
+        -pdf-frame-content: footer_content;
+        left:10px;
+        width: 515px;
+        top: 1090px;
+        height: 30px;
+    }
+}
+
+#footer_content {
+    font-size: 10px;
+    width: 100%;
+    text-align: right;
+    padding-right: 10px;
+}
+</style>
+</head>
+<body>
+
+<!-- Header -->
+<table class="header-box">
 <tr>
-<th>Method</th>
+<td>
+<div style="font-size:18px; font-weight:bold;">Leela Restaurant</div>
+<div style="font-size:11px;">Dehgam Road, Ahmedabad</div>
+<div style="font-size:11px;">📞 +91 9876543210 | ✉️ leelarestaurant.official@gmail.com</div>
+<div style="font-size:14px; font-weight:bold; margin-top:4px;">PAYMENT METHOD REPORT</div>
+
+<div style="font-size:10px;">Generated On: {{ date }}</div>
+</td>
+</tr>
+</table>
+
+<!-- Payments Table -->
+<table>
+<tr>
+<th>Payment Method</th>
+<th>Status</th>
 <th>Total Orders</th>
 <th>Total Amount</th>
 </tr>
 
 {% for p in payments %}
 <tr>
-<td>{{ p.payment__method }}</td>
+<td>{{ p.payment__method }}</td>  <!-- Direct DB field -->
+<td>{{ p.payment__status }}</td>  <!-- Direct DB field -->
 <td>{{ p.total_orders }}</td>
-<td>{{ p.total_amount }}</td>
+<td>{{ p.total_amount|floatformat:2 }}</td>  <!-- 2 decimals -->
 </tr>
 {% endfor %}
 </table>
+
+<!-- Footer -->
+<div id="footer_content" style="font-size:10px; width:100%; text-align:right; padding-right:10px;">
+      Generated on {{ date|date:"Y-m-d" }} |Page <pdf:pagenumber/> of <pdf:pagecount/>
+</div>
+
+</body>
+</html>

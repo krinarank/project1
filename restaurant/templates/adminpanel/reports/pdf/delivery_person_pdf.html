@@ -1,0 +1,88 @@
+<html>
+<head>
+<style>
+body { font-family: Helvetica, Arial; font-size: 11px; }
+table { width: 100%; border-collapse: collapse; table-layout: fixed; }
+th, td { border: 1px solid black; padding: 5px; text-align: left; word-wrap: break-word; }
+
+th#id_col, td#id_col { width: 5%; }
+th#fname_col, td#fname_col { width: 12%; }
+th#lname_col, td#lname_col { width: 12%; }
+th#contact_col, td#contact_col { width: 15%; }
+th#email_col, td#email_col { width: 20%; }
+th#address_col, td#address_col { width: 20%; }
+th#joining_col, td#joining_col { width: 16%; }
+
+.header-box { width: 100%; border: 2px solid #000; border-collapse: collapse; margin-bottom:8px; }
+.header-box td { border:none; text-align:center; padding:6px; line-height:1.1; }
+#footer_content { font-size:10px; width:100%; text-align:right; padding-right:10px; }
+
+@page {
+    size: A4;
+    margin-top: 60px;
+    margin-bottom: 50px;
+    margin-left: 40px;
+    margin-right: 40px;
+
+    @frame footer_frame {
+        -pdf-frame-content: footer_content;
+        left:10px;
+        width: 515px;
+        top: 1090px;
+        height: 30px;
+    }
+}
+</style>
+</head>
+<body>
+
+<!-- Header -->
+<table class="header-box">
+<tr>
+<td>
+<div style="font-size:18px; font-weight:bold;">Leela Restaurant</div>
+<div style="font-size:11px;">Dehgam Road, Ahmedabad</div>
+<div style="font-size:11px;">📞 +91 9876543210 | ✉️ leelarestaurant.official@gmail.com</div>
+<div style="font-size:14px; font-weight:bold; margin-top:4px;">DELIVERY PERSON REPORT</div>
+<div style="font-size:10px;">Generated On: {{ date }}</div>
+</td>
+</tr>
+</table>
+
+<table>
+<thead>
+<tr>
+<th id="id_col">ID</th>
+<th id="fname_col">First Name</th>
+<th id="lname_col">Last Name</th>
+<th id="contact_col">Contact</th>
+<th id="email_col">Email</th>
+<th id="address_col">Address</th>
+<th id="joining_col">Joining Date</th>
+</tr>
+</thead>
+<tbody>
+{% for d in delivery_persons %}
+<tr>
+<td id="id_col">{{ d.id }}</td>
+<td id="fname_col">{{ d.fname }}</td>
+<td id="lname_col">{{ d.lname }}</td>
+<td id="contact_col">{{ d.contact_no }}</td>
+<td id="email_col">{{ d.email }}</td>
+<td id="address_col">{{ d.address }}</td>
+<td id="joining_col">{{ d.joining_date }}</td>
+</tr>
+{% empty %}
+<tr>
+<td colspan="7" style="text-align:center;">No delivery persons found</td>
+</tr>
+{% endfor %}
+</tbody>
+</table>
+
+<div id="footer_content">
+Generated on {{ date|date:"Y-m-d" }} | Page <pdf:pagenumber/> of <pdf:pagecount/>
+</div>
+
+</body>
+</html>

@@ -1,0 +1,28 @@
+<table border="1" width="100%" cellpadding="5" cellspacing="0" style="border-collapse:collapse;"  class="table table-bordered table-striped">
+    <thead>
+        <tr>
+            <th>ID</th>
+            <th>Title</th>
+            <th>Message</th>
+            <th>Recipient</th>
+            <th>Sent On</th>
+            <th>Read Status</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for n in notifications %}
+        <tr>
+            <td>{{ n.id }}</td>
+            <td>{{ n.title }}</td>
+            <td>{{ n.message|default:"-" }}</td>
+            <td>{{ n.recipient_type|title }}</td>
+            <td>{{ n.send_datetime|date:"Y-m-d H:i" }}</td>
+            <td>{{ n.read_status|yesno:"Read,Unread" }}</td>
+        </tr>
+        {% empty %}
+        <tr>
+            <td colspan="6" style="text-align:center;">No notifications found</td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>

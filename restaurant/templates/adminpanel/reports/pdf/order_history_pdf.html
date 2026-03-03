@@ -1,39 +1,81 @@
-<!DOCTYPE html>
 <html>
 <head>
 <style>
-body { font-family: Helvetica; font-size: 11px; }
-table { width:100%; border-collapse:collapse; }
-th, td { border:1px solid black; padding:5px; }
+body { font-family: Helvetica, Arial; font-size: 11px; }
+table { width:100%; border-collapse:collapse; margin-bottom:10px;}
+th, td { border:1px solid black; padding:5px; text-align:left; }
 th { background:#333; color:white; }
 h2 { text-align:center; }
+.header-box { width: 100%; border: 2px solid #000; border-collapse: collapse; margin-bottom:8px; }
+.header-box td { border:none; text-align:center; padding:6px; line-height:1.1; }
+#footer_content { font-size:10px; width:100%; text-align:right; padding-right:10px; }
+@page {
+    size: A4;
+    margin-top: 60px;
+    margin-bottom: 50px;
+    margin-left: 40px;
+    margin-right: 40px;
+
+    @frame footer_frame {
+        -pdf-frame-content: footer_content;
+        left:10px;
+        width: 515px;
+        top: 1090px;
+        height: 30px;
+    }
+}
+
+#footer_content {
+    font-size: 10px;
+    width: 100%;
+    text-align: right;
+    padding-right: 10px;
+}
 </style>
 </head>
 <body>
 
-<h2>Order History Report</h2>
-<p>From {{ from_date }} To {{ to_date }}</p>
+<!-- Header -->
+<table class="header-box">
+<tr>
+<td>
+<div style="font-size:18px; font-weight:bold;">Leela Restaurant</div>
+<div style="font-size:11px;">Dehgam Road, Ahmedabad</div>
+<div style="font-size:11px;">📞 +91 9876543210 | ✉️ leelarestaurant.official@gmail.com</div>
+<div style="font-size:14px; font-weight:bold; margin-top:4px;">ORDER HISTORY REPORT</div>
 
+<div style="font-size:10px;">Generated On: {{ date }}</div>
+</td>
+</tr>
+</table>
+
+<!-- Orders Table -->
 <table>
 <tr>
-    <th>ID</th>
-    <th>Customer</th>
-    <th>Status</th>
-    <th>Total</th>
-    <th>Date</th>
+<th>ID</th>
+<th>Customer</th>
+<th>Status</th>
+<th>Total</th>
+<th>Date</th>
 </tr>
 
 {% for order in orders %}
 <tr>
-    <td>{{ order.id }}</td>
-    <td>{{ order.user.username }}</td>
-    <td>{{ order.order_status }}</td>
-    <td>{{ order.total_amount }}</td>
-    <td>{{ order.order_date }}</td>
+<td>{{ order.id }}</td>
+<td>{{ order.user.username }}</td>
+<td>{{ order.order_status }}</td>
+<td>{{ order.total_amount|floatformat:2 }}</td>
+<td>{{ order.order_date|date:"Y-m-d H:i" }}</td>
 </tr>
+{% empty %}
+<tr><td colspan="5" class="text-center">No Data</td></tr>
 {% endfor %}
-
 </table>
+
+<!-- Footer -->
+<div id="footer_content">
+Generated on {{ date|date:"Y-m-d" }} | Page <pdf:pagenumber/> of <pdf:pagecount/>
+</div>
 
 </body>
 </html>

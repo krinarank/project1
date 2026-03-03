@@ -1,0 +1,31 @@
+
+<table class="table table-bordered table-striped">
+    <thead>
+        <tr>
+            <th>ID</th>
+            <th>Ingredient</th>
+            <th>Unit</th>
+            <th>Purchased Qty</th>
+            <th>Used Qty</th>
+            <th>Returned Qty</th>
+            <th>Current Stock</th>
+            <th>Unit Price (₹)</th>
+            <th>Total Value (₹)</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for item in stock_data %}
+        <tr>
+            <td>{{ forloop.counter }}</td>
+            <td>{{ item.ingredient.name }}</td>
+            <td>{{ item.unit }}</td>
+           <td>{{ item.purchased|floatformat:-2 }}</td>
+<td>{{ item.used|floatformat:-2 }}</td>
+<td>{{ item.returned|floatformat:-2 }}</td>
+<td>{{ item.current_stock|floatformat:-2 }}</td>
+<td>{{ item.unit_price|floatformat:2 }}</td>
+<td>{{ item.total_value|floatformat:2 }}</td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>

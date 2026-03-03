@@ -74,12 +74,24 @@ path('reports/pdf/item/', views.item_report_pdf, name='item_report_pdf'),
 path('reports/pdf/payment/', views.payment_report_pdf, name='payment_report_pdf'),
 # PDF URLs
 path('reports/pdf/order-history/', views.order_history_pdf, name='order_history_pdf'),
+path('reports/pdf/cancellation/', views.cancellation_report_pdf, name='cancellation_report_pdf'),
 path('reports/pdf/delivery-status/', views.delivery_status_pdf, name='delivery_status_pdf'),
-#path('reports/pdf/assign-order/', views.assign_order_pdf, name='assign_order_pdf'),
+
 path('profile/', views.admin_profile, name='admin_profile'),
 path('admin/profile/edit/', views.admin_profile_edit, name='admin_profile_edit'),  # edit page
 path('admin/profile/change-password/', views.admin_change_password, name='admin_change_password'),
-
-# urls.py
+path('reports/pdf/supplier/', views.supplier_report_pdf, name='supplier_report_pdf'),
+path('reports/pdf/delivery_person/', views.delivery_person_report_pdf, name='delivery_person_report_pdf'),
+path('reports/pdf/return_order/', views.return_order_report_pdf, name='return_order_report_pdf'),
+path('reports/pdf/feedback-rating/', views.feedback_rating_report_pdf, name='feedback_rating_report_pdf'),
+path('reports/pdf/purchase/', views.purchase_report_pdf, name='purchase_report_pdf'),
+path('reports/pdf/purchase-return/', views.purchase_return_report_pdf, name='purchase_return_report_pdf'),
 path('admin/complaints/', views.admin_complaint_list, name='admin_complaint_list'),
+path('reports/pdf/assign-order/', views.assign_order_report_pdf, name='assign_order_pdf'),
+path('reports/pdf/notification/', views.notification_report_pdf, name='notification_report_pdf'),
+path('reports/pdf/offer-discount/', views.offer_discount_report_pdf, name='offer_discount_report_pdf'),
+path('reports/pdf/complaint/', views.complaint_report_pdf, name='complaint_report_pdf'),
+path('reports/pdf/fooditem/', views.fooditem_report_pdf, name='fooditem_report_pdf'),
+path('reports/pdf/stock/', views.stock_report_pdf, name='stock_report_pdf'),
+
 ]

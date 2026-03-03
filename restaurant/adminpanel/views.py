@@ -44,7 +44,7 @@ from .models import (
 )
 from menu.models import Inquiry
 from purchase.models import Ingredient
-from purchase.models import Purchase 
+from purchase.models import Purchase ,PurchaseReturn
 from orders.models import FeedbackRating
 
 # def login_view(request):
@@ -1278,7 +1278,7 @@ def admin_customers(request):
         is_staff=False,
         is_superuser=False,
         is_delivery_person=False
-    ).order_by('-creationdate')
+    ).order_by('creationdate')
 
     return render(request, 'adminpanel/customers/customers.html', {
         'customers': customers
@@ -1552,17 +1552,18 @@ def load_report(request, report_type):
         )
         return HttpResponse(html)
 
-    # ================= ORDER =================
+   
     elif report_type == "order_report":
         orders = Order.objects.filter(
-            order_date__date__range=[from_date, to_date]
-        )
-        html = render_to_string(
-            "adminpanel/reports/partials/order_table.html",
-            {"orders": orders}
-        )
-        return HttpResponse(html)
+        order_date__date__range=[from_date, to_date],
+        order_status='DELIVERED'
+    ).order_by('order_date')
 
+        html = render_to_string(
+        "adminpanel/reports/partials/order_table.html",
+        {"orders": orders}
+    )
+        return HttpResponse(html)
     # ================= SALES =================
     elif report_type == "sales_report":
         orders = Order.objects.filter(
@@ -1614,24 +1615,38 @@ def load_report(request, report_type):
         )
         return HttpResponse(html)
     
-    elif report_type == "payment_report":
 
+    elif report_type == "payment_report":
         payments = OrderHasPayment.objects.filter(
-        order__order_date__date__range=[from_date, to_date],
-        order__order_status='DELIVERED'
-    ).values(
-        'payment__method'
-    ).annotate(
+        order__order_date__date__range=[from_date, to_date]
+        ).values(
+        'payment__method',
+        'payment__status'
+        ).annotate(
         total_orders=Count('order', distinct=True),
-        total_amount=Sum('amount')
-    ).order_by('-total_amount')
+        total_amount=Coalesce(Sum('amount'), Decimal('0.00')),
+        refunded_amount=Coalesce(
+            Sum('amount', filter=Q(payment__status='REFUNDED')), Decimal('0.00')
+        ),
+        failed_amount=Coalesce(
+            Sum('amount', filter=Q(payment__status='FAILED')), Decimal('0.00')
+        )
+        ).order_by('-total_amount')
+
+    # Optional: avg per payment
+        for p in payments:
+            if p['total_orders']:
+                p['avg_order'] = round(p['total_amount'] / p['total_orders'], 2)
+            else:
+                p['avg_order'] = Decimal('0.00')
 
         html = render_to_string(
         "adminpanel/reports/partials/payment_table.html",
         {"payments": payments}
     )
         return HttpResponse(html)
-    
+
+
     elif report_type == "order_history_report":
 
         orders = Order.objects.filter(
@@ -1644,6 +1659,7 @@ def load_report(request, report_type):
     )
         return HttpResponse(html)
     
+  
     elif report_type == "cancellation_report":
 
         orders = Order.objects.filter(
@@ -1669,39 +1685,166 @@ def load_report(request, report_type):
         {"orders": orders}
     )
         return HttpResponse(html)
+    
+    elif report_type == "supplier_report":
+        suppliers = Supplier.objects.select_related('area').all()
+        html = render_to_string(
+        "adminpanel/reports/partials/supplier_table.html",
+        {"suppliers": suppliers}
+    )
+        return HttpResponse(html)
+    
+    elif report_type == "delivery_person_report":
+        delivery_persons = DeliveryPerson.objects.all()
+        html = render_to_string(
+        "adminpanel/reports/partials/delivery_person_table.html",
+        {"delivery_persons": delivery_persons}
+    )
+        return HttpResponse(html)
+    
+       # ================= RETURN ORDER REPORT =================
+    elif report_type == "return_order_report":
+        return_orders = ReturnOrder.objects.filter(
+            created_at__date__range=[from_date, to_date]
+        ).order_by('-created_at')
 
-    # elif report_type == "past_delivery_report":
+        html = render_to_string(
+            "adminpanel/reports/partials/return_order_table.html",
+            {"return_orders": return_orders}
+        )
+        return HttpResponse(html)
 
-    #     orders = Order.objects.filter(
-    #     order_status='DELIVERED',
-    #     order_date__date__range=[from_date, to_date]
-    # ).select_related('delivery_person').order_by('-order_date')
+    elif report_type == "feedback_rating_report":
+        feedbacks = FeedbackRating.objects.select_related('user', 'order').all()
+        html = render_to_string(
+        "adminpanel/reports/partials/feedback_rating_table.html",
+        {"feedbacks": feedbacks}
+    )
+        return HttpResponse(html)
 
-    #     html = render_to_string(
-    #     "adminpanel/reports/partials/past_delivery_table.html",
-    #     {"orders": orders}
-    # )
-    #     return HttpResponse(html)
+    elif report_type == "purchase_report":
+        purchases = Purchase.objects.select_related('supplier').prefetch_related('items__ingredient').order_by('purchase_date')
+        html = render_to_string(
+        "adminpanel/reports/partials/purchase_table.html",
+        {"purchases": purchases}
+    )
+        return HttpResponse(html)
 
-    # elif report_type == "assign_order_report":
+    elif report_type == "purchase_return_report":
+        purchase_returns = PurchaseReturn.objects.prefetch_related('items__raw', 'purchase__supplier').order_by('-return_date')
+        html = render_to_string(
+        "adminpanel/reports/partials/purchase_return_table.html",  # <-- correct spelling
+        {"purchase_returns": purchase_returns}
+    )
+        return HttpResponse(html)
 
-    #     orders = Order.objects.filter(
-    #     delivery_person__isnull=False,
-    #     order_date__date__range=[from_date, to_date]
-    # ).select_related('delivery_person').order_by('-order_date')
+    elif report_type == "assign_order_report":
+        assignments = AssignOrder.objects.select_related('order', 'delivery_person', 'user').order_by('-assign_time')
+        html = render_to_string(
+        "adminpanel/reports/partials/assign_order_table.html",
+        {"assignments": assignments}
+    )
+        return HttpResponse(html)
 
-    #     html = render_to_string(
-    #     "adminpanel/reports/partials/assign_order_table.html",
-    #     {"orders": orders}
-    # )
-    #     return HttpResponse(html)
+    elif report_type == "notification_report":
+        from_date = request.GET.get("from_date")
+        to_date = request.GET.get("to_date")
+
+        notifications = Notification.objects.filter(
+        send_datetime__date__range=[from_date, to_date]
+    ).order_by('-send_datetime')
+
+        html = render_to_string(
+        "adminpanel/reports/partials/notification_table.html",
+        {"notifications": notifications}
+    )
+        return HttpResponse(html)
+
+    elif report_type == "offer_discount_report":
+        from_date = request.GET.get("from_date")
+        to_date = request.GET.get("to_date")
+
+    # Get all active and inactive offers in the selected date range
+        offers = OfferDiscount.objects.filter(
+        created_at__date__range=[from_date, to_date]
+    ).order_by('-created_at')
+
+        html = render_to_string(
+        "adminpanel/reports/partials/offer_discount_table.html",
+        {"offers": offers}
+    )
+        return HttpResponse(html)
+    
+    elif report_type == "complaint_report":
+        complaints = Complaint.objects.select_related('order', 'user').all()
+        html = render_to_string(
+        "adminpanel/reports/partials/complaint_table.html",
+        {"complaints": complaints}
+    )
+        return HttpResponse(html)
+
+    elif report_type == "fooditem_report":
+    # Fetch all food items with related subcategory and category for display
+        food_items = FoodItem.objects.select_related('sub_cat', 'sub_cat__food_item_cat').all()
+
+    # Render the partial table template
+        html = render_to_string(
+        "adminpanel/reports/partials/fooditem_table.html",
+        {"food_items": food_items}
+    )
+        return HttpResponse(html)
+
+   
 
 
+    elif report_type == "stock_report":
+        ingredients = Ingredient.objects.all()
+        stock_data = []
 
+        for ing in ingredients:
+        # Total purchased
+            purchased = PurchaseDetail.objects.filter(ingredient=ing).aggregate(
+            total=models.Sum('qty')
+        )['total'] or 0
+
+        # Total returned
+            returned = PurchaseReturnDetail.objects.filter(raw=ing).aggregate(
+            total=models.Sum('qty')
+        )['total'] or 0
+
+        # Total used
+            used = IngredientUsage.objects.filter(raw=ing).aggregate(
+            total=models.Sum('qty_used')
+        )['total'] or 0
+
+        # Current stock
+            current_stock = purchased - used - returned
+
+        # Convert to Decimal for calculations
+            unit_price = Decimal(ing.price_per_unit)
+            total_value = Decimal(current_stock) * unit_price
+
+            stock_data.append({
+            'ingredient': ing,
+            'purchased': purchased,
+            'used': used,
+            'returned': returned,
+            'current_stock': current_stock,
+            'unit': ing.unit_of_measure,
+            'unit_price': f"{unit_price:.2f}",
+            'total_value': f"{total_value:.2f}"
+        })
+
+        html = render_to_string(
+        "adminpanel/reports/partials/stock_table.html",
+        {"stock_data": stock_data}
+    )
+        return HttpResponse(html)
 
     # ================= INVALID =================
     else:
         return HttpResponse("Invalid report type")
+    
 
 from django.db.models import Sum, Count
 from orders.models import OrderDetail
@@ -1720,7 +1863,115 @@ def generate_pdf(template_src, context_dict, filename):
 
     return response
 
+from django.template.loader import get_template
+from xhtml2pdf import pisa
+from django.http import HttpResponse
 
+def notification_report_pdf(request):
+    from_date = request.GET.get("from_date")
+    to_date = request.GET.get("to_date")
+
+    notifications = Notification.objects.filter(
+        send_datetime__date__range=[from_date, to_date]
+    ).order_by('-send_datetime')
+
+    template = get_template("adminpanel/reports/pdf/notification_pdf.html")
+    html = template.render({
+        "notifications": notifications,
+        "date": date.today()
+    })
+
+    response = HttpResponse(content_type='application/pdf')
+    response['Content-Disposition'] = 'attachment; filename="notification_report.pdf"'
+
+    pisa.CreatePDF(html, dest=response)
+    return response
+
+from purchase.models import Ingredient,  IngredientUsage
+from purchase.models import *
+from orders.models import *
+from adminpanel.models import *
+from django.template.loader import get_template
+from xhtml2pdf import pisa
+from django.http import HttpResponse
+
+# def stock_report_pdf(request):
+    
+
+#     ingredients = Ingredient.objects.all()
+
+#     stock_data = []
+#     for ing in ingredients:
+#         purchased = PurchaseDetail.objects.filter(ingredient=ing).aggregate(total=models.Sum('qty'))['total'] or 0
+#         returned = PurchaseReturnDetail.objects.filter(raw=ing).aggregate(total=models.Sum('qty'))['total'] or 0
+#         used = IngredientUsage.objects.filter(raw=ing).aggregate(total=models.Sum('qty_used'))['total'] or 0
+#         current_stock = purchased - used - returned
+
+#         stock_data.append({
+#             'ingredient': ing,
+#             'purchased': purchased,
+#             'used': used,
+#             'returned': returned,
+#             'current_stock': current_stock,
+#             'unit': ing.unit_of_measure,
+#             'unit_price': ing.price_per_unit,
+#             'total_value': current_stock * ing.price_per_unit
+#         })
+
+#     template = get_template("adminpanel/reports/pdf/stock_pdf.html")
+#     html = template.render({"stock_data": stock_data, "date": timezone.now().date()})
+
+#     response = HttpResponse(content_type='application/pdf')
+#     response['Content-Disposition'] = 'attachment; filename="stock_report.pdf"'
+#     pisa.CreatePDF(html, dest=response)
+#     return response
+
+
+from decimal import Decimal, ROUND_HALF_UP
+
+def stock_report_pdf(request):
+    ingredients = Ingredient.objects.all()
+    stock_data = []
+
+    for ing in ingredients:
+        purchased = PurchaseDetail.objects.filter(ingredient=ing).aggregate(
+            total=models.Sum('qty')
+        )['total'] or 0
+
+        returned = PurchaseReturnDetail.objects.filter(raw=ing).aggregate(
+            total=models.Sum('qty')
+        )['total'] or 0
+
+        used = IngredientUsage.objects.filter(raw=ing).aggregate(
+            total=models.Sum('qty_used')
+        )['total'] or 0
+
+        current_stock = purchased - used - returned
+
+        unit_price = Decimal(ing.price_per_unit).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
+        total_value = (Decimal(current_stock) * unit_price).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
+
+        stock_data.append({
+            'ingredient': ing,
+            'purchased': purchased,
+            'used': used,
+            'returned': returned,
+            'current_stock': current_stock,
+            'unit': ing.unit_of_measure,
+            'unit_price': unit_price,
+            'total_value': total_value
+        })
+
+    template = get_template("adminpanel/reports/pdf/stock_pdf.html")
+    html = template.render({
+        "stock_data": stock_data,
+        "date": timezone.now().date()
+    })
+
+    response = HttpResponse(content_type='application/pdf')
+    response['Content-Disposition'] = 'attachment; filename="stock_report.pdf"'
+    pisa.CreatePDF(html, dest=response)
+    return response
 # ================= CUSTOMER PDF =================
 def customer_report_pdf(request):
 
@@ -1754,9 +2005,24 @@ def customer_report_pdf(request):
     )
     
 
-# ================= ORDER PDF =================
-def order_report_pdf(request):
+def fooditem_report_pdf(request):
+    food_items = FoodItem.objects.select_related('sub_cat', 'sub_cat__food_item_cat').all()
+    
+    template = get_template("adminpanel/reports/pdf/fooditem_pdf.html")
+    html = template.render({
+        "food_items": food_items,
+        "date": date.today()
+    })
 
+    response = HttpResponse(content_type='application/pdf')
+    response['Content-Disposition'] = 'attachment; filename="fooditem_report.pdf"'
+
+    pisa.CreatePDF(html, dest=response)
+    return response
+
+
+#================ ORDER REPORT PDF (Only DELIVERED) =================
+def order_report_pdf(request):
     from_date = request.GET.get("from_date")
     to_date = request.GET.get("to_date")
 
@@ -1770,14 +2036,15 @@ def order_report_pdf(request):
         return HttpResponse("Future date not allowed")
 
     orders = Order.objects.filter(
-        order_date__date__range=[from_date, to_date]
-    )
+        order_date__date__range=[from_date, to_date],
+        order_status='DELIVERED'
+    ).order_by('order_date')
 
     context = {
         "orders": orders,
-        "date": date.today(),
         "from_date": from_date,
-        "to_date": to_date
+        "to_date": to_date,
+        "date": date.today()
     }
 
     return generate_pdf(
@@ -1786,8 +2053,11 @@ def order_report_pdf(request):
         "order_report.pdf"
     )
 
-def sales_report_pdf(request):
+from decimal import Decimal, ROUND_HALF_UP
+from datetime import date
+from django.db.models import Count, Sum, Q
 
+def sales_report_pdf(request):
     from_date = request.GET.get("from_date")
     to_date = request.GET.get("to_date")
 
@@ -1799,16 +2069,18 @@ def sales_report_pdf(request):
         total_orders=Count('id'),
         delivered_orders=Count('id', filter=Q(order_status='DELIVERED')),
         cancelled_orders=Count('id', filter=Q(order_status='CANCELLED')),
-
         gross_revenue=Sum('total_amount'),
         discount=Sum('dis_amount')
     )
 
-    net_revenue = (summary['gross_revenue'] or 0) - (summary['discount'] or 0)
+    # Convert to Decimal and round to 2 decimal places
+    gross_revenue = Decimal(summary['gross_revenue'] or 0).quantize(Decimal('0.01'), rounding=ROUND_HALF_UP)
+    discount = Decimal(summary['discount'] or 0).quantize(Decimal('0.01'), rounding=ROUND_HALF_UP)
+    net_revenue = (gross_revenue - discount).quantize(Decimal('0.01'), rounding=ROUND_HALF_UP)
 
-    avg_order = 0
+    avg_order = Decimal(0)
     if summary['delivered_orders']:
-        avg_order = net_revenue / summary['delivered_orders']
+        avg_order = (net_revenue / Decimal(summary['delivered_orders'])).quantize(Decimal('0.01'), rounding=ROUND_HALF_UP)
 
     context = {
         "orders": orders,
@@ -1826,8 +2098,11 @@ def sales_report_pdf(request):
         "sales_report.pdf"
     )
 
-def item_report_pdf(request):
+from decimal import Decimal, ROUND_HALF_UP
+from datetime import date
+from django.db.models import Count, Sum
 
+def item_report_pdf(request):
     from_date = request.GET.get("from_date")
     to_date = request.GET.get("to_date")
 
@@ -1842,6 +2117,10 @@ def item_report_pdf(request):
         revenue=Sum('total_amount')
     ).order_by('-total_qty')
 
+    # Round revenue to 2 decimals
+    for i in items:
+        i['revenue'] = Decimal(i['revenue'] or 0).quantize(Decimal('0.01'), ROUND_HALF_UP)
+
     context = {
         "items": items,
         "from_date": from_date,
@@ -1854,21 +2133,128 @@ def item_report_pdf(request):
         context,
         "item_report.pdf"
     )
+from orders.models import ReturnOrder,OfferDiscount
+from django.http import HttpResponse
+from django.template.loader import get_template
+from xhtml2pdf import pisa
+from datetime import date
+from purchase.models import Ingredient,IngredientUsage
 
-def payment_report_pdf(request):
-
+def offer_discount_report_pdf(request):
     from_date = request.GET.get("from_date")
     to_date = request.GET.get("to_date")
 
-    payments = OrderHasPayment.objects.filter(
-        order__order_date__date__range=[from_date, to_date],
-        order__order_status='DELIVERED'
-    ).values(
-        'payment__method'
-    ).annotate(
-        total_orders=Count('order', distinct=True),
-        total_amount=Sum('amount')
-    ).order_by('-total_amount')
+    offers = OfferDiscount.objects.filter(
+        created_at__date__range=[from_date, to_date]
+    ).order_by('-created_at')
+
+    template = get_template("adminpanel/reports/pdf/offer_discount_pdf.html")
+    html = template.render({
+        "offers": offers,
+        "from_date": from_date,
+        "to_date": to_date,
+        "date": date.today()
+    })
+
+    response = HttpResponse(content_type='application/pdf')
+    response['Content-Disposition'] = 'attachment; filename="offer_discount_report.pdf"'
+
+    pisa.CreatePDF(html, dest=response)
+    return response
+
+
+from django.http import HttpResponse
+from django.template.loader import get_template, render_to_string
+from xhtml2pdf import pisa
+from datetime import date
+
+def complaint_report_pdf(request):
+    from_date = request.GET.get("from_date")
+    to_date = request.GET.get("to_date")
+
+    complaints = Complaint.objects.filter(
+        created_at__date__range=[from_date, to_date]
+    ).order_by('-created_at')
+
+    template = get_template("adminpanel/reports/pdf/complaint_pdf.html")
+    html = template.render({
+        "complaints": complaints,
+        "from_date": from_date,
+        "to_date": to_date,
+        "date": date.today()
+    })
+
+    response = HttpResponse(content_type='application/pdf')
+    response['Content-Disposition'] = 'attachment; filename="complaint_report.pdf"'
+
+    pisa.CreatePDF(html, dest=response)
+    return response
+
+def return_order_report_pdf(request):
+    from_date = request.GET.get("from_date")
+    to_date = request.GET.get("to_date")
+
+    return_orders = ReturnOrder.objects.filter(
+        created_at__date__range=[from_date, to_date]
+    ).order_by('-created_at')
+
+
+    template = get_template("adminpanel/reports/pdf/return_order_pdf.html")
+    html = template.render({
+        "return_orders": return_orders,
+        "from_date": from_date,
+        "to_date": to_date,
+        "date": date.today()
+    })
+
+    response = HttpResponse(content_type='application/pdf')
+    response['Content-Disposition'] = 'attachment; filename="return_order_report.pdf"'
+    pisa.CreatePDF(html, dest=response)
+    return response
+
+def feedback_rating_report_pdf(request):
+    from_date = request.GET.get("from_date")
+    to_date = request.GET.get("to_date")
+
+    feedbacks = FeedbackRating.objects.select_related('user', 'order').all()
+    template = get_template("adminpanel/reports/pdf/feedback_rating_pdf.html")
+    html = template.render({
+        "feedbacks": feedbacks,
+        "date": date.today()
+    })
+
+    response = HttpResponse(content_type='application/pdf')
+    response['Content-Disposition'] = 'attachment; filename="feedback_rating_report.pdf"'
+    pisa.CreatePDF(html, dest=response)
+    return response
+
+
+from django.db.models import Sum, Count, Q, F, DecimalField
+from django.db.models.functions import Coalesce
+from decimal import Decimal
+from decimal import Decimal, ROUND_HALF_UP
+from django.db.models import Sum, Count, Q
+
+def payment_report_pdf(request):
+    from_date = request.GET.get("from_date")
+    to_date = request.GET.get("to_date")
+
+    # Filter payments in date range
+    payments = (
+        OrderHasPayment.objects.filter(
+            order__order_date__date__range=[from_date, to_date]
+        )
+        .values('payment__method', 'payment__status')  # Group by method + status
+        .annotate(
+            total_orders=Count('order', distinct=True),
+            total_amount=Sum('amount')
+        )
+        .order_by('-total_amount')
+    )
+
+    # Round total_amount to 2 decimals
+    for p in payments:
+        p['total_amount'] = Decimal(p['total_amount'] or 0).quantize(Decimal('0.01'), rounding=ROUND_HALF_UP)
 
     context = {
         "payments": payments,
@@ -1883,27 +2269,27 @@ def payment_report_pdf(request):
         "payment_report.pdf"
     )
 
-def order_history_pdf(request):
 
+def order_history_pdf(request):
     from_date = request.GET.get("from_date")
     to_date = request.GET.get("to_date")
 
     orders = Order.objects.filter(
         order_date__date__range=[from_date, to_date]
-    ).order_by('-order_date')
+    ).order_by('order_date')  # oldest first
 
-    template = get_template("adminpanel/reports/pdf/order_history_pdf.html")
-    html = template.render({
+    context = {
         "orders": orders,
         "from_date": from_date,
-        "to_date": to_date
-    })
+        "to_date": to_date,
+        "date": date.today()
+    }
 
-    response = HttpResponse(content_type='application/pdf')
-    response['Content-Disposition'] = 'attachment; filename="order_history.pdf"'
-
-    pisa.CreatePDF(html, dest=response)
-    return response
+    return generate_pdf(
+    "adminpanel/reports/pdf/order_history_pdf.html",
+    context,
+    "order_history_report.pdf"
+)
 
 def delivery_status_pdf(request):
 
@@ -1928,26 +2314,16 @@ def delivery_status_pdf(request):
     pisa.CreatePDF(html, dest=response)
     return response
 
-def assign_order_pdf(request):
-
-    from_date = request.GET.get("from_date")
-    to_date = request.GET.get("to_date")
-
-    orders = Order.objects.filter(
-        delivery_person__isnull=False,
-        order_date__date__range=[from_date, to_date]
-    ).select_related('delivery_person')
-
+def assign_order_report_pdf(request):
+    assignments = AssignOrder.objects.select_related('order', 'delivery_person', 'user').order_by('-assign_time')
     template = get_template("adminpanel/reports/pdf/assign_order_pdf.html")
     html = template.render({
-        "orders": orders,
-        "from_date": from_date,
-        "to_date": to_date
+        "assignments": assignments,
+        "date": date.today()
     })
 
     response = HttpResponse(content_type='application/pdf')
-    response['Content-Disposition'] = 'attachment; filename="assign_order.pdf"'
-
+    response['Content-Disposition'] = 'attachment; filename="assign_order_report.pdf"'
     pisa.CreatePDF(html, dest=response)
     return response
 
@@ -1965,7 +2341,8 @@ def cancellation_report_pdf(request):
     html = template.render({
         "orders": orders,
         "from_date": from_date,
-        "to_date": to_date
+        "to_date": to_date,
+        "date": date.today()
     })
 
     response = HttpResponse(content_type='application/pdf')
@@ -1974,29 +2351,80 @@ def cancellation_report_pdf(request):
     pisa.CreatePDF(html, dest=response)
     return response
 
-def past_delivery_pdf(request):
-
+def supplier_report_pdf(request):
     from_date = request.GET.get("from_date")
     to_date = request.GET.get("to_date")
 
-    orders = Order.objects.filter(
-        order_status='DELIVERED',
-        order_date__date__range=[from_date, to_date]
-    ).prefetch_related('order_details', 'order_details__food_item')
+    suppliers = Supplier.objects.select_related('area').all()
 
-    template = get_template("adminpanel/reports/pdf/past_delivery_pdf.html")
+    # Optional: filter by date if created_at exists
+    if hasattr(Supplier, 'created_at') and from_date and to_date:
+        suppliers = suppliers.filter(created_at__date__range=[from_date, to_date])
+
+    template = get_template("adminpanel/reports/pdf/supplier_report_pdf.html")
     html = template.render({
-        "orders": orders,
+        "suppliers": suppliers,
         "from_date": from_date,
-        "to_date": to_date
+        "to_date": to_date,
+        "date": date.today()
     })
 
     response = HttpResponse(content_type='application/pdf')
-    response['Content-Disposition'] = 'attachment; filename="past_delivery.pdf"'
+    response['Content-Disposition'] = 'attachment; filename="supplier_report.pdf"'
 
     pisa.CreatePDF(html, dest=response)
     return response
 
+def delivery_person_report_pdf(request):
+    delivery_persons = DeliveryPerson.objects.all()
+    template = get_template("adminpanel/reports/pdf/delivery_person_pdf.html")
+    html = template.render({
+        "delivery_persons": delivery_persons,
+        "date": date.today()
+    })
+
+    response = HttpResponse(content_type='application/pdf')
+    response['Content-Disposition'] = 'attachment; filename="delivery_person_report.pdf"'
+    pisa.CreatePDF(html, dest=response)
+    return response
+
+def purchase_report_pdf(request):
+    from_date = request.GET.get("from_date")
+    to_date = request.GET.get("to_date")
+
+    purchases = Purchase.objects.select_related('supplier').prefetch_related('items__ingredient').filter(
+        purchase_date__range=[from_date, to_date]
+    ).order_by('-purchase_date')
+
+    template = get_template("adminpanel/reports/pdf/purchase_pdf.html")
+    html = template.render({
+        "purchases": purchases,
+        "date": date.today()
+    })
+
+    response = HttpResponse(content_type='application/pdf')
+    response['Content-Disposition'] = 'attachment; filename="purchase_report.pdf"'
+    pisa.CreatePDF(html, dest=response)
+    return response
+
+def purchase_return_report_pdf(request):
+    from_date = request.GET.get("from_date")
+    to_date = request.GET.get("to_date")
+
+    purchase_returns = PurchaseReturn.objects.prefetch_related('items__raw', 'purchase__supplier').filter(
+        return_date__range=[from_date, to_date]
+    ).order_by('-return_date')
+
+    template = get_template("adminpanel/reports/pdf/purchase_return_pdf.html")
+    html = template.render({
+        "purchase_returns": purchase_returns,
+        "date": date.today()
+    })
+
+    response = HttpResponse(content_type='application/pdf')
+    response['Content-Disposition'] = 'attachment; filename="purchase_return_report.pdf"'
+    pisa.CreatePDF(html, dest=response)
+    return response
 
 # ===========krisha ae add karelu============
 # adminpanel/views.py

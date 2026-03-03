@@ -42,40 +42,47 @@ h2 { text-align:center; }
 <div style="font-size:18px; font-weight:bold;">Leela Restaurant</div>
 <div style="font-size:11px;">Dehgam Road, Ahmedabad</div>
 <div style="font-size:11px;">📞 +91 9876543210 | ✉️ leelarestaurant.official@gmail.com</div>
-<div style="font-size:14px; font-weight:bold; margin-top:4px;">ORDER REPORT</div>
+<div style="font-size:14px; font-weight:bold; margin-top:4px;">FOODITEM REPORT</div>
 
 <div style="font-size:10px;">Generated On: {{ date }}</div>
 </td>
 </tr>
 </table>
 
-<!-- Orders Table -->
 <table>
-<tr>
-<th>Order ID</th>
-<th>Customer</th>
-<th>Total Qty</th>
-<th>Total Amount</th>
-<th>Status</th>
-<th>Order Date</th>
-</tr>
-
-{% for o in orders %}
-<tr>
-<td>{{ o.id }}</td>
-<td>{{ o.user.username }}</td>
-<td>{{ o.total_qty }}</td>
-<td>{{ o.total_amount|floatformat:2 }}</td>
-<td>{{ o.order_status }}</td>
-<td>{{ o.order_date|date:"Y-m-d H:i" }}</td>
-</tr>
-{% endfor %}
+    <thead>
+        <tr>
+            <th>ID</th>
+            <th>Name</th>
+            <th>Price</th>
+            <th>Available</th>
+          
+            <th>Calories</th>
+            <th>Subcategory</th>
+            <th>Category</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for item in food_items %}
+        <tr>
+            <td>{{ item.id }}</td>
+            <td>{{ item.name }}</td>
+            <td>{{ item.price }}</td>
+            <td>{{ item.is_available|yesno:"Yes,No" }}</td>
+            
+            <td>{{ item.calories }}</td>
+            <td>{{ item.sub_cat.subcategory_name }}</td>
+            <td>{{ item.sub_cat.food_item_cat.category_name }}</td>
+        </tr>
+        {% empty %}
+        <tr>
+            <td colspan="8" style="text-align:center;">No Food Items found</td>
+        </tr>
+        {% endfor %}
+    </tbody>
 </table>
-
-<!-- Footer -->
 <div id="footer_content">
 Generated on {{ date|date:"Y-m-d" }} | Page <pdf:pagenumber/> of <pdf:pagecount/>
 </div>
-
 </body>
 </html>

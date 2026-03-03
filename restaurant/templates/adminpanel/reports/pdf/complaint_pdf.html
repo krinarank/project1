@@ -42,40 +42,47 @@ h2 { text-align:center; }
 <div style="font-size:18px; font-weight:bold;">Leela Restaurant</div>
 <div style="font-size:11px;">Dehgam Road, Ahmedabad</div>
 <div style="font-size:11px;">📞 +91 9876543210 | ✉️ leelarestaurant.official@gmail.com</div>
-<div style="font-size:14px; font-weight:bold; margin-top:4px;">ORDER REPORT</div>
+<div style="font-size:14px; font-weight:bold; margin-top:4px;">COMPLAINTS REPORT</div>
 
 <div style="font-size:10px;">Generated On: {{ date }}</div>
 </td>
 </tr>
 </table>
 
-<!-- Orders Table -->
 <table>
+<thead>
 <tr>
-<th>Order ID</th>
-<th>Customer</th>
-<th>Total Qty</th>
-<th>Total Amount</th>
-<th>Status</th>
-<th>Order Date</th>
+    <th width="5%">ID</th>
+    <th>Order ID</th>
+    <th>User</th>
+    <th>Reason</th>
+ 
+    <th>Status</th>
+    <th>Full Return</th>
+    <th>Created At</th>
 </tr>
-
-{% for o in orders %}
+</thead>
+<tbody>
+{% for c in complaints %}
 <tr>
-<td>{{ o.id }}</td>
-<td>{{ o.user.username }}</td>
-<td>{{ o.total_qty }}</td>
-<td>{{ o.total_amount|floatformat:2 }}</td>
-<td>{{ o.order_status }}</td>
-<td>{{ o.order_date|date:"Y-m-d H:i" }}</td>
+    <td>{{ c.id }}</td>
+    <td>{{ c.order.id }}</td>
+    <td>{{ c.user.username }}</td>
+    <td>{{ c.get_reason_display }}</td>
+    
+    <td>{{ c.get_status_display }}</td>
+    <td>{% if c.is_full_return %}Yes{% else %}No{% endif %}</td>
+    <td>{{ c.created_at|date:"Y-m-d H:i" }}</td>
+</tr>
+{% empty %}
+<tr>
+    <td colspan="8" style="text-align:center;">No complaints found</td>
 </tr>
 {% endfor %}
+</tbody>
 </table>
-
-<!-- Footer -->
 <div id="footer_content">
 Generated on {{ date|date:"Y-m-d" }} | Page <pdf:pagenumber/> of <pdf:pagecount/>
 </div>
-
 </body>
 </html>

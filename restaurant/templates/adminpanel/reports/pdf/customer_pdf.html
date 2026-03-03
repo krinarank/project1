@@ -3,7 +3,10 @@
 <head>
     <meta charset="UTF-8">
 <style>
-
+/* Header Box */ .header-box { width: 100%; border: 2px solid #000; border-collapse: collapse; margin: 0 0 8px 0; }
+ .header-box td { border: none; padding: 6px; /* reduced from 12px */ text-align: center; line-height: 1.1; /* tighter spacing */ } 
+ .header-box div { margin: 0; /* remove all default div gaps */ }
+    
 @page {
     size: A4;
 
@@ -39,23 +42,18 @@ body {
 
 <body>
 
-    <!-- ================= HEADER (First Page Only) ================= -->
-    <div style="text-align:center;">
-        <h2>My Restaurant Pvt Ltd</h2>
-        <div>
-            123 Food Street, Ahmedabad<br>
-            Contact: 9876543210 | Email: info@myrestaurant.com
-        </div>
-         <h3 style="text-align:center;">Customer Report</h3>
-
-    <div style="text-align:center; margin-bottom:15px;">
-        From: {{ from_date }} &nbsp;&nbsp; To: {{ to_date }}
-    </div>
-        <hr>
-    </div>
-
-    <!-- ================= REPORT TITLE ================= -->
    
+<table class="header-box"> 
+    <tr> 
+        <td> 
+            <div style="font-size:18px; font-weight:bold;"> Leela Restaurant </div> 
+            <div style="font-size:11px;"> Dehgam Road, Ahmedabad </div> 
+            <div style="font-size:11px;"> 📞 +91 9876543210 | ✉️ leelarestaurant.official@gmail.com </div>
+             <div style="font-size:14px; font-weight:bold; margin-top:4px;"> CUSTOMER REPORT </div> 
+             <div style="font-size:10px;"> Generated On: {{ date }} </div> 
+        </td>
+        </tr>
+        </table>
 
     <!-- ================= TABLE ================= -->
     <table border="1" width="100%" cellpadding="4" cellspacing="0">
