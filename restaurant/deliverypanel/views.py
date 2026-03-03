@@ -149,7 +149,7 @@ def delivery_accept_order(request, assign_id):
     assignment.status = 'ACCEPTED'
     assignment.save()
 
-    messages.success(request, "Order accepted successfully.")
+    
     return redirect('delivery_dashboard')
 
 
@@ -307,7 +307,7 @@ def delivery_mark_paid(request, order_id):
             payment.remaining_amount = 0
             payment.save()
 
-            messages.success(request, "COD Payment received successfully.")
+            
 
     return redirect('delivery_dashboard')
 

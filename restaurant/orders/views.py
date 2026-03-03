@@ -275,7 +275,6 @@ def apply_offer(request):
     # ✅ ONLY CURRENTLY ACTIVE OFFERS (NO EXPIRED)
     offers = OfferDiscount.objects.filter(
         isactive=True,
-        valid_from__lte=today,
         valid_to__gte=today
     )
 
@@ -482,6 +481,10 @@ def remove_from_wishlist(request, food_id):
 
 from orders.utils import get_best_offer
 
+from django.utils import timezone
+from decimal import Decimal
+
+
 def my_wishlist(request):
 
     if request.user.is_authenticated:
@@ -494,18 +497,71 @@ def my_wishlist(request):
             id__in=wishlist_ids
         ).prefetch_related('images')
 
-    # 🔁 APPLY OFFER (MENU JEVI)
+    # ✅ APPLY OFFER LIKE CART
+    today = timezone.now().date()
+
     for item in wishlist_items:
-        offer = get_best_offer(item)
-        if offer:
-            discount = offer.offer.discount_percentage
-            item.offer_percent = discount
-            item.discounted_price = round(
-                item.price - (item.price * discount / 100), 2
-            )
-            item.has_offer = True
-        else:
-            item.has_offer = False
+
+        base_price = item.price
+        final_price = base_price
+
+        # 🔥 1. Food Item Offer
+        food_offer = FoodItemOfferDiscount.objects.filter(
+            food_item=item,
+            is_active=True,
+            applied_date__lte=today,
+            expiry_date__gte=today
+        ).select_related('offer').first()
+
+        if food_offer and food_offer.offer.is_currently_active():
+            discount = food_offer.offer.discount_percentage
+            final_price = base_price - (base_price * Decimal(discount) / 100)
+
+        # 🔥 2. SubCategory Offer
+        elif SubCategoryOfferDiscount.objects.filter(
+            subcategory=item.sub_cat,
+            is_active=True,
+            applied_date__lte=today,
+            expiry_date__gte=today
+        ).exists():
+
+            sub_offer = SubCategoryOfferDiscount.objects.filter(
+                subcategory=item.sub_cat,
+                is_active=True,
+                applied_date__lte=today,
+                expiry_date__gte=today
+            ).select_related('offer').first()
+
+            if sub_offer and sub_offer.offer.is_currently_active():
+                discount = sub_offer.offer.discount_percentage
+                final_price = base_price - (base_price * Decimal(discount) / 100)
+
+        # 🔥 3. Category Offer
+        elif CategoryOfferDiscount.objects.filter(
+            category=item.sub_cat.food_item_cat,
+            is_active=True,
+            applied_date__lte=today,
+            expiry_date__gte=today
+        ).exists():
+
+            cat_offer = CategoryOfferDiscount.objects.filter(
+                category=item.sub_cat.food_item_cat,
+                is_active=True,
+                applied_date__lte=today,
+                expiry_date__gte=today
+            ).select_related('offer').first()
+
+            if cat_offer and cat_offer.offer.is_currently_active():
+                discount = cat_offer.offer.discount_percentage
+                final_price = base_price - (base_price * Decimal(discount) / 100)
+
+        # ✅ Template ma show karva mate values attach karo
+        item.has_offer = final_price < base_price
+        item.discounted_price = round(final_price, 2)
+        item.offer_percent = (
+            round(((base_price - final_price) / base_price) * 100)
+            if base_price > final_price else 0
+        )
 
     return render(request, 'orders/wishlist.html', {
         'wishlist_items': wishlist_items

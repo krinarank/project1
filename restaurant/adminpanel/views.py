@@ -634,6 +634,7 @@ def delete_foodimage(request, id):
 def delete_category(request, id):
     category = get_object_or_404(FoodItemCategory, id=id)
     category.delete()
+    messages.success(request, "Category deleted successfully")
     return redirect('add_category')
 
 
@@ -954,7 +955,7 @@ def add_delivery_person(request):
 
 # Contact validation
         if contact and not re.match(r'^[6-9]\d{9}$', contact):
-             errors['contact'] = "Enter valid 10 digit Indian mobile number."
+             errors['contact'] = "Enter valid 10 digit mobile number."
 
 
 # Password validation
