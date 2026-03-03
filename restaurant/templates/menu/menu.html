@@ -588,8 +588,43 @@ searchInput.addEventListener("keyup", function(){
         }
 
     });
-</script>
 
+</script>
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+
+    const cart = document.querySelector(".floating-cart");
+    const footer = document.querySelector("footer");
+
+    if (!cart || !footer) return;
+
+    function adjustCartPosition() {
+
+        const footerRect = footer.getBoundingClientRect();
+        const cartHeight = cart.offsetHeight;
+        const windowHeight = window.innerHeight;
+
+        // Footer screen ma visible thay tyare
+        if (footerRect.top < windowHeight) {
+
+            // Footer ane button vachche gap add karo
+            const overlap = windowHeight - footerRect.top;
+
+            cart.style.bottom = (overlap + 20) + "px";
+
+        } else {
+
+            // Normal position
+            cart.style.bottom = "25px";
+        }
+    }
+
+    window.addEventListener("scroll", adjustCartPosition);
+    window.addEventListener("resize", adjustCartPosition);
+
+    adjustCartPosition();
+});
+</script>
 <script src="{% static 'menu/js/cart.js' %}"></script>
 
 {% if user.is_authenticated %}

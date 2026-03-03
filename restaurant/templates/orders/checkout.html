@@ -178,6 +178,11 @@
             transform: translateY(0);
         }
     }
+    .pay-card.disabled-wallet {
+    opacity: 0.5;
+    pointer-events: none;   /* click completely block */
+    filter: grayscale(60%);
+}
 </style>
 {% endblock %}
 
@@ -257,9 +262,15 @@
                 <span class="pay-text">UPI</span>
             </label><br><br>
 
-            <label class="pay-card">
-                <input type="radio" id="walletBtn" name="payment_method" value="WALLET">
-                <span class="pay-text">Wallet (₹{{ wallet.balance|floatformat:2 }})</span>
+            <label class="pay-card {% if wallet_balance <= 0 %}disabled-wallet{% endif %}">
+                <input type="radio" 
+       id="walletBtn" 
+       name="payment_method" 
+       value="WALLET"
+       {% if wallet_balance <= 0 %} disabled {% endif %}>
+<span class="pay-text">
+    Wallet (₹{{ wallet_balance|floatformat:2 }})
+</span>
             </label>
 
             <div id="walletOptions" style="display:none;">
@@ -319,6 +330,9 @@
         const walletAmountInput = document.getElementById("walletAmount");
 
         const walletBalance = parseFloat("{{ wallet.balance|floatformat:2 }}");
+        if (walletBalance <= 0) {
+    walletBtn.disabled = true;
+}
         const grandTotal = parseFloat("{{ grand_total|floatformat:2 }}");
 
         // ---------------- FIELD REFERENCES ----------------
@@ -418,6 +432,16 @@
                 errors.wallet.innerText = "Select wallet option";
                 return false;
             }
+               // ✅ FULL CHECK
+    if (walletOption.value === "FULL") {
+
+        if (walletBalance < grandTotal) {
+            errors.wallet.innerText = "❌ Insufficient wallet balance for full payment";
+            return false;
+        }
+
+        errors.wallet.innerText = "";
+    }
 
             if (walletOption.value === "PARTIAL") {
                 let walletUsed = parseFloat(walletAmountInput.value) || 0;
@@ -519,13 +543,18 @@
                 },
                 body: data
             })
-                .then(res => res.json())
                 .then(res => {
-                    if (res.order_id)
-                        window.location.href = "/orders/order-success/" + res.order_id + "/";
-                    else
-                        alert("Error placing order.");
-                });
+    if (!res.ok) {
+        return res.json().then(err => { throw err; });
+    }
+    return res.json();
+})
+.then(res => {
+    window.location.href = "/orders/order-success/" + res.order_id + "/";
+})
+.catch(err => {
+    alert(err.error || "Something went wrong");
+});
         }
 
         // ---------------- PLACE ORDER ----------------

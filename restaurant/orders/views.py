@@ -1061,6 +1061,45 @@ def place_order(request):
                     f"❌ {ingredient.name} stock is low."
                 )
                 return redirect("cart_page")
+            # -----------------------------
+# 🔹 WALLET VALIDATION BEFORE ORDER
+# -----------------------------
+
+    payment_method = request.POST.get("payment_method", "COD")
+    wallet_option = request.POST.get("wallet_option")
+
+    wallet, _ = Wallet.objects.get_or_create(user=user)
+
+    grand_total = safe_decimal(request.POST.get("final_grand_total"))
+
+# FULL Wallet Validation
+    if payment_method == "WALLET" and wallet_option == "FULL":
+
+        if wallet.balance < grand_total:
+            return JsonResponse({
+             "error": "Insufficient wallet balance for full payment."
+        }, status=400)
+
+
+# PARTIAL Wallet Validation
+    elif wallet_option == "PARTIAL":
+
+        wallet_amount = safe_decimal(request.POST.get("wallet_amount"))
+
+        if wallet_amount > wallet.balance:
+            return JsonResponse({
+                "error": " Entered wallet amount exceeds available balance."
+        }, status=400)
+
+        if wallet_amount > grand_total:
+             return JsonResponse({
+             "error": " Wallet amount cannot exceed order total."
+        }, status=400)
+
+        if wallet_amount <= 0:
+            return JsonResponse({
+             "error": " Enter valid wallet amount."
+        }, status=400)
 
     # -----------------------------
     # 2️⃣ ORDER CREATION
@@ -1127,18 +1166,14 @@ def place_order(request):
 
     # 🔹 FULL WALLET
     if payment_method == "WALLET" and wallet_option == "FULL":
-        if wallet.balance >= grand_total:
-            wallet_used = grand_total
-            remaining_amount = Decimal("0.00")
-            final_method = "WALLET"
-        else:
-            wallet_used = wallet.balance
-            remaining_amount = grand_total - wallet.balance
-            final_method = "COD"
+
+        wallet_used = grand_total
+        remaining_amount = Decimal("0.00")
+        final_method = "WALLET"
 
     # 🔹 PARTIAL WALLET
     elif wallet_option == "PARTIAL":
-        wallet_used = min(wallet_amount, wallet.balance, grand_total)
+        wallet_used = wallet_amount
         remaining_amount = grand_total - wallet_used
         final_method = payment_method  # COD or UPI from frontend
 
@@ -1202,6 +1237,7 @@ def place_order(request):
 
     messages.success(request, "✅ Order placed successfully!")
     return redirect("order_success", order.id)
+
 
 @login_required
 def order_success(request, order_id):
