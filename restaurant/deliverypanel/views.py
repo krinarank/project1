@@ -341,8 +341,9 @@ def reset_password(request):
             return redirect('delivery_forgot_password')
 
         user = Customer.objects.get(id=user_id)
-        user.password = new_pass   # ✅ plain save (IMPORTANT)
+        # user.password = new_pass   # ✅ plain save (IMPORTANT)
        # user.set_password(new_pass)
+        user.set_password(new_pass) 
         user.save()
 
         request.session.flush()

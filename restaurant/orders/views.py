@@ -1077,6 +1077,222 @@ from django.contrib import messages
 #     messages.success(request, "✅ Order placed successfully!")
 #     return redirect("order_success", order.id)
 
+# @login_required
+# @transaction.atomic
+# def place_order(request):
+#     if request.method != "POST":
+#         return redirect("checkout")
+
+#     user = request.user
+#     cart_items = Cart.objects.filter(user=user)
+
+#     if not cart_items.exists():
+#         if request.headers.get("x-requested-with") == "XMLHttpRequest":
+#             return JsonResponse({"error": "Cart empty"}, status=400)
+#         return redirect("cart_page")
+
+#     # -----------------------------
+#     # 1️⃣ STOCK CHECK (UNCHANGED)
+#     # -----------------------------
+#     for item in cart_items:
+#         prepared_item = PreparedItem.objects.filter(
+#             product_name=item.food_item.name
+#         ).first()
+
+#         if not prepared_item:
+#             messages.error(request, f"No recipe found for {item.food_item.name}")
+#             return redirect("cart_page")
+
+#         usages = IngredientUsage.objects.filter(production=prepared_item)
+#         total_produced_qty = Decimal(prepared_item.quantity_produced)
+
+#         for usage in usages:
+#             per_piece_qty = Decimal(usage.qty_used) / total_produced_qty
+#             required_qty = per_piece_qty * Decimal(item.quantity)
+#             ingredient = usage.raw
+
+#             if ingredient.available_qty < required_qty:
+#                 messages.error(
+#                     request,
+#                     f"❌ {ingredient.name} stock is low."
+#                 )
+#                 return redirect("cart_page")
+#             # -----------------------------
+# # 🔹 WALLET VALIDATION BEFORE ORDER
+# # -----------------------------
+
+#     payment_method = request.POST.get("payment_method", "COD")
+#     wallet_option = request.POST.get("wallet_option")
+
+#     wallet, _ = Wallet.objects.get_or_create(user=user)
+
+#     grand_total = safe_decimal(request.POST.get("final_grand_total"))
+
+# # FULL Wallet Validation
+#     if payment_method == "WALLET" and wallet_option == "FULL":
+
+#         if wallet.balance < grand_total:
+#             return JsonResponse({
+#              "error": "Insufficient wallet balance for full payment."
+#         }, status=400)
+
+
+# # PARTIAL Wallet Validation
+#     elif wallet_option == "PARTIAL":
+
+#         wallet_amount = safe_decimal(request.POST.get("wallet_amount"))
+
+#         if wallet_amount > wallet.balance:
+#             return JsonResponse({
+#                 "error": " Entered wallet amount exceeds available balance."
+#         }, status=400)
+
+#         if wallet_amount > grand_total:
+#              return JsonResponse({
+#              "error": " Wallet amount cannot exceed order total."
+#         }, status=400)
+
+#         if wallet_amount <= 0:
+#             return JsonResponse({
+#              "error": " Enter valid wallet amount."
+#         }, status=400)
+
+#     # -----------------------------
+#     # 2️⃣ ORDER CREATION
+#     # -----------------------------
+#     area = get_object_or_404(Area, id=request.POST.get("area_id"))
+
+#     subtotal = safe_decimal(request.POST.get("final_subtotal"))
+#     tax = safe_decimal(request.POST.get("final_tax"))
+#     delivery_charge = safe_decimal(request.POST.get("final_delivery"))
+#     grand_total = safe_decimal(request.POST.get("final_grand_total"))
+#     total_discount = safe_decimal(request.POST.get("final_discount"))
+
+#     order = Order.objects.create(
+#         user=user,
+#         area=area,
+#         delivery_address=f"{request.POST.get('address')}, {request.POST.get('city')}, "
+#                          f"{request.POST.get('state')} - {request.POST.get('pincode')}",
+#         total_qty=sum(i.quantity for i in cart_items),
+#         total_amount=grand_total,
+#         dis_amount=total_discount,
+#         order_status="PLACED"
+#     )
+
+#     # -----------------------------
+#     # 3️⃣ ORDER DETAILS + STOCK DEDUCT
+#     # -----------------------------
+#     for item in cart_items:
+#         OrderDetail.objects.create(
+#             order=order,
+#             food_item=item.food_item,
+#             qty=item.quantity,
+#             price=item.price,
+#             total_amount=item.price * item.quantity
+#         )
+
+#         prepared_item = PreparedItem.objects.filter(
+#             product_name=item.food_item.name
+#         ).first()
+
+#         usages = IngredientUsage.objects.filter(production=prepared_item)
+#         total_produced_qty = Decimal(prepared_item.quantity_produced)
+
+#         for usage in usages:
+#             per_piece_qty = Decimal(usage.qty_used) / total_produced_qty
+#             required_qty = per_piece_qty * Decimal(item.quantity)
+#             ingredient = usage.raw
+#             ingredient.available_qty -= required_qty
+#             ingredient.save()
+
+#     # -----------------------------
+#     # 4️⃣ PAYMENT & WALLET LOGIC (FIXED)
+#     # -----------------------------
+#     txn_no = "TXN-" + str(uuid.uuid4())[:10].upper()
+
+#     payment_method = request.POST.get("payment_method", "COD")
+#     wallet_option = request.POST.get("wallet_option")
+#     wallet_amount = safe_decimal(request.POST.get("wallet_amount"))
+
+#     wallet, _ = Wallet.objects.get_or_create(user=user)
+
+#     wallet_used = Decimal("0.00")
+#     remaining_amount = grand_total
+#     final_method = payment_method
+
+#     # 🔹 FULL WALLET
+#     if payment_method == "WALLET" and wallet_option == "FULL":
+
+#         wallet_used = grand_total
+#         remaining_amount = Decimal("0.00")
+#         final_method = "WALLET"
+
+#     # 🔹 PARTIAL WALLET
+#     elif wallet_option == "PARTIAL":
+#         wallet_used = wallet_amount
+#         remaining_amount = grand_total - wallet_used
+#         final_method = payment_method  # COD or UPI from frontend
+
+#     # 🔹 Deduct Wallet
+#     wallet_txn = None
+#     if wallet_used > 0:
+#         wallet.balance -= wallet_used
+#         wallet.save()
+
+#         wallet_txn = WalletTransaction.objects.create(
+#             wallet=wallet,
+#             amount=wallet_used,
+#             txn_type="DEBIT",
+#             description=f"Wallet used for Order #{order.id}"
+#         )
+
+#         # -----------------------------
+#     # 🔹 PAYMENT ENTRY (CORRECTED)
+#     # -----------------------------
+
+#     # Default values
+#     amount_paid = wallet_used
+
+#     # 🔹 If UPI → remaining amount પણ paid ગણવું
+#     if final_method == "UPI":
+#         amount_paid = wallet_used + remaining_amount
+#         remaining_amount = Decimal("0.00")
+#         payment_status = "PAID"
+
+#     # 🔹 If Full Wallet
+#     elif remaining_amount == 0:
+#         amount_paid = wallet_used
+#         payment_status = "PAID"
+
+#     # 🔹 COD case
+#     else:
+#         payment_status = "PENDING"
+
+#     payment = Payment.objects.create(
+#         method=final_method,
+#         status=payment_status,
+#         amount_paid=amount_paid,
+#         remaining_amount=remaining_amount
+#     )
+
+#     OrderHasPayment.objects.create(
+#         order=order,
+#         payment=payment,
+#         amount=wallet_used,
+#         transaction_no=request.POST.get("razorpay_payment_id") or txn_no,
+#         wallet_transaction=wallet_txn
+#     )
+
+#     # -----------------------------
+#     # 5️⃣ CLEAR CART
+#     # -----------------------------
+#     cart_items.delete()
+
+#     if request.headers.get("x-requested-with") == "XMLHttpRequest":
+#         return JsonResponse({"order_id": order.id})
+
+#     messages.success(request, "✅ Order placed successfully!")
+#     return redirect("order_success", order.id)
 @login_required
 @transaction.atomic
 def place_order(request):
@@ -1293,7 +1509,6 @@ def place_order(request):
 
     messages.success(request, "✅ Order placed successfully!")
     return redirect("order_success", order.id)
-
 
 @login_required
 def order_success(request, order_id):
@@ -2152,7 +2367,6 @@ def cancel_order(request, order_id):
     })
 
 
-
 from rest_framework import viewsets, status
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated, IsAdminUser
@@ -2384,4 +2598,3 @@ def food_cart_summary(request, food_id):
     return JsonResponse({
         "total_quantity": total_qty
     })
-

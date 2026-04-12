@@ -39,9 +39,6 @@
 
 <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
 
-
-
-
 <script>
 
 var modalOpen = false;
@@ -219,21 +216,16 @@ areaOrders.forEach((o, index) => {
                 ${o.order_status}
             </span>
         </td>
-
-    </tr>
-    `;
+    </tr>  `;
 });
-
 html += `
 </tbody>
 </table>
 </div>
 `;}
-
     document.getElementById("modalContent").innerHTML = html;
     document.getElementById("orderModal").style.display = "flex";
 
-    // 🔥 SEARCH WORKING
     var searchInput = document.getElementById("tableSearch");
 
     if(searchInput){
@@ -247,7 +239,6 @@ html += `
             });
         });
     }
-
     return false;
 });
 
@@ -262,6 +253,5 @@ window.onclick = function(event){
         modal.style.display = "none";
     }
 };
-
 </script>
 {% endblock %}
