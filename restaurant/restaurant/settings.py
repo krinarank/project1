@@ -44,6 +44,7 @@ INSTALLED_APPS = [
     'deliverypanel',
     'orders',
     'location',
+    'rest_framework',
 
     # 'purchase',
 
