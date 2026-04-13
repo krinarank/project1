@@ -59,7 +59,12 @@
         </div>
          <h6 class="food-calories">Calories: {{ food.calories }} kcal</h6>
 
-
+{% if food.preparation_time %}
+<div class="info-box">
+    <span>⏱</span>
+    <span>Ready in {{ food.preparation_time }} mins</span>
+</div>
+{% endif %}
         <hr>
 
         <!-- ================= Variant Radio Buttons ================= -->

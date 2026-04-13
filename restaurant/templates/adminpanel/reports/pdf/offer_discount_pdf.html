@@ -42,40 +42,46 @@ h2 { text-align:center; }
 <div style="font-size:18px; font-weight:bold;">Leela Restaurant</div>
 <div style="font-size:11px;">Dehgam Road, Ahmedabad</div>
 <div style="font-size:11px;">📞 +91 9876543210 | ✉️ leelarestaurant.official@gmail.com</div>
-<div style="font-size:14px; font-weight:bold; margin-top:4px;">ORDER REPORT</div>
+<div style="font-size:14px; font-weight:bold; margin-top:4px;">OFFER DISCOUNT REPORT</div>
 
 <div style="font-size:10px;">Generated On: {{ date }}</div>
 </td>
 </tr>
 </table>
 
-<!-- Orders Table -->
-<table>
-<tr>
-<th>Order ID</th>
-<th>Customer</th>
-<th>Total Qty</th>
-<th>Total Amount</th>
-<th>Status</th>
-<th>Order Date</th>
-</tr>
 
-{% for o in orders %}
+<table>
+<thead>
 <tr>
-<td>{{ o.id }}</td>
-<td>{{ o.user.username }}</td>
-<td>{{ o.total_qty }}</td>
-<td>{{ o.total_amount|floatformat:2 }}</td>
-<td>{{ o.order_status }}</td>
-<td>{{ o.order_date|date:"Y-m-d H:i" }}</td>
+    <th width="5%">ID</th>
+    <th>Offer Code</th>
+    <th>Description</th>
+    <th>Discount %</th>
+    <th>Valid From</th>
+    <th>Valid To</th>
+    <th>Status</th>
+</tr>
+</thead>
+<tbody>
+{% for offer in offers %}
+<tr>
+    <td>{{ offer.id }}</td>
+    <td>{{ offer.offer_code }}</td>
+    <td>{{ offer.description }}</td>
+    <td>{{ offer.discount_percentage }}%</td>
+    <td>{{ offer.valid_from }}</td>
+    <td>{{ offer.valid_to }}</td>
+    <td>{{ offer.get_status }}</td>
+</tr>
+{% empty %}
+<tr>
+    <td colspan="7" style="text-align:center;">No offers found</td>
 </tr>
 {% endfor %}
+</tbody>
 </table>
-
-<!-- Footer -->
 <div id="footer_content">
 Generated on {{ date|date:"Y-m-d" }} | Page <pdf:pagenumber/> of <pdf:pagecount/>
 </div>
-
 </body>
 </html>

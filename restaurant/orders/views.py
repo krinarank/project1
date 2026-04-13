@@ -275,7 +275,6 @@ def apply_offer(request):
     # ✅ ONLY CURRENTLY ACTIVE OFFERS (NO EXPIRED)
     offers = OfferDiscount.objects.filter(
         isactive=True,
-        valid_from__lte=today,
         valid_to__gte=today
     )
 
@@ -482,6 +481,10 @@ def remove_from_wishlist(request, food_id):
 
 from orders.utils import get_best_offer
 
+from django.utils import timezone
+from decimal import Decimal
+
+
 def my_wishlist(request):
 
     if request.user.is_authenticated:
@@ -494,18 +497,71 @@ def my_wishlist(request):
             id__in=wishlist_ids
         ).prefetch_related('images')
 
-    # 🔁 APPLY OFFER (MENU JEVI)
+    # ✅ APPLY OFFER LIKE CART
+    today = timezone.now().date()
+
     for item in wishlist_items:
-        offer = get_best_offer(item)
-        if offer:
-            discount = offer.offer.discount_percentage
-            item.offer_percent = discount
-            item.discounted_price = round(
-                item.price - (item.price * discount / 100), 2
-            )
-            item.has_offer = True
-        else:
-            item.has_offer = False
+
+        base_price = item.price
+        final_price = base_price
+
+        # 🔥 1. Food Item Offer
+        food_offer = FoodItemOfferDiscount.objects.filter(
+            food_item=item,
+            is_active=True,
+            applied_date__lte=today,
+            expiry_date__gte=today
+        ).select_related('offer').first()
+
+        if food_offer and food_offer.offer.is_currently_active():
+            discount = food_offer.offer.discount_percentage
+            final_price = base_price - (base_price * Decimal(discount) / 100)
+
+        # 🔥 2. SubCategory Offer
+        elif SubCategoryOfferDiscount.objects.filter(
+            subcategory=item.sub_cat,
+            is_active=True,
+            applied_date__lte=today,
+            expiry_date__gte=today
+        ).exists():
+
+            sub_offer = SubCategoryOfferDiscount.objects.filter(
+                subcategory=item.sub_cat,
+                is_active=True,
+                applied_date__lte=today,
+                expiry_date__gte=today
+            ).select_related('offer').first()
+
+            if sub_offer and sub_offer.offer.is_currently_active():
+                discount = sub_offer.offer.discount_percentage
+                final_price = base_price - (base_price * Decimal(discount) / 100)
+
+        # 🔥 3. Category Offer
+        elif CategoryOfferDiscount.objects.filter(
+            category=item.sub_cat.food_item_cat,
+            is_active=True,
+            applied_date__lte=today,
+            expiry_date__gte=today
+        ).exists():
+
+            cat_offer = CategoryOfferDiscount.objects.filter(
+                category=item.sub_cat.food_item_cat,
+                is_active=True,
+                applied_date__lte=today,
+                expiry_date__gte=today
+            ).select_related('offer').first()
+
+            if cat_offer and cat_offer.offer.is_currently_active():
+                discount = cat_offer.offer.discount_percentage
+                final_price = base_price - (base_price * Decimal(discount) / 100)
+
+        # ✅ Template ma show karva mate values attach karo
+        item.has_offer = final_price < base_price
+        item.discounted_price = round(final_price, 2)
+        item.offer_percent = (
+            round(((base_price - final_price) / base_price) * 100)
+            if base_price > final_price else 0
+        )
 
     return render(request, 'orders/wishlist.html', {
         'wishlist_items': wishlist_items
@@ -1061,6 +1117,45 @@ from django.contrib import messages
 #                     f"❌ {ingredient.name} stock is low."
 #                 )
 #                 return redirect("cart_page")
+#             # -----------------------------
+# # 🔹 WALLET VALIDATION BEFORE ORDER
+# # -----------------------------
+
+#     payment_method = request.POST.get("payment_method", "COD")
+#     wallet_option = request.POST.get("wallet_option")
+
+#     wallet, _ = Wallet.objects.get_or_create(user=user)
+
+#     grand_total = safe_decimal(request.POST.get("final_grand_total"))
+
+# # FULL Wallet Validation
+#     if payment_method == "WALLET" and wallet_option == "FULL":
+
+#         if wallet.balance < grand_total:
+#             return JsonResponse({
+#              "error": "Insufficient wallet balance for full payment."
+#         }, status=400)
+
+
+# # PARTIAL Wallet Validation
+#     elif wallet_option == "PARTIAL":
+
+#         wallet_amount = safe_decimal(request.POST.get("wallet_amount"))
+
+#         if wallet_amount > wallet.balance:
+#             return JsonResponse({
+#                 "error": " Entered wallet amount exceeds available balance."
+#         }, status=400)
+
+#         if wallet_amount > grand_total:
+#              return JsonResponse({
+#              "error": " Wallet amount cannot exceed order total."
+#         }, status=400)
+
+#         if wallet_amount <= 0:
+#             return JsonResponse({
+#              "error": " Enter valid wallet amount."
+#         }, status=400)
 
 #     # -----------------------------
 #     # 2️⃣ ORDER CREATION
@@ -1139,6 +1234,14 @@ from django.contrib import messages
 #     # 🔹 PARTIAL WALLET
 #     elif wallet_option == "PARTIAL":
 #         wallet_used = min(wallet_amount, wallet.balance, grand_total)
+
+#         wallet_used = grand_total
+#         remaining_amount = Decimal("0.00")
+#         final_method = "WALLET"
+
+#     # 🔹 PARTIAL WALLET
+#     elif wallet_option == "PARTIAL":
+#         wallet_used = wallet_amount
 #         remaining_amount = grand_total - wallet_used
 #         final_method = payment_method  # COD or UPI from frontend
 
@@ -2010,12 +2113,10 @@ def download_invoice(request, order_id):
     # Ensure customer only accesses own order
     order = get_object_or_404(Order, id=order_id, user=request.user)
    
-
-    order_items = order.order_details.all()  # fetch items
-
+    order_items = order.order_details.all()  # fetch item
    
-   
-    subtotal=sum(item.price * item.qty for item in order_items)
+    subtotal = sum(item.total_amount for item in order_items)
+    # subtotal=sum(item.price * item.qty for item in order_items)
     tax=(subtotal*Decimal('0.05')).quantize(Decimal('0.01'),rounding=ROUND_HALF_UP)
     delivery_charge=getattr(order,'delivery_charge',Decimal('50.00'))
     grand_total=subtotal+tax+delivery_charge
@@ -2029,8 +2130,9 @@ def download_invoice(request, order_id):
     context = {
         'order': order,
         'order_items': order_items,
-        'original_total': grand_total,
+        # 'original_total': grand_total,
        # 'total_discount': total_discount,
+       'subtotal': subtotal, 
         'tax': tax,
         'delivery_charge': delivery_charge,
         'grand_total': grand_total,
@@ -2042,15 +2144,18 @@ def download_invoice(request, order_id):
 
     # ====== Generate PDF ======
     response = HttpResponse(content_type='application/pdf')
-    response['Content-Disposition'] = f'attachment; filename="invoice_{order.id}.pdf"'
+
+    # response['Content-Disposition'] = f'attachment; filename="invoice_{order.id}.pdf"'
+    name = f"{order.user.firstname}_{order.user.lastname}"
+    filename = f"Invoice_{order.id}_{name}.pdf"
+    response['Content-Disposition'] = f'attachment; filename="{filename}"'
+
 
     pisa_status = pisa.CreatePDF(html, dest=response)
     if pisa_status.err:
         return HttpResponse('Error generating PDF <pre>' + html + '</pre>')
 
     return response
-
-
 
 from .models import Complaint
 
@@ -2275,7 +2380,6 @@ def cancel_order(request, order_id):
         "order_status": order.order_status,
         "message": f"Order cancelled. Reason: {reason}"
     })
-
 
 
 from rest_framework import viewsets, status
@@ -2509,4 +2613,3 @@ def food_cart_summary(request, food_id):
     return JsonResponse({
         "total_quantity": total_qty
     })
-

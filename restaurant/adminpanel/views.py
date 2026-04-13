@@ -44,7 +44,7 @@ from .models import (
 )
 from menu.models import Inquiry
 from purchase.models import Ingredient
-from purchase.models import Purchase 
+from purchase.models import Purchase ,PurchaseReturn
 from orders.models import FeedbackRating
 
 # def login_view(request):
@@ -151,12 +151,12 @@ def add_category(request):
 
         # Numeric check
         if category_name.isnumeric():
-            messages.error(request, "Category name cannot be numeric")
+            messages.success(request, "Category name cannot be numeric")
             return redirect('add_category')
 
         # Duplicate check
         if FoodItemCategory.objects.filter(category_name__iexact=category_name).exists():
-            messages.error(request, f"Category '{category_name}' already exists")
+            messages.success(request, f"Category '{category_name}' already exists")
             return redirect('add_category')
 
         # Create category
@@ -177,17 +177,17 @@ def add_subcategory(request):
 
         # Check if subcategory name is empty
         if not subcategory_name:
-            messages.error(request, "Subcategory name cannot be empty")
+            messages.success(request, "Subcategory name cannot be empty")
             return redirect('add_subcategory')
 
         # Numeric check
         if subcategory_name.isnumeric():
-            messages.error(request, "Subcategory name cannot be numeric")
+            messages.success(request, "Subcategory name cannot be numeric")
             return redirect('add_subcategory')
 
         # Category selection check
         if not category_id:
-            messages.error(request, "Please select a parent category")
+            messages.success(request, "Please select a parent category")
             return redirect('add_subcategory')
 
         # Duplicate check (case-insensitive) under the same category
@@ -195,7 +195,7 @@ def add_subcategory(request):
             subcategory_name__iexact=subcategory_name,
             food_item_cat_id=category_id
         ).exists():
-            messages.error(request, f"Subcategory '{subcategory_name}' already exists in this category")
+            messages.success(request, f"Subcategory '{subcategory_name}' already exists in this category")
             return redirect('add_subcategory')
 
         # Create subcategory
@@ -559,19 +559,19 @@ def add_foodimage(request):
             # -------- FILE TYPE VALIDATION --------
             allowed_types = ['image/jpeg', 'image/png']
             if image.content_type not in allowed_types:
-                messages.error(request, "Only JPG ,JPEG and PNG images are allowed.")
+                messages.success(request, "Only JPG ,JPEG and PNG images are allowed.")
                 return redirect('add_foodimage')
 
             # -------- FILE SIZE VALIDATION (1MB) --------
             if image.size > 1024 * 300:
-                messages.error(request, "Image size must be under 300 kb.")
+                messages.success(request, "Image size must be under 300 kb.")
                 return redirect('add_foodimage')
 
             food = get_object_or_404(FoodItem, id=food_id)
 
             # Duplicate check
             if FoodItemImage.objects.filter(food_item=food).exists():
-                messages.error(request, "This food item already has an image!")
+                messages.success(request, "This food item already has an image!")
                 return redirect('add_foodimage')
 
             FoodItemImage.objects.create(
@@ -634,6 +634,7 @@ def delete_foodimage(request, id):
 def delete_category(request, id):
     category = get_object_or_404(FoodItemCategory, id=id)
     category.delete()
+    messages.success(request, "Category deleted successfully")
     return redirect('add_category')
 
 
@@ -715,6 +716,7 @@ def admin_inquiry_list(request):
 #     return render(request, 'adminpanel/reply_inquiry.html', {
 #         'inquiry': inquiry
 #     })
+
 
 from django.shortcuts import render, get_object_or_404, redirect
 from django.contrib.auth.decorators import login_required
@@ -870,7 +872,174 @@ def dashboard_view(request):
         'order_daily_labels': order_daily_labels,
         'order_daily_totals': order_daily_totals,
     })
-   
+from django.db.models.functions import TruncDate, TruncWeek, TruncMonth  
+
+from django.http import JsonResponse
+from django.db.models import Sum
+from datetime import date
+
+def revenue_data(request):
+    type = request.GET.get('type', 'daily')
+    month = request.GET.get('month')
+    from_date = request.GET.get('from')
+    to_date = request.GET.get('to')
+
+    qs = Order.objects.filter(order_status='DELIVERED')
+
+    # 🟢 DAILY → ONLY TODAY
+    if type == "daily":
+        today = date.today()
+        qs = qs.filter(order_date__date=today)
+
+        if not qs.exists():
+            return JsonResponse({'labels': ["Today"], 'data': [0]})
+
+    # 🟡 WEEKLY → DATE RANGE
+    elif type == "weekly":
+        if from_date and to_date:
+            qs = qs.filter(order_date__date__range=[from_date, to_date])
+        else:
+            return JsonResponse({'labels': [], 'data': []})
+
+    # 🔵 MONTHLY → SELECTED MONTH
+    elif type == "monthly":
+        if month:
+            year, mon = month.split('-')
+            year = int(year)
+            mon = int(mon)
+
+            qs = qs.filter(
+                order_date__year=year,
+                order_date__month=mon   # ✅ FIXED HERE
+            )
+        else:
+            return JsonResponse({'labels': [], 'data': []})
+
+    # ❗ NO DATA CASE
+    if not qs.exists():
+        return JsonResponse({'labels': [], 'data': []})
+
+    # 📊 GROUP BY DATE
+    data = (
+        qs.annotate(period=TruncDate('order_date'))
+        .values('period')
+        .annotate(total=Sum('total_amount'))
+        .order_by('period')
+    )
+
+    # LABELS
+    if type == "daily":
+        labels = ["Today"]
+    else:
+        labels = [x['period'].strftime("%d %b") for x in data]
+
+    totals = [float(x['total'] or 0) for x in data]
+
+    return JsonResponse({
+        'labels': labels,
+        'data': totals
+    })
+
+
+def purchase_data(request):
+    from django.http import JsonResponse
+    from django.db.models import Sum
+    from django.db.models.functions import TruncDate
+    from datetime import date
+
+    type = request.GET.get('type', 'daily')
+    month = request.GET.get('month')
+    from_date = request.GET.get('from')
+    to_date = request.GET.get('to')
+
+    qs = Purchase.objects.all()
+
+    # 🟢 DAILY
+    if type == "daily":
+        today = date.today()
+        qs = qs.filter(purchase_date=today)
+
+    # 🟡 WEEKLY
+    elif type == "weekly":
+        if from_date and to_date:
+            qs = qs.filter(purchase_date__range=[from_date, to_date])
+
+    # 🔵 MONTHLY
+    elif type == "monthly":
+        if month:
+            year, mon = month.split('-')
+            qs = qs.filter(
+                purchase_date__year=int(year),
+                purchase_date__month=int(mon)
+            )
+
+    # ❗ IMPORTANT FIX → NO CRASH
+    try:
+        data = (
+            qs.values('purchase_date')
+            .annotate(total=Sum('total_amount'))
+            .order_by('purchase_date')
+        )
+
+        labels = [x['purchase_date'].strftime("%d %b") for x in data if x['purchase_date']]
+        totals = [float(x['total'] or 0) for x in data]
+
+    except Exception as e:
+        print("ERROR:", e)
+        return JsonResponse({'labels': [], 'data': []})
+
+    return JsonResponse({
+        'labels': labels,
+        'data': totals
+    })
+from django.http import JsonResponse
+from django.db.models import Count
+from datetime import date
+
+def order_data(request):
+    type = request.GET.get('type', 'daily')
+    month = request.GET.get('month')
+    from_date = request.GET.get('from')
+    to_date = request.GET.get('to')
+
+    qs = Order.objects.all()
+
+    # 🟢 DAILY
+    if type == "daily":
+        today = date.today()
+        qs = qs.filter(order_date__date=today)
+
+    # 🟡 WEEKLY
+    elif type == "weekly":
+        if from_date and to_date:
+            qs = qs.filter(order_date__date__range=[from_date, to_date])
+
+    # 🔵 MONTHLY
+    elif type == "monthly":
+        if month:
+            year, mon = month.split('-')
+            qs = qs.filter(
+                order_date__year=int(year),
+                order_date__month=int(mon)
+            )
+
+    # 📊 GROUP
+    data = (
+        qs.values('order_date__date')
+        .annotate(total=Count('id'))
+        .order_by('order_date__date')
+    )
+
+    labels = [
+        x['order_date__date'].strftime("%d %b")
+        for x in data if x['order_date__date']
+    ]
+    totals = [x['total'] for x in data]
+
+    return JsonResponse({
+        'labels': labels,
+        'data': totals
+    })
 
 
 def get_pending_inquiry_count():
@@ -906,65 +1075,92 @@ def add_delivery_person(request):
         contact = request.POST.get('contact', '').strip()
         address = request.POST.get('address', '').strip()
 
-        errors = []
+        errors = {}
 
-        # ===== Required Fields =====
-        if not all([fname, lname, username, email, password, confirm_password, contact, address]):
-            errors.append("All fields are required.")
+# Required
+        if not fname:
+            errors['fname'] = "First name is required."
 
-        # ===== Name Validation =====
-        if not fname.isalpha():
-            errors.append("First name must contain only letters.")
+        if not lname:
+            errors['lname'] = "Last name is required."
 
-        if not lname.isalpha():
-            errors.append("Last name must contain only letters.")
+        if not username:
+            errors['username'] = "Username is required."
 
-        # ===== Username Validation =====
-        if not re.match(r'^[A-Za-z0-9_]{4,20}$', username):
-            errors.append("Username must be 4-20 characters (letters, numbers, underscore).")
+        if not email:
+            errors['email'] = "Email is required."
 
-        # ===== Email Validation =====
-        if not re.match(r'^[\w\.-]+@[\w\.-]+\.\w+$', email):
-            errors.append("Invalid email format.")
+        if not password:
+            errors['password'] = "Password is required."
 
-        # ===== Contact Validation (Indian) =====
-        if not re.match(r'^[6-9]\d{9}$', contact):
-            errors.append("Enter valid 10 digit Indian mobile number.")
+        if not confirm_password:
+            errors['confirm_password'] = "Confirm password is required."
 
-        # ===== Password Validation =====
-        if len(password) < 8:
-            errors.append("Password must be at least 8 characters.")
+        if not contact:
+            errors['contact'] = "Contact number is required."
 
-        if not re.search(r'[A-Z]', password):
-            errors.append("Password must contain one uppercase letter.")
+        if not address:
+            errors['address'] = "Address is required."
 
-        if not re.search(r'[a-z]', password):
-            errors.append("Password must contain one lowercase letter.")
 
-        if not re.search(r'\d', password):
-            errors.append("Password must contain one number.")
+# Name validation
+        if fname and not fname.isalpha():
+            errors['fname'] = "First name must contain only letters."
 
-        if not re.search(r'[@$!%*?&]', password):
-            errors.append("Password must contain one special character.")
+        if lname and not lname.isalpha():
+            errors['lname'] = "Last name must contain only letters."
 
-        if password != confirm_password:
-            errors.append("Password and Confirm Password do not match.")
 
-        # ===== Duplicate Checks =====
-        if Customer.objects.filter(username=username).exists():
-            errors.append("Username already exists.")
+# Username validation
+        if username and not re.match(r'^[A-Za-z0-9_]{4,20}$', username):
+            errors['username'] = "Username must be 4-20 characters."
 
-        if Customer.objects.filter(email=email).exists():
-            errors.append("Email already exists.")
 
-        if DeliveryPerson.objects.filter(email=email).exists():
-            errors.append("Delivery email already exists.")
+# Email validation
+        if email and not re.match(r'^[\w\.-]+@[\w\.-]+\.\w+$', email):
+             errors['email'] = "Invalid email format."
 
-        # ===== Stop if errors =====
+
+# Contact validation
+        if contact and not re.match(r'^[6-9]\d{9}$', contact):
+             errors['contact'] = "Enter valid 10 digit mobile number."
+
+
+# Password validation
+        if password:
+            if len(password) < 8:
+                 errors['password'] = "Password must be at least 8 characters."
+            elif not re.search(r'[A-Z]', password):
+                errors['password'] = "Password must contain one uppercase letter."
+            elif not re.search(r'[a-z]', password):
+                errors['password'] = "Password must contain one lowercase letter."
+            elif not re.search(r'\d', password):
+                errors['password'] = "Password must contain one number."
+            elif not re.search(r'[@$!%*?&]', password):
+                errors['password'] = "Password must contain one special character."
+
+
+        if password and confirm_password and password != confirm_password:
+             errors['confirm_password'] = "Passwords do not match."
+
+
+# Duplicate check
+        if username and Customer.objects.filter(username=username).exists():
+              errors['username'] = "Username already exists."
+
+        if email and Customer.objects.filter(email=email).exists():
+            errors['email'] = "Email already exists."
+
+        if email and DeliveryPerson.objects.filter(email=email).exists():
+            errors['email'] = "Delivery email already exists."
+
+
+# Stop if errors
         if errors:
-            for error in errors:
-                messages.error(request, error)
-            return redirect('add_delivery_person')
+            return render(request, 'adminpanel/add_delivery_person.html', {
+                'errors': errors,
+                'delivery_list': DeliveryPerson.objects.all().order_by('id')
+    })
 
         # ===== Create Customer (Secure Way) =====
         customer = Customer.objects.create_user(
@@ -1158,46 +1354,90 @@ def delete_city(request, id):
 
 
 
+# def add_and_list_area(request):
+#     if request.method == "POST":
+#         name = request.POST.get('name')
+#         city_id = request.POST.get('city')
+#         delivery_time = request.POST.get("delivery_time")
+        
+
+#         if name and city_id:
+#             city = get_object_or_404(City, id=city_id)
+
+#             if Area.objects.filter(name__iexact=name, city=city).exists():
+#                 messages.success(request, "Area already exists in this city!")
+#             else:
+#                 # 🔥 Fetch lat/lng using improved function
+#                 lat, lng = get_lat_lng_from_osm(name, city.name, city.state.name if city.state else "Gujarat")
+
+#                 if lat is None or lng is None:
+#                     messages.warning(request, "Could not fetch coordinates. Please check spelling!")
+#                     lat, lng = 0.0, 0.0  # optional fallback
+
+#                 Area.objects.create(
+#                     name=name,
+#                     city=city,
+#                     latitude=lat,
+#                     longitude=lng,
+#                     delivery_time=delivery_time,
+                    
+#                 )
+#                 messages.success(request, "Area added successfully!")
+
+#         return redirect('add_and_list_area')
+
+#     # GET request → show page
+#     cities = City.objects.all().order_by('name')
+#     areas = Area.objects.all().order_by('id')
+#     return render(request, "adminpanel/add_and_list_area.html", {
+#         'areas': areas,
+#         'cities': cities
+#     })
 def add_and_list_area(request):
     if request.method == "POST":
         name = request.POST.get('name')
         city_id = request.POST.get('city')
         delivery_time = request.POST.get("delivery_time")
-        
 
         if name and city_id:
             city = get_object_or_404(City, id=city_id)
 
+            # Duplicate check
             if Area.objects.filter(name__iexact=name, city=city).exists():
-                messages.error(request, "Area already exists in this city!")
+                messages.warning(request, "Area already exists in this city!")
+
             else:
-                # 🔥 Fetch lat/lng using improved function
-                lat, lng = get_lat_lng_from_osm(name, city.name, city.state.name if city.state else "Gujarat")
-
-                if lat is None or lng is None:
-                    messages.warning(request, "Could not fetch coordinates. Please check spelling!")
-                    lat, lng = 0.0, 0.0  # optional fallback
-
-                Area.objects.create(
-                    name=name,
-                    city=city,
-                    latitude=lat,
-                    longitude=lng,
-                    delivery_time=delivery_time,
-                    
+                lat, lng = get_lat_lng_from_osm(
+                    name,
+                    city.name,
+                    city.state.name if city.state else "Gujarat"
                 )
-                messages.success(request, "Area added successfully!")
+
+                # 🔥 STRICT VALIDATION (IMPORTANT)
+                if lat is None or lng is None:
+                    messages.warning(request, "Invalid area! Could not find location.")
+                    return redirect('add_and_list_area')
+
+                # 🔥 Check if result actually matches input
+                if lat and lng:
+                    Area.objects.create(
+                        name=name,
+                        city=city,
+                        latitude=lat,
+                        longitude=lng,
+                        delivery_time=delivery_time,
+                    )
+                    messages.success(request, "Area added successfully!")
 
         return redirect('add_and_list_area')
 
-    # GET request → show page
     cities = City.objects.all().order_by('name')
     areas = Area.objects.all().order_by('id')
+
     return render(request, "adminpanel/add_and_list_area.html", {
         'areas': areas,
         'cities': cities
     })
-
  
 def edit_area(request, id):
     area = get_object_or_404(Area, id=id)
@@ -1213,7 +1453,7 @@ def edit_area(request, id):
             city_obj = get_object_or_404(City, id=new_city_id)
 
             if Area.objects.filter(name__iexact=new_name, city=city_obj).exclude(id=id).exists():
-                messages.error(request, "Area with this name already exists in selected city!")
+                messages.success(request, "Area with this name already exists in selected city!")
             else:
                 area.name = new_name
                 area.city = city_obj
@@ -1277,7 +1517,7 @@ def admin_customers(request):
         is_staff=False,
         is_superuser=False,
         is_delivery_person=False
-    ).order_by('-creationdate')
+    ).order_by('creationdate')
 
     return render(request, 'adminpanel/customers/customers.html', {
         'customers': customers
@@ -1286,10 +1526,33 @@ def admin_customers(request):
 
 
 
+# def get_lat_lng_from_osm(area, city, state="Gujarat"):
+#     """
+#     Fetch real lat/lng from OSM for given area, city, state
+#     """
+#     query = f"{area}, {city}, {state}, India"
+#     url = "https://nominatim.openstreetmap.org/search"
+#     params = {"q": query, "format": "json", "limit": 1}
+#     headers = {"User-Agent": "RestaurantProject/1.0"}
+
+#     try:
+#         response = requests.get(url, params=params, headers=headers, timeout=5)
+#         response.raise_for_status()
+#         data = response.json()
+
+#         if data:
+#             lat = float(data[0]['lat'])
+#             lng = float(data[0]['lon'])
+#             print(f"OSM: Found {area} → lat: {lat}, lng: {lng}")
+#             return lat, lng
+#         else:
+#             print(f"OSM: No data for {query}")
+#             return None, None
+
+#     except requests.RequestException as e:
+#         print(f"OSM ERROR: {e}")
+#         return None, None
 def get_lat_lng_from_osm(area, city, state="Gujarat"):
-    """
-    Fetch real lat/lng from OSM for given area, city, state
-    """
     query = f"{area}, {city}, {state}, India"
     url = "https://nominatim.openstreetmap.org/search"
     params = {"q": query, "format": "json", "limit": 1}
@@ -1301,18 +1564,21 @@ def get_lat_lng_from_osm(area, city, state="Gujarat"):
         data = response.json()
 
         if data:
+            display_name = data[0]['display_name'].lower()
+
+            # 🔥 VALIDATION
+            if area.lower() not in display_name:
+                print("Mismatch area name")
+                return None, None
+
             lat = float(data[0]['lat'])
             lng = float(data[0]['lon'])
-            print(f"OSM: Found {area} → lat: {lat}, lng: {lng}")
             return lat, lng
-        else:
-            print(f"OSM: No data for {query}")
-            return None, None
 
-    except requests.RequestException as e:
-        print(f"OSM ERROR: {e}")
         return None, None
 
+    except requests.RequestException:
+        return None, None
 
 from django.shortcuts import render, redirect
 from .forms import NotificationForm
@@ -1551,17 +1817,18 @@ def load_report(request, report_type):
         )
         return HttpResponse(html)
 
-    # ================= ORDER =================
+   
     elif report_type == "order_report":
         orders = Order.objects.filter(
-            order_date__date__range=[from_date, to_date]
-        )
-        html = render_to_string(
-            "adminpanel/reports/partials/order_table.html",
-            {"orders": orders}
-        )
-        return HttpResponse(html)
+        order_date__date__range=[from_date, to_date],
+        order_status='DELIVERED'
+    ).order_by('order_date')
 
+        html = render_to_string(
+        "adminpanel/reports/partials/order_table.html",
+        {"orders": orders}
+    )
+        return HttpResponse(html)
     # ================= SALES =================
     elif report_type == "sales_report":
         orders = Order.objects.filter(
@@ -1613,24 +1880,38 @@ def load_report(request, report_type):
         )
         return HttpResponse(html)
     
-    elif report_type == "payment_report":
 
+    elif report_type == "payment_report":
         payments = OrderHasPayment.objects.filter(
-        order__order_date__date__range=[from_date, to_date],
-        order__order_status='DELIVERED'
-    ).values(
-        'payment__method'
-    ).annotate(
+        order__order_date__date__range=[from_date, to_date]
+        ).values(
+        'payment__method',
+        'payment__status'
+        ).annotate(
         total_orders=Count('order', distinct=True),
-        total_amount=Sum('amount')
-    ).order_by('-total_amount')
+        total_amount=Coalesce(Sum('amount'), Decimal('0.00')),
+        refunded_amount=Coalesce(
+            Sum('amount', filter=Q(payment__status='REFUNDED')), Decimal('0.00')
+        ),
+        failed_amount=Coalesce(
+            Sum('amount', filter=Q(payment__status='FAILED')), Decimal('0.00')
+        )
+        ).order_by('-total_amount')
+
+    # Optional: avg per payment
+        for p in payments:
+            if p['total_orders']:
+                p['avg_order'] = round(p['total_amount'] / p['total_orders'], 2)
+            else:
+                p['avg_order'] = Decimal('0.00')
 
         html = render_to_string(
         "adminpanel/reports/partials/payment_table.html",
         {"payments": payments}
     )
         return HttpResponse(html)
-    
+
+
     elif report_type == "order_history_report":
 
         orders = Order.objects.filter(
@@ -1643,6 +1924,7 @@ def load_report(request, report_type):
     )
         return HttpResponse(html)
     
+  
     elif report_type == "cancellation_report":
 
         orders = Order.objects.filter(
@@ -1668,39 +1950,166 @@ def load_report(request, report_type):
         {"orders": orders}
     )
         return HttpResponse(html)
+    
+    elif report_type == "supplier_report":
+        suppliers = Supplier.objects.select_related('area').all()
+        html = render_to_string(
+        "adminpanel/reports/partials/supplier_table.html",
+        {"suppliers": suppliers}
+    )
+        return HttpResponse(html)
+    
+    elif report_type == "delivery_person_report":
+        delivery_persons = DeliveryPerson.objects.all()
+        html = render_to_string(
+        "adminpanel/reports/partials/delivery_person_table.html",
+        {"delivery_persons": delivery_persons}
+    )
+        return HttpResponse(html)
+    
+       # ================= RETURN ORDER REPORT =================
+    elif report_type == "return_order_report":
+        return_orders = ReturnOrder.objects.filter(
+            created_at__date__range=[from_date, to_date]
+        ).order_by('-created_at')
 
-    # elif report_type == "past_delivery_report":
+        html = render_to_string(
+            "adminpanel/reports/partials/return_order_table.html",
+            {"return_orders": return_orders}
+        )
+        return HttpResponse(html)
 
-    #     orders = Order.objects.filter(
-    #     order_status='DELIVERED',
-    #     order_date__date__range=[from_date, to_date]
-    # ).select_related('delivery_person').order_by('-order_date')
+    elif report_type == "feedback_rating_report":
+        feedbacks = FeedbackRating.objects.select_related('user', 'order').all()
+        html = render_to_string(
+        "adminpanel/reports/partials/feedback_rating_table.html",
+        {"feedbacks": feedbacks}
+    )
+        return HttpResponse(html)
 
-    #     html = render_to_string(
-    #     "adminpanel/reports/partials/past_delivery_table.html",
-    #     {"orders": orders}
-    # )
-    #     return HttpResponse(html)
+    elif report_type == "purchase_report":
+        purchases = Purchase.objects.select_related('supplier').prefetch_related('items__ingredient').order_by('purchase_date')
+        html = render_to_string(
+        "adminpanel/reports/partials/purchase_table.html",
+        {"purchases": purchases}
+    )
+        return HttpResponse(html)
 
-    # elif report_type == "assign_order_report":
+    elif report_type == "purchase_return_report":
+        purchase_returns = PurchaseReturn.objects.prefetch_related('items__raw', 'purchase__supplier').order_by('-return_date')
+        html = render_to_string(
+        "adminpanel/reports/partials/purchase_return_table.html",  # <-- correct spelling
+        {"purchase_returns": purchase_returns}
+    )
+        return HttpResponse(html)
 
-    #     orders = Order.objects.filter(
-    #     delivery_person__isnull=False,
-    #     order_date__date__range=[from_date, to_date]
-    # ).select_related('delivery_person').order_by('-order_date')
+    elif report_type == "assign_order_report":
+        assignments = AssignOrder.objects.select_related('order', 'delivery_person', 'user').order_by('-assign_time')
+        html = render_to_string(
+        "adminpanel/reports/partials/assign_order_table.html",
+        {"assignments": assignments}
+    )
+        return HttpResponse(html)
 
-    #     html = render_to_string(
-    #     "adminpanel/reports/partials/assign_order_table.html",
-    #     {"orders": orders}
-    # )
-    #     return HttpResponse(html)
+    elif report_type == "notification_report":
+        from_date = request.GET.get("from_date")
+        to_date = request.GET.get("to_date")
+
+        notifications = Notification.objects.filter(
+        send_datetime__date__range=[from_date, to_date]
+    ).order_by('-send_datetime')
+
+        html = render_to_string(
+        "adminpanel/reports/partials/notification_table.html",
+        {"notifications": notifications}
+    )
+        return HttpResponse(html)
+
+    elif report_type == "offer_discount_report":
+        from_date = request.GET.get("from_date")
+        to_date = request.GET.get("to_date")
+
+    # Get all active and inactive offers in the selected date range
+        offers = OfferDiscount.objects.filter(
+        created_at__date__range=[from_date, to_date]
+    ).order_by('-created_at')
+
+        html = render_to_string(
+        "adminpanel/reports/partials/offer_discount_table.html",
+        {"offers": offers}
+    )
+        return HttpResponse(html)
+    
+    elif report_type == "complaint_report":
+        complaints = Complaint.objects.select_related('order', 'user').all()
+        html = render_to_string(
+        "adminpanel/reports/partials/complaint_table.html",
+        {"complaints": complaints}
+    )
+        return HttpResponse(html)
+
+    elif report_type == "fooditem_report":
+    # Fetch all food items with related subcategory and category for display
+        food_items = FoodItem.objects.select_related('sub_cat', 'sub_cat__food_item_cat').all()
+
+    # Render the partial table template
+        html = render_to_string(
+        "adminpanel/reports/partials/fooditem_table.html",
+        {"food_items": food_items}
+    )
+        return HttpResponse(html)
+
+   
 
 
+    elif report_type == "stock_report":
+        ingredients = Ingredient.objects.all()
+        stock_data = []
 
+        for ing in ingredients:
+        # Total purchased
+            purchased = PurchaseDetail.objects.filter(ingredient=ing).aggregate(
+            total=models.Sum('qty')
+        )['total'] or 0
+
+        # Total returned
+            returned = PurchaseReturnDetail.objects.filter(raw=ing).aggregate(
+            total=models.Sum('qty')
+        )['total'] or 0
+
+        # Total used
+            used = IngredientUsage.objects.filter(raw=ing).aggregate(
+            total=models.Sum('qty_used')
+        )['total'] or 0
+
+        # Current stock
+            current_stock = purchased - used - returned
+
+        # Convert to Decimal for calculations
+            unit_price = Decimal(ing.price_per_unit)
+            total_value = Decimal(current_stock) * unit_price
+
+            stock_data.append({
+            'ingredient': ing,
+            'purchased': purchased,
+            'used': used,
+            'returned': returned,
+            'current_stock': current_stock,
+            'unit': ing.unit_of_measure,
+            'unit_price': f"{unit_price:.2f}",
+            'total_value': f"{total_value:.2f}"
+        })
+
+        html = render_to_string(
+        "adminpanel/reports/partials/stock_table.html",
+        {"stock_data": stock_data}
+    )
+        return HttpResponse(html)
 
     # ================= INVALID =================
     else:
         return HttpResponse("Invalid report type")
+    
 
 from django.db.models import Sum, Count
 from orders.models import OrderDetail
@@ -1719,7 +2128,115 @@ def generate_pdf(template_src, context_dict, filename):
 
     return response
 
+from django.template.loader import get_template
+from xhtml2pdf import pisa
+from django.http import HttpResponse
 
+def notification_report_pdf(request):
+    from_date = request.GET.get("from_date")
+    to_date = request.GET.get("to_date")
+
+    notifications = Notification.objects.filter(
+        send_datetime__date__range=[from_date, to_date]
+    ).order_by('-send_datetime')
+
+    template = get_template("adminpanel/reports/pdf/notification_pdf.html")
+    html = template.render({
+        "notifications": notifications,
+        "date": date.today()
+    })
+
+    response = HttpResponse(content_type='application/pdf')
+    response['Content-Disposition'] = 'attachment; filename="notification_report.pdf"'
+
+    pisa.CreatePDF(html, dest=response)
+    return response
+
+from purchase.models import Ingredient,  IngredientUsage
+from purchase.models import *
+from orders.models import *
+from adminpanel.models import *
+from django.template.loader import get_template
+from xhtml2pdf import pisa
+from django.http import HttpResponse
+
+# def stock_report_pdf(request):
+    
+
+#     ingredients = Ingredient.objects.all()
+
+#     stock_data = []
+#     for ing in ingredients:
+#         purchased = PurchaseDetail.objects.filter(ingredient=ing).aggregate(total=models.Sum('qty'))['total'] or 0
+#         returned = PurchaseReturnDetail.objects.filter(raw=ing).aggregate(total=models.Sum('qty'))['total'] or 0
+#         used = IngredientUsage.objects.filter(raw=ing).aggregate(total=models.Sum('qty_used'))['total'] or 0
+#         current_stock = purchased - used - returned
+
+#         stock_data.append({
+#             'ingredient': ing,
+#             'purchased': purchased,
+#             'used': used,
+#             'returned': returned,
+#             'current_stock': current_stock,
+#             'unit': ing.unit_of_measure,
+#             'unit_price': ing.price_per_unit,
+#             'total_value': current_stock * ing.price_per_unit
+#         })
+
+#     template = get_template("adminpanel/reports/pdf/stock_pdf.html")
+#     html = template.render({"stock_data": stock_data, "date": timezone.now().date()})
+
+#     response = HttpResponse(content_type='application/pdf')
+#     response['Content-Disposition'] = 'attachment; filename="stock_report.pdf"'
+#     pisa.CreatePDF(html, dest=response)
+#     return response
+
+
+from decimal import Decimal, ROUND_HALF_UP
+
+def stock_report_pdf(request):
+    ingredients = Ingredient.objects.all()
+    stock_data = []
+
+    for ing in ingredients:
+        purchased = PurchaseDetail.objects.filter(ingredient=ing).aggregate(
+            total=models.Sum('qty')
+        )['total'] or 0
+
+        returned = PurchaseReturnDetail.objects.filter(raw=ing).aggregate(
+            total=models.Sum('qty')
+        )['total'] or 0
+
+        used = IngredientUsage.objects.filter(raw=ing).aggregate(
+            total=models.Sum('qty_used')
+        )['total'] or 0
+
+        current_stock = purchased - used - returned
+
+        unit_price = Decimal(ing.price_per_unit).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
+        total_value = (Decimal(current_stock) * unit_price).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
+
+        stock_data.append({
+            'ingredient': ing,
+            'purchased': purchased,
+            'used': used,
+            'returned': returned,
+            'current_stock': current_stock,
+            'unit': ing.unit_of_measure,
+            'unit_price': unit_price,
+            'total_value': total_value
+        })
+
+    template = get_template("adminpanel/reports/pdf/stock_pdf.html")
+    html = template.render({
+        "stock_data": stock_data,
+        "date": timezone.now().date()
+    })
+
+    response = HttpResponse(content_type='application/pdf')
+    response['Content-Disposition'] = 'attachment; filename="stock_report.pdf"'
+    pisa.CreatePDF(html, dest=response)
+    return response
 # ================= CUSTOMER PDF =================
 def customer_report_pdf(request):
 
@@ -1751,11 +2268,26 @@ def customer_report_pdf(request):
         context,
         "customer_report.pdf"
     )
+    
+
+def fooditem_report_pdf(request):
+    food_items = FoodItem.objects.select_related('sub_cat', 'sub_cat__food_item_cat').all()
+    
+    template = get_template("adminpanel/reports/pdf/fooditem_pdf.html")
+    html = template.render({
+        "food_items": food_items,
+        "date": date.today()
+    })
+
+    response = HttpResponse(content_type='application/pdf')
+    response['Content-Disposition'] = 'attachment; filename="fooditem_report.pdf"'
+
+    pisa.CreatePDF(html, dest=response)
+    return response
 
 
-# ================= ORDER PDF =================
+#================ ORDER REPORT PDF (Only DELIVERED) =================
 def order_report_pdf(request):
-
     from_date = request.GET.get("from_date")
     to_date = request.GET.get("to_date")
 
@@ -1769,14 +2301,15 @@ def order_report_pdf(request):
         return HttpResponse("Future date not allowed")
 
     orders = Order.objects.filter(
-        order_date__date__range=[from_date, to_date]
-    )
+        order_date__date__range=[from_date, to_date],
+        order_status='DELIVERED'
+    ).order_by('order_date')
 
     context = {
         "orders": orders,
-        "date": date.today(),
         "from_date": from_date,
-        "to_date": to_date
+        "to_date": to_date,
+        "date": date.today()
     }
 
     return generate_pdf(
@@ -1785,8 +2318,11 @@ def order_report_pdf(request):
         "order_report.pdf"
     )
 
-def sales_report_pdf(request):
+from decimal import Decimal, ROUND_HALF_UP
+from datetime import date
+from django.db.models import Count, Sum, Q
 
+def sales_report_pdf(request):
     from_date = request.GET.get("from_date")
     to_date = request.GET.get("to_date")
 
@@ -1798,16 +2334,18 @@ def sales_report_pdf(request):
         total_orders=Count('id'),
         delivered_orders=Count('id', filter=Q(order_status='DELIVERED')),
         cancelled_orders=Count('id', filter=Q(order_status='CANCELLED')),
-
         gross_revenue=Sum('total_amount'),
         discount=Sum('dis_amount')
     )
 
-    net_revenue = (summary['gross_revenue'] or 0) - (summary['discount'] or 0)
+    # Convert to Decimal and round to 2 decimal places
+    gross_revenue = Decimal(summary['gross_revenue'] or 0).quantize(Decimal('0.01'), rounding=ROUND_HALF_UP)
+    discount = Decimal(summary['discount'] or 0).quantize(Decimal('0.01'), rounding=ROUND_HALF_UP)
+    net_revenue = (gross_revenue - discount).quantize(Decimal('0.01'), rounding=ROUND_HALF_UP)
 
-    avg_order = 0
+    avg_order = Decimal(0)
     if summary['delivered_orders']:
-        avg_order = net_revenue / summary['delivered_orders']
+        avg_order = (net_revenue / Decimal(summary['delivered_orders'])).quantize(Decimal('0.01'), rounding=ROUND_HALF_UP)
 
     context = {
         "orders": orders,
@@ -1825,8 +2363,11 @@ def sales_report_pdf(request):
         "sales_report.pdf"
     )
 
-def item_report_pdf(request):
+from decimal import Decimal, ROUND_HALF_UP
+from datetime import date
+from django.db.models import Count, Sum
 
+def item_report_pdf(request):
     from_date = request.GET.get("from_date")
     to_date = request.GET.get("to_date")
 
@@ -1841,6 +2382,10 @@ def item_report_pdf(request):
         revenue=Sum('total_amount')
     ).order_by('-total_qty')
 
+    # Round revenue to 2 decimals
+    for i in items:
+        i['revenue'] = Decimal(i['revenue'] or 0).quantize(Decimal('0.01'), ROUND_HALF_UP)
+
     context = {
         "items": items,
         "from_date": from_date,
@@ -1853,21 +2398,128 @@ def item_report_pdf(request):
         context,
         "item_report.pdf"
     )
+from orders.models import ReturnOrder,OfferDiscount
+from django.http import HttpResponse
+from django.template.loader import get_template
+from xhtml2pdf import pisa
+from datetime import date
+from purchase.models import Ingredient,IngredientUsage
 
-def payment_report_pdf(request):
-
+def offer_discount_report_pdf(request):
     from_date = request.GET.get("from_date")
     to_date = request.GET.get("to_date")
 
-    payments = OrderHasPayment.objects.filter(
-        order__order_date__date__range=[from_date, to_date],
-        order__order_status='DELIVERED'
-    ).values(
-        'payment__method'
-    ).annotate(
-        total_orders=Count('order', distinct=True),
-        total_amount=Sum('amount')
-    ).order_by('-total_amount')
+    offers = OfferDiscount.objects.filter(
+        created_at__date__range=[from_date, to_date]
+    ).order_by('-created_at')
+
+    template = get_template("adminpanel/reports/pdf/offer_discount_pdf.html")
+    html = template.render({
+        "offers": offers,
+        "from_date": from_date,
+        "to_date": to_date,
+        "date": date.today()
+    })
+
+    response = HttpResponse(content_type='application/pdf')
+    response['Content-Disposition'] = 'attachment; filename="offer_discount_report.pdf"'
+
+    pisa.CreatePDF(html, dest=response)
+    return response
+
+
+from django.http import HttpResponse
+from django.template.loader import get_template, render_to_string
+from xhtml2pdf import pisa
+from datetime import date
+
+def complaint_report_pdf(request):
+    from_date = request.GET.get("from_date")
+    to_date = request.GET.get("to_date")
+
+    complaints = Complaint.objects.filter(
+        created_at__date__range=[from_date, to_date]
+    ).order_by('-created_at')
+
+    template = get_template("adminpanel/reports/pdf/complaint_pdf.html")
+    html = template.render({
+        "complaints": complaints,
+        "from_date": from_date,
+        "to_date": to_date,
+        "date": date.today()
+    })
+
+    response = HttpResponse(content_type='application/pdf')
+    response['Content-Disposition'] = 'attachment; filename="complaint_report.pdf"'
+
+    pisa.CreatePDF(html, dest=response)
+    return response
+
+def return_order_report_pdf(request):
+    from_date = request.GET.get("from_date")
+    to_date = request.GET.get("to_date")
+
+    return_orders = ReturnOrder.objects.filter(
+        created_at__date__range=[from_date, to_date]
+    ).order_by('-created_at')
+
+
+    template = get_template("adminpanel/reports/pdf/return_order_pdf.html")
+    html = template.render({
+        "return_orders": return_orders,
+        "from_date": from_date,
+        "to_date": to_date,
+        "date": date.today()
+    })
+
+    response = HttpResponse(content_type='application/pdf')
+    response['Content-Disposition'] = 'attachment; filename="return_order_report.pdf"'
+    pisa.CreatePDF(html, dest=response)
+    return response
+
+def feedback_rating_report_pdf(request):
+    from_date = request.GET.get("from_date")
+    to_date = request.GET.get("to_date")
+
+    feedbacks = FeedbackRating.objects.select_related('user', 'order').all()
+    template = get_template("adminpanel/reports/pdf/feedback_rating_pdf.html")
+    html = template.render({
+        "feedbacks": feedbacks,
+        "date": date.today()
+    })
+
+    response = HttpResponse(content_type='application/pdf')
+    response['Content-Disposition'] = 'attachment; filename="feedback_rating_report.pdf"'
+    pisa.CreatePDF(html, dest=response)
+    return response
+
+
+from django.db.models import Sum, Count, Q, F, DecimalField
+from django.db.models.functions import Coalesce
+from decimal import Decimal
+from decimal import Decimal, ROUND_HALF_UP
+from django.db.models import Sum, Count, Q
+
+def payment_report_pdf(request):
+    from_date = request.GET.get("from_date")
+    to_date = request.GET.get("to_date")
+
+    # Filter payments in date range
+    payments = (
+        OrderHasPayment.objects.filter(
+            order__order_date__date__range=[from_date, to_date]
+        )
+        .values('payment__method', 'payment__status')  # Group by method + status
+        .annotate(
+            total_orders=Count('order', distinct=True),
+            total_amount=Sum('amount')
+        )
+        .order_by('-total_amount')
+    )
+
+    # Round total_amount to 2 decimals
+    for p in payments:
+        p['total_amount'] = Decimal(p['total_amount'] or 0).quantize(Decimal('0.01'), rounding=ROUND_HALF_UP)
 
     context = {
         "payments": payments,
@@ -1882,27 +2534,27 @@ def payment_report_pdf(request):
         "payment_report.pdf"
     )
 
-def order_history_pdf(request):
 
+def order_history_pdf(request):
     from_date = request.GET.get("from_date")
     to_date = request.GET.get("to_date")
 
     orders = Order.objects.filter(
         order_date__date__range=[from_date, to_date]
-    ).order_by('-order_date')
+    ).order_by('order_date')  # oldest first
 
-    template = get_template("adminpanel/reports/pdf/order_history_pdf.html")
-    html = template.render({
+    context = {
         "orders": orders,
         "from_date": from_date,
-        "to_date": to_date
-    })
+        "to_date": to_date,
+        "date": date.today()
+    }
 
-    response = HttpResponse(content_type='application/pdf')
-    response['Content-Disposition'] = 'attachment; filename="order_history.pdf"'
-
-    pisa.CreatePDF(html, dest=response)
-    return response
+    return generate_pdf(
+    "adminpanel/reports/pdf/order_history_pdf.html",
+    context,
+    "order_history_report.pdf"
+)
 
 def delivery_status_pdf(request):
 
@@ -1927,26 +2579,16 @@ def delivery_status_pdf(request):
     pisa.CreatePDF(html, dest=response)
     return response
 
-def assign_order_pdf(request):
-
-    from_date = request.GET.get("from_date")
-    to_date = request.GET.get("to_date")
-
-    orders = Order.objects.filter(
-        delivery_person__isnull=False,
-        order_date__date__range=[from_date, to_date]
-    ).select_related('delivery_person')
-
+def assign_order_report_pdf(request):
+    assignments = AssignOrder.objects.select_related('order', 'delivery_person', 'user').order_by('-assign_time')
     template = get_template("adminpanel/reports/pdf/assign_order_pdf.html")
     html = template.render({
-        "orders": orders,
-        "from_date": from_date,
-        "to_date": to_date
+        "assignments": assignments,
+        "date": date.today()
     })
 
     response = HttpResponse(content_type='application/pdf')
-    response['Content-Disposition'] = 'attachment; filename="assign_order.pdf"'
-
+    response['Content-Disposition'] = 'attachment; filename="assign_order_report.pdf"'
     pisa.CreatePDF(html, dest=response)
     return response
 
@@ -1964,7 +2606,8 @@ def cancellation_report_pdf(request):
     html = template.render({
         "orders": orders,
         "from_date": from_date,
-        "to_date": to_date
+        "to_date": to_date,
+        "date": date.today()
     })
 
     response = HttpResponse(content_type='application/pdf')
@@ -1973,29 +2616,80 @@ def cancellation_report_pdf(request):
     pisa.CreatePDF(html, dest=response)
     return response
 
-def past_delivery_pdf(request):
-
+def supplier_report_pdf(request):
     from_date = request.GET.get("from_date")
     to_date = request.GET.get("to_date")
 
-    orders = Order.objects.filter(
-        order_status='DELIVERED',
-        order_date__date__range=[from_date, to_date]
-    ).prefetch_related('order_details', 'order_details__food_item')
+    suppliers = Supplier.objects.select_related('area').all()
 
-    template = get_template("adminpanel/reports/pdf/past_delivery_pdf.html")
+    # Optional: filter by date if created_at exists
+    if hasattr(Supplier, 'created_at') and from_date and to_date:
+        suppliers = suppliers.filter(created_at__date__range=[from_date, to_date])
+
+    template = get_template("adminpanel/reports/pdf/supplier_report_pdf.html")
     html = template.render({
-        "orders": orders,
+        "suppliers": suppliers,
         "from_date": from_date,
-        "to_date": to_date
+        "to_date": to_date,
+        "date": date.today()
     })
 
     response = HttpResponse(content_type='application/pdf')
-    response['Content-Disposition'] = 'attachment; filename="past_delivery.pdf"'
+    response['Content-Disposition'] = 'attachment; filename="supplier_report.pdf"'
 
     pisa.CreatePDF(html, dest=response)
     return response
 
+def delivery_person_report_pdf(request):
+    delivery_persons = DeliveryPerson.objects.all()
+    template = get_template("adminpanel/reports/pdf/delivery_person_pdf.html")
+    html = template.render({
+        "delivery_persons": delivery_persons,
+        "date": date.today()
+    })
+
+    response = HttpResponse(content_type='application/pdf')
+    response['Content-Disposition'] = 'attachment; filename="delivery_person_report.pdf"'
+    pisa.CreatePDF(html, dest=response)
+    return response
+
+def purchase_report_pdf(request):
+    from_date = request.GET.get("from_date")
+    to_date = request.GET.get("to_date")
+
+    purchases = Purchase.objects.select_related('supplier').prefetch_related('items__ingredient').filter(
+        purchase_date__range=[from_date, to_date]
+    ).order_by('-purchase_date')
+
+    template = get_template("adminpanel/reports/pdf/purchase_pdf.html")
+    html = template.render({
+        "purchases": purchases,
+        "date": date.today()
+    })
+
+    response = HttpResponse(content_type='application/pdf')
+    response['Content-Disposition'] = 'attachment; filename="purchase_report.pdf"'
+    pisa.CreatePDF(html, dest=response)
+    return response
+
+def purchase_return_report_pdf(request):
+    from_date = request.GET.get("from_date")
+    to_date = request.GET.get("to_date")
+
+    purchase_returns = PurchaseReturn.objects.prefetch_related('items__raw', 'purchase__supplier').filter(
+        return_date__range=[from_date, to_date]
+    ).order_by('-return_date')
+
+    template = get_template("adminpanel/reports/pdf/purchase_return_pdf.html")
+    html = template.render({
+        "purchase_returns": purchase_returns,
+        "date": date.today()
+    })
+
+    response = HttpResponse(content_type='application/pdf')
+    response['Content-Disposition'] = 'attachment; filename="purchase_return_report.pdf"'
+    pisa.CreatePDF(html, dest=response)
+    return response
 
 # ===========krisha ae add karelu============
 # adminpanel/views.py

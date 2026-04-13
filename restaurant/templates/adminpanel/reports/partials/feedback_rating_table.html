@@ -1,0 +1,29 @@
+<table class="table table-bordered table-striped">
+
+    <thead>
+        <tr>
+            <th>ID</th>
+            <th>User Name</th>
+            <th>Order ID</th>
+            <th>Rating</th>
+            <th>Feedback</th>
+            <th>Date</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for f in feedbacks %}
+        <tr>
+            <td>{{ f.id }}</td>
+            <td>{{ f.user.firstname }} {{ f.user.lastname }}</td>
+            <td>{{ f.order.id }}</td>
+            <td>{{ f.rating }}</td>
+            <td>{{ f.feedback_text }}</td>
+            <td>{{ f.date }}</td>
+        </tr>
+        {% empty %}
+        <tr>
+            <td colspan="6" style="text-align:center;">No feedbacks found</td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>

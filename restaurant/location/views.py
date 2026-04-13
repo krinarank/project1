@@ -18,13 +18,10 @@ from django.db.models import Count
 
 
 def order_heatmap(request):
-    # Get area-wise order counts
     area_orders = Area.objects.annotate(order_count=Count('order')).values('id', 'name', 'order_count')
 
-    # Prepare order details per area
     area_order_details = {}
     for area in area_orders:
-        # Fetch order info using related user fields
         orders = list(
             Order.objects.filter(area_id=area['id']).values(
                 'id',
@@ -36,7 +33,6 @@ def order_heatmap(request):
             )
         )
 
-        # Optional: format the customer name for front-end
         for order in orders:
             order['customer_name'] = f"{order.pop('user__firstname')} {order.pop('user__lastname')}"
 

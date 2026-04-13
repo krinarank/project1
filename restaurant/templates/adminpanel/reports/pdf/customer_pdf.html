@@ -1,106 +1,89 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <style>
+    <meta charset="UTF-8">
+<style>
+/* Header Box */ .header-box { width: 100%; border: 2px solid #000; border-collapse: collapse; margin: 0 0 8px 0; }
+ .header-box td { border: none; padding: 6px; /* reduced from 12px */ text-align: center; line-height: 1.1; /* tighter spacing */ } 
+ .header-box div { margin: 0; /* remove all default div gaps */ }
+    
+@page {
+    size: A4;
 
-        body {
-            font-family: Helvetica;
-            font-size: 11px;
-            margin: 40px;
-        }
+    margin-top: 60px;      /* Reduced */
+    margin-bottom: 50px;   /* Reduced */
+    margin-left: 40px;
+    margin-right: 40px;
 
-        h2 {
-            text-align: center;
-            font-size: 18px;
-            margin-bottom: 5px;
-        }
+    @frame footer_frame {
+        -pdf-frame-content: footer_content;
+        left:10px;
+        width: 515px;
+        top: 1090px;        /* Move footer lower */
+        height: 30px;
+    }
+#footer_content {
+    font-size: 10px;
+    width: 100%;
+    text-align: right;   /* Align content to right */
+    padding-right: 10px; /* Optional, space from edge */
+}
+}
 
-        .date {
-            text-align: center;
-            font-size: 10px;
-            margin-bottom: 15px;
-        }
+body {
+    font-family: Helvetica;
+    margin: 0;  /* IMPORTANT */
+}
 
-        table {
-            width: 100%;
-            border-collapse: collapse;
-            table-layout: fixed;   /* ⭐ MOST IMPORTANT (stops overlapping) */
-        }
+</style>
 
-        th, td {
-            border: 1px solid black;
-            padding: 5px;
-            word-wrap: break-word;   /* ⭐ break long text */
-            overflow-wrap: break-word;
-        }
-
-        th {
-            background-color: #444;
-            color: white;
-            font-size: 11px;
-        }
-
-        td {
-            font-size: 10px;
-        }
-
-        /* column widths — VERY IMPORTANT */
-        .id { width:5%; }
-        .username { width:15%; }
-        .name { width:18%; }
-        .contact { width:12%; }
-        .email { width:22%; }
-        .gender { width:8%; }
-        .datecol { width:20%; }
-
-        .footer {
-            position: fixed;
-            bottom: -20px;
-            text-align: center;
-            font-size: 9px;
-            color: grey;
-        }
-
-    </style>
+   
 </head>
 
 <body>
 
-<h2>Customer Report</h2>
-<div class="date">
-From: {{ from_date|default:"All" }} &nbsp;&nbsp; To: {{ to_date|default:"All" }}
-</div>
-
-<table>
-    <thead>
-        <tr>
-            <th class="id">ID</th>
-            <th class="username">Username</th>
-            <th class="name">Name</th>
-            <th class="contact">Contact</th>
-            <th class="email">Email</th>
-            <th class="gender">Gender</th>
-            <th class="datecol">Created</th>
+   
+<table class="header-box"> 
+    <tr> 
+        <td> 
+            <div style="font-size:18px; font-weight:bold;"> Leela Restaurant </div> 
+            <div style="font-size:11px;"> Dehgam Road, Ahmedabad </div> 
+            <div style="font-size:11px;"> 📞 +91 9876543210 | ✉️ leelarestaurant.official@gmail.com </div>
+             <div style="font-size:14px; font-weight:bold; margin-top:4px;"> CUSTOMER REPORT </div> 
+             <div style="font-size:10px;"> Generated On: {{ date }} </div> 
+        </td>
         </tr>
-    </thead>
+        </table>
 
-    <tbody>
+    <!-- ================= TABLE ================= -->
+    <table border="1" width="100%" cellpadding="4" cellspacing="0">
+
+        <tr>
+            <th align="center" width="5%">ID</th>
+            <th>Username</th>
+            <th>Name</th>
+            <th align="center">Contact</th>
+            <th align="center">Email</th>
+            <th>Created</th>
+        </tr>
+
         {% for c in customers %}
         <tr>
-            <td>{{ c.id }}</td>
+            <td align="center" width="5%">{{ c.id }}</td>
             <td>{{ c.username }}</td>
             <td>{{ c.firstname }} {{ c.lastname }}</td>
-            <td>{{ c.contactno }}</td>
-            <td>{{ c.email }}</td>
-            <td>{{ c.gender }}</td>
-            <td>{{ c.creationdate|date:"Y-m-d H:i" }}</td>
+            <td align="center">{{ c.contactno }}</td>
+            <td align="center">{{ c.email }}</td>
+            <td>{{ c.creationdate|date:"Y-m-d" }}</td>
         </tr>
         {% endfor %}
-    </tbody>
-</table>
 
-<div class="footer">
-Generated on {{ date|date:"Y-m-d H:i" }} | Page <pdf:pagenumber>
+    </table>
+
+    
+<!-- ================= FOOTER (All Pages) ================= -->
+<div id="footer_content" style="font-size:10px; width:100%; text-align:right; padding-right:10px;">
+      Generated on {{ date|date:"Y-m-d" }} |Page <pdf:pagenumber/> of <pdf:pagecount/>
 </div>
 
 </body>

@@ -1,18 +1,19 @@
-<table class="table table-bordered">
-<thead>
-<tr>
-<th>Payment Method</th>
-<th>Total Orders</th>
-<th>Total Amount</th>
-</tr>
-</thead>
-
+<table class="table table-bordered table-striped">
+    <thead>
+        <tr>
+            <th>Payment Method</th>
+            <th>Status</th> <!-- New column -->
+            <th>Total Orders</th>
+            <th>Total Amount</th>
+        </tr>
+    </thead>
 <tbody>
 {% for p in payments %}
 <tr>
-<td>{{ p.payment__method }}</td>
-<td>{{ p.total_orders }}</td>
-<td>₹ {{ p.total_amount }}</td>
+    <td>{{ p.payment__method }}</td> <!-- Direct use -->
+    <td>{{ p.payment__status }}</td> <!-- Direct use -->
+    <td>{{ p.total_orders }}</td>
+    <td>₹ {{ p.total_amount|floatformat:2 }}</td> <!-- 2 decimal fix -->
 </tr>
 {% endfor %}
 </tbody>

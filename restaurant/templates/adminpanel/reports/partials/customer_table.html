@@ -1,20 +1,22 @@
-<table class="table table-bordered">
+<table class="table table-bordered table-striped">
     <thead>
         <tr>
-            <th>ID</th><th>Username</th><th>Name</th><th>Contact</th><th>Email</th><th>Gender</th><th>Created At</th>
+            <th>ID</th>
+            <th>Username</th>
+            <th>Name</th>
+            <th>Contact</th>
+            <th>Email</th>
+            <th>Created At</th>
         </tr>
     </thead>
-    <tbody>
-        {% for c in customers %}
-        <tr>
+    <tbody> {% for c in customers %} <tr>
             <td>{{ c.id }}</td>
             <td>{{ c.username }}</td>
             <td>{{ c.firstname }} {{ c.lastname }}</td>
             <td>{{ c.contactno }}</td>
             <td>{{ c.email }}</td>
-            <td>{{ c.gender }}</td>
-            <td>{{ c.creationdate|date:"Y-m-d H:i" }}</td>
+            
+            <td>{{ c.creationdate|date:"Y-m-d" }}</td>
         </tr>
-        {% endfor %}
-    </tbody>
+        {% endfor %} </tbody>
 </table>

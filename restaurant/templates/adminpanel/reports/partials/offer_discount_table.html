@@ -1,0 +1,30 @@
+<table class="table table-bordered table-striped">
+    <thead>
+        <tr>
+            <th width="5%">ID</th>
+            <th>Offer Code</th>
+            <th>Description</th>
+            <th>Discount %</th>
+            <th>Valid From</th>
+            <th>Valid To</th>
+            <th>Status</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for offer in offers %}
+        <tr>
+            <td>{{ offer.id }}</td>
+            <td>{{ offer.offer_code }}</td>
+            <td>{{ offer.description }}</td>
+            <td>{{ offer.discount_percentage }}%</td>
+            <td>{{ offer.valid_from }}</td>
+            <td>{{ offer.valid_to }}</td>
+            <td>{{ offer.get_status }}</td>
+        </tr>
+        {% empty %}
+        <tr>
+            <td colspan="7" style="text-align:center;">No offers found</td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>

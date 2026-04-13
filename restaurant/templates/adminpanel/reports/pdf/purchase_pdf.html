@@ -42,44 +42,53 @@ h2 { text-align:center; }
 <div style="font-size:18px; font-weight:bold;">Leela Restaurant</div>
 <div style="font-size:11px;">Dehgam Road, Ahmedabad</div>
 <div style="font-size:11px;">📞 +91 9876543210 | ✉️ leelarestaurant.official@gmail.com</div>
-<div style="font-size:14px; font-weight:bold; margin-top:4px;">ASSIGN ORDERS REPORT</div>
+<div style="font-size:14px; font-weight:bold; margin-top:4px;">PURCHASE REPORT</div>
 
 <div style="font-size:10px;">Generated On: {{ date }}</div>
 </td>
 </tr>
 </table>
 
-<table>
+<table style="width:100%; border-collapse:collapse; table-layout:fixed;">
     <thead>
         <tr>
-            <th>ID</th>
-            <th>Order ID</th>
-            <th>Delivery Person</th>
-            <th>Customer</th>
-            <th>Status</th>
-            <th>Assign Time</th>
+            <th style="width:5%;">ID</th>
+            <th style="width:15%;">Supplier</th>
+            <th style="width:10%;">Date</th>
+            <th style="width:20%;">Item</th>
+            <th style="width:10%;">Qty</th>
+            <th style="width:10%;">Price/Unit</th>
+            <th style="width:10%;">Total</th>
+            <th style="width:10%;">Purchase Total</th>
         </tr>
     </thead>
     <tbody>
-        {% for a in assignments %}
-        <tr>
-            <td>{{ a.id }}</td>
-            <td>{{ a.order.id }}</td>
-            <td>{{ a.delivery_person.fname }} {{ a.delivery_person.lname }}</td>
-            <td>{{ a.user.firstname }} {{ a.user.lastname }}</td>
-            <td>{{ a.status }}</td>
-            <td>{{ a.assign_time }}</td>
-        </tr>
+        {% for purchase in purchases %}
+            {% for item in purchase.items.all %}
+            <tr>
+                {% if forloop.first %}
+                <td rowspan="{{ purchase.items.count }}">{{ purchase.id }}</td>
+                <td rowspan="{{ purchase.items.count }}">{{ purchase.supplier.fname }} {{ purchase.supplier.lname }}</td>
+                <td rowspan="{{ purchase.items.count }}">{{ purchase.purchase_date }}</td>
+                {% endif %}
+                <td>{{ item.ingredient.name }}</td>
+                <td>{{ item.qty }}</td>
+                <td>{{ item.price_per_unit }}</td>
+                <td>{{ item.total_price }}</td>
+                {% if forloop.first %}
+                <td rowspan="{{ purchase.items.count }}">{{ purchase.total_amount }}</td>
+                {% endif %}
+            </tr>
+            {% endfor %}
         {% empty %}
-        <tr>
-            <td colspan="6" style="text-align:center;">No assignments found</td>
-        </tr>
+        <tr><td colspan="8" style="text-align:center;">No purchases found</td></tr>
         {% endfor %}
     </tbody>
 </table>
+
+<!-- Footer -->
 <div id="footer_content">
 Generated on {{ date|date:"Y-m-d" }} | Page <pdf:pagenumber/> of <pdf:pagecount/>
 </div>
-
 </body>
 </html>

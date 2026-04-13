@@ -1,8 +1,30 @@
 {% extends "adminpanel/base.html" %}
 {% block content %}
- 
+<head>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+</head>
 <!-- AHI NICHHE AA ADD KAR -->
- 
+<style>
+    .filter-group {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 10px;
+}
+
+.filter-icon {
+    font-size: 16px;
+    color: #0d6efd;
+}
+
+.filter-dropdown {
+    padding: 6px 10px;
+    border-radius: 6px;
+    border: 1px solid #ccc;
+    font-size: 14px;
+    cursor: pointer;
+}
+</style>
 <div class="lowstock-topbar">
     <button class="lowstock-btn" onclick="openLowStockModal()">
         ⚠ View Low Stock
@@ -48,20 +70,68 @@
 
     <!-- Purchase Chart -->
     <div style="background:#fff; padding:15px; flex:2; max-width:700px;">
+      <div class="filter-group">
+    
+    <select id="purchaseFilter" onchange="handlePurchaseFilter()" class="filter-dropdown">
+        <option value="daily">📅 Daily</option>
+        <option value="weekly">📊 Weekly</option>
+        <option value="monthly">📆 Monthly</option>
+    </select>
+</div>
+
+<input type="month" id="purchaseMonth" style="display:none;" onchange="fetchPurchase()">
+
+<input type="date" id="purFrom" style="display:none;">
+<input type="date" id="purTo" style="display:none;">
+<button onclick="fetchPurchase()" id="purBtn"
+    style="display:none; background:#075d23; color:white;">Apply</button>
         <h4>📊 Recent Purchases</h4>
         <canvas id="purchaseChart"></canvas>
     </div>
 
+
     <!-- Revenue Chart -->
     <div style="background:#fff; padding:15px; flex:1; max-width:400px;">
-        <h4>📊 Revenue (Last 7 Days)</h4>
+        <!-- REVENUE -->
+        <div class="filter-group">
+    <select id="revenueFilter" onchange="handleRevenueFilter()" class="filter-dropdown">
+        <option value="daily">📅 Daily</option>
+        <option value="weekly">📊 Weekly</option>
+        <option value="monthly">📆 Monthly</option>
+    </select>
+</div>
+
+        <!-- Monthly -->
+        <input type="month" id="revenueMonth" style="display:none;" onchange="fetchRevenue()">
+        <br>
+        <!-- Weekly -->
+        <input type="date" id="revFrom" style="display:none;">
+        <input type="date" id="revTo" style="display:none;">
+        <button onclick="fetchRevenue()" id="revBtn"
+            style="display:none; background:#075d23; color:white;">Apply</button>
+        <h4>📊 Revenue Chart</h4>
         <canvas id="revenueChart"></canvas>
     </div>
 
 </div>
 
+
 <!-- Orders Chart (Same Old Size) -->
 <div style="background:#fff; margin-top:20px; padding:15px; max-width:700px;">
+  <div class="filter-group">
+    <select id="orderFilter" onchange="handleOrderFilter()" class="filter-dropdown">
+        <option value="daily">📅 Daily</option>
+        <option value="weekly">📊 Weekly</option>
+        <option value="monthly">📆 Monthly</option>
+    </select>
+</div>
+
+<input type="month" id="orderMonth" style="display:none;" onchange="fetchOrder()">
+
+<input type="date" id="ordFrom" style="display:none;">
+<input type="date" id="ordTo" style="display:none;">
+<button onclick="fetchOrder()" id="ordBtn"
+    style="display:none; background:#075d23; color:white;">Apply</button>
     <h4>📊 Recent Orders</h4>
     <canvas id="ordersChart"></canvas>
 </div>
@@ -107,223 +177,395 @@
 
 
 <script>
-const labels = JSON.parse(
-    document.getElementById("purchase-labels").textContent
-);
+    function handleOrderFilter() {
+    let type = document.getElementById("orderFilter").value;
 
-const totals = JSON.parse(
-    document.getElementById("purchase-totals").textContent
-);
+    document.getElementById("orderMonth").style.display = "none";
+    document.getElementById("ordFrom").style.display = "none";
+    document.getElementById("ordTo").style.display = "none";
+    document.getElementById("ordBtn").style.display = "none";
 
-const canvas = document.getElementById("purchaseChart");
-
-if (canvas && labels.length > 0) {
-
-    Chart.getChart(canvas)?.destroy();
-
-    new Chart(canvas, {
-        type: "line",
-        data: {
-            labels: labels,
-            datasets: [{
-                label: "Purchase Amount",
-                data: totals,
-                borderColor: "#0d6efd",
-                borderWidth: 3,
-                tension: 0.35,
-                pointRadius: 4,
-                pointBackgroundColor: "#0d6efd",
-                fill: false
-            }]
-        },
-        options: {
-            responsive: true,
-            animation: false,   // ✅ animation bandh (fine)
-            
-            plugins: {
-                legend: {
-                    display: true
-                },
-                tooltip: {
-                    callbacks: {
-                        label: function(context) {
-                            let value = context.raw;
-
-                            if (!value || value === 0) {
-                                return "Purchase : No data";
-                            }
-                            return "Purchase : ₹ " + value;
-                        }
-                    }
-                }
-            },
-
-            scales: {
-                y: {
-                    beginAtZero: true
-                }
-            }
-        }
-    });
-}
-
-// ------------------- Professional Revenue Doughnut Chart -------------------
-
-const revenueLabels = JSON.parse(document.getElementById("revenue-labels").textContent);
-const revenueData = JSON.parse(document.getElementById("revenue-data").textContent);
-const revenueCanvas = document.getElementById("revenueChart");
-
-// Ensure 7 days
-while (revenueLabels.length < 7) {
-    revenueLabels.push("");
-    revenueData.push(0);
-}
-
-// 💎 Professional Color Palette
-const colors = [
-    "#4e73df",
-    "#1cc88a",
-    "#36b9cc",
-    "#f6c23e",
-    "#e74a3b",
-    "#858796",
-    "#5a5c69"
-];
-
-// 💎 Professional Center Text Plugin
-const centerTextPlugin = {
-    id: "centerText",
-    beforeDraw(chart) {
-        const { width, height, ctx } = chart;
-
-        const total = chart.data.datasets[0].data
-            .reduce((a, b) => a + b, 0);
-
-        ctx.save();
-
-        // Title text
-        ctx.font = "14px sans-serif";
-        ctx.fillStyle = "#6c757d";
-        ctx.textAlign = "center";
-        ctx.textBaseline = "middle";
-        ctx.fillText("Total Revenue", width / 2, height / 2 - 10);
-
-        // Amount text
-        ctx.font = "bold 22px sans-serif";
-        ctx.fillStyle = "#2c3e50";
-        ctx.fillText("₹ " + total.toLocaleString(), width / 2, height / 2 + 12);
-
-        ctx.restore();
+    if (type === "monthly") {
+        document.getElementById("orderMonth").style.display = "inline";
     }
-};
+    else if (type === "weekly") {
+        document.getElementById("ordFrom").style.display = "inline";
+        document.getElementById("ordTo").style.display = "inline";
+        document.getElementById("ordBtn").style.display = "inline";
+    }
 
-if (revenueCanvas && revenueLabels.length > 0) {
+    fetchOrder();
+}
+function fetchOrder() {
+    let type = document.getElementById("orderFilter").value;
+    let url = `/dashboard/order-data/?type=${type}`;
 
-    Chart.getChart(revenueCanvas)?.destroy();
+    if (type === "monthly") {
+    let month = document.getElementById("orderMonth").value;
 
-    new Chart(revenueCanvas, {
-        type: "doughnut",
-        data: {
-            labels: revenueLabels,
-            datasets: [{
-                data: revenueData,
-                backgroundColor: colors,
-                borderWidth: 0,
-                hoverOffset: 12
-            }]
-        },
-        options: {
-            responsive: true,
-            cutout: "65%",  // thicker donut
-            animation: {
-                animateRotate: true,
-                duration: 1000
+    if (!month) {
+        alert("Please select month");
+        return;
+    }
+
+    url += `&month=${month}`;
+}
+    if (type === "weekly") {
+    let from = document.getElementById("ordFrom").value;
+    let to = document.getElementById("ordTo").value;
+
+    if (!from || !to) {
+        alert("Select both dates");
+        return;
+    }
+
+    url += `&from=${from}&to=${to}`;
+}
+
+    fetch(url)
+        .then(res => res.json())
+        .then(data => {
+            orderChart.data.labels = data.labels;
+            orderChart.data.datasets[0].data = data.data;
+            orderChart.update();
+        });
+}
+    function handlePurchaseFilter() {
+    let type = document.getElementById("purchaseFilter").value;
+
+    document.getElementById("purchaseMonth").style.display = "none";
+    document.getElementById("purFrom").style.display = "none";
+    document.getElementById("purTo").style.display = "none";
+    document.getElementById("purBtn").style.display = "none";
+
+    if (type === "monthly") {
+        document.getElementById("purchaseMonth").style.display = "inline";
+    }
+    else if (type === "weekly") {
+        document.getElementById("purFrom").style.display = "inline";
+        document.getElementById("purTo").style.display = "inline";
+        document.getElementById("purBtn").style.display = "inline";
+    }
+
+    fetchPurchase();
+}
+function fetchPurchase() {
+    let type = document.getElementById("purchaseFilter").value;
+    let url = `/dashboard/purchase-data/?type=${type}`;
+
+    if (type === "monthly") {
+        let month = document.getElementById("purchaseMonth").value;
+
+        if (!month) {
+            alert("Please select month");
+            return;
+        }
+
+        url += `&month=${month}`;
+    }
+
+    if (type === "weekly") {
+        let from = document.getElementById("purFrom").value;
+        let to = document.getElementById("purTo").value;
+
+        if (!from || !to) {
+            alert("Select both dates");
+            return;
+        }
+
+        url += `&from=${from}&to=${to}`;
+    }
+
+    fetch(url)
+        .then(res => res.json())
+        .then(data => {
+            purchaseChart.data.labels = data.labels;
+            purchaseChart.data.datasets[0].data = data.data;
+            purchaseChart.update();
+        });
+}
+    function handleRevenueFilter() {
+        let type = document.getElementById("revenueFilter").value;
+
+        // hide all
+        document.getElementById("revenueMonth").style.display = "none";
+        document.getElementById("revFrom").style.display = "none";
+        document.getElementById("revTo").style.display = "none";
+        document.getElementById("revBtn").style.display = "none";
+
+        if (type === "monthly") {
+            document.getElementById("revenueMonth").style.display = "inline";
+        }
+        else if (type === "weekly") {
+            document.getElementById("revFrom").style.display = "inline";
+            document.getElementById("revTo").style.display = "inline";
+            document.getElementById("revBtn").style.display = "inline";
+        }
+
+        fetchRevenue();
+    }
+
+    function fetchRevenue() {
+        let type = document.getElementById("revenueFilter").value;
+        let url = `/dashboard/revenue-data/?type=${type}`;
+
+        if (type === "monthly") {
+            let month = document.getElementById("revenueMonth").value;
+
+            console.log("MONTH:", month);   // 🔥 DEBUG
+
+            if (!month) {
+                alert("Please select month");  // ❗ important
+                return;
+            }
+
+            url += `&month=${month}`;
+        }
+
+        if (type === "weekly") {
+            let from = document.getElementById("revFrom").value;
+            let to = document.getElementById("revTo").value;
+
+            console.log("FROM:", from, "TO:", to); // 🔥 DEBUG
+
+            if (!from || !to) {
+                alert("Select both dates");
+                return;
+            }
+
+            url += `&from=${from}&to=${to}`;
+        }
+        fetch(url)
+            .then(res => res.json())
+            .then(data => {
+                revenueChart.data.labels = data.labels;
+                revenueChart.data.datasets[0].data = data.data;
+                revenueChart.update();
+            });
+    }
+
+    // default load
+    window.onload = function () {
+        fetchRevenue();
+        fetchPurchase();
+        fetchOrder();
+    }
+</script>
+
+
+
+
+<script>
+    const labels = JSON.parse(
+        document.getElementById("purchase-labels").textContent
+    );
+
+    const totals = JSON.parse(
+        document.getElementById("purchase-totals").textContent
+    );
+    let purchaseChart
+    const canvas = document.getElementById("purchaseChart");
+
+    if (canvas) {
+
+        Chart.getChart(canvas)?.destroy();
+
+        purchaseChart = new Chart(canvas, {
+            type: "line",
+            data: {
+                labels: labels,
+                datasets: [{
+                    label: "Purchase Amount",
+                    data: totals,
+                    borderColor: "#0d6efd",
+                    borderWidth: 3,
+                    tension: 0.35,
+                    pointRadius: 4,
+                    pointBackgroundColor: "#0d6efd",
+                    fill: false
+                }]
             },
-            plugins: {
-                legend: {
-                    display: true,
-                    position: "center",
-                    labels: {
-                        boxWidth: 14,
-                        padding: 15,
-                        font: {
-                            size: 12
+            options: {
+                responsive: true,
+                animation: false,   // ✅ animation bandh (fine)
+
+                plugins: {
+                    legend: {
+                        display: true
+                    },
+                    tooltip: {
+                        callbacks: {
+                            label: function (context) {
+                                let value = context.raw;
+
+                                if (!value || value === 0) {
+                                    return "Purchase : No data";
+                                }
+                                return "Purchase : ₹ " + value;
+                            }
                         }
                     }
                 },
-                tooltip: {
-                    callbacks: {
-                        label: function(context) {
-                            let value = context.raw;
-                            let label = context.label || "";
-                            return "Total" + " : ₹" + value;
-                        }
+
+                scales: {
+                    y: {
+                        beginAtZero: true
                     }
                 }
             }
-        },
-        plugins: [centerTextPlugin]
-    });
-}
+        });
+    }
+
+    // ------------------- Professional Revenue Doughnut Chart -------------------
+
+    const revenueLabels = JSON.parse(document.getElementById("revenue-labels").textContent);
+    const revenueData = JSON.parse(document.getElementById("revenue-data").textContent);
+    let revenueChart;
+    const revenueCanvas = document.getElementById("revenueChart");
+
+    // Ensure 7 days
+    while (revenueLabels.length < 7) {
+        revenueLabels.push("");
+        revenueData.push(0);
+    }
+
+    // 💎 Professional Color Palette
+    const colors = [
+        "#4e73df",
+        "#1cc88a",
+        "#36b9cc",
+        "#f6c23e",
+        "#e74a3b",
+        "#858796",
+        "#5a5c69"
+    ];
+
+    // 💎 Professional Center Text Plugin
+    const centerTextPlugin = {
+        id: "centerText",
+        beforeDraw(chart) {
+            const { width, height, ctx } = chart;
+
+            const total = chart.data.datasets[0].data
+                .reduce((a, b) => a + b, 0);
+
+            ctx.save();
+
+            // Title text
+            ctx.font = "14px sans-serif";
+            ctx.fillStyle = "#6c757d";
+            ctx.textAlign = "center";
+            ctx.textBaseline = "middle";
+            ctx.fillText("Total Revenue", width / 2, height / 2 - 10);
+
+            // Amount text
+            ctx.font = "bold 22px sans-serif";
+            ctx.fillStyle = "#2c3e50";
+            ctx.fillText("₹ " + total.toLocaleString(), width / 2, height / 2 + 12);
+
+            ctx.restore();
+        }
+    };
+
+    if (revenueCanvas && revenueLabels.length > 0) {
+
+        Chart.getChart(revenueCanvas)?.destroy();
+
+        revenueChart = new Chart(revenueCanvas, {
+            type: "doughnut",
+            data: {
+                labels: revenueLabels,
+                datasets: [{
+                    data: revenueData,
+                    backgroundColor: colors,
+                    borderWidth: 0,
+                    hoverOffset: 12
+                }]
+            },
+            options: {
+                responsive: true,
+                cutout: "65%",  // thicker donut
+                animation: {
+                    animateRotate: true,
+                    duration: 1000
+                },
+                plugins: {
+                    legend: {
+                        display: true,
+                        position: "center",
+                        labels: {
+                            boxWidth: 14,
+                            padding: 15,
+                            font: {
+                                size: 12
+                            }
+                        }
+                    },
+                    tooltip: {
+                        callbacks: {
+                            label: function (context) {
+                                let value = context.raw;
+                                let label = context.label || "";
+                                return "Total" + " : ₹" + value;
+                            }
+                        }
+                    }
+                }
+            },
+            plugins: [centerTextPlugin]
+        });
+    }
 </script>
 <script>
-function toggleDelivery() {
-    let menu = document.getElementById("deliveryMenu");
-    menu.style.display = (menu.style.display === "block") ? "none" : "block";
-}
+    function toggleDelivery() {
+        let menu = document.getElementById("deliveryMenu");
+        menu.style.display = (menu.style.display === "block") ? "none" : "block";
+    }
 </script>
 
 <script>
-const orderDailyLabels = JSON.parse(
-    document.getElementById("order-daily-labels").textContent
-);
+    const orderDailyLabels = JSON.parse(
+        document.getElementById("order-daily-labels").textContent
+    );
 
-const orderDailyTotals = JSON.parse(
-    document.getElementById("order-daily-totals").textContent
-);
+    const orderDailyTotals = JSON.parse(
+        document.getElementById("order-daily-totals").textContent
+    );
 
-const orderCanvas = document.getElementById("ordersChart");
+    const orderCanvas = document.getElementById("ordersChart");
 
-if (orderCanvas && orderDailyLabels.length > 0) {
+    let orderChart;
+
+
+
+if (orderCanvas) {
 
     Chart.getChart(orderCanvas)?.destroy();
 
-    new Chart(orderCanvas, {
-        type: "bar",   // BAR / STAMBH
+    orderChart = new Chart(orderCanvas, {
+        type: "bar",
         data: {
-            labels: orderDailyLabels,   
+            labels: orderDailyLabels,
             datasets: [{
                 label: "Daily Orders",
                 data: orderDailyTotals,
-
                 backgroundColor: "#198754",
                 borderColor: "#146c43",
                 borderWidth: 1,
-
-                // ✅ BAR WIDTH CONTROL
-                barThickness: 30,          // FIXED slim width (try 12–20)
+                barThickness: 30,
                 maxBarThickness: 50,
-                categoryPercentage: 0.6,   // space between groups
-                barPercentage: 0.8         // space between bars
+                categoryPercentage: 0.6,
+                barPercentage: 0.8
             }]
         },
         options: {
             responsive: true,
             animation: false,
             plugins: {
-                legend: { display: true },
-                tooltip: {
-                    callbacks: {
-                        label: function(context) {
-                            let value = context.raw;
-                            if (!value || value === 0) return "Orders: No data";
-                            return "Orders: " + value;
-                        }
-                    }
-                }
+                legend: { display: true }
             },
             scales: {
-                y: { 
+                y: {
                     beginAtZero: true,
                     ticks: { precision: 0 }
                 }
@@ -333,15 +575,15 @@ if (orderCanvas && orderDailyLabels.length > 0) {
 }
 </script>
 <script>
-function openLowStockModal() {
-    document.body.classList.add("modal-open");
-    document.getElementById("lowStockModal").style.display = "flex";
-}
+    function openLowStockModal() {
+        document.body.classList.add("modal-open");
+        document.getElementById("lowStockModal").style.display = "flex";
+    }
 
-function closeLowStockModal() {
-    document.body.classList.remove("modal-open");
-    document.getElementById("lowStockModal").style.display = "none";
-}
+    function closeLowStockModal() {
+        document.body.classList.remove("modal-open");
+        document.getElementById("lowStockModal").style.display = "none";
+    }
 </script>
 
 {% endblock %}

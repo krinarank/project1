@@ -82,10 +82,27 @@
                 <option value="customer_report">Customers</option>
                 <option value="order_report">Orders</option>
                 <option value="sales_report">Sales</option>
-                <option value="item_report">Items</option>
+                <option value="item_report">Item Sales</option>
                 <option value="payment_report">Payments</option>
                 <option value="order_history_report">Order History</option>
     <option value="cancellation_report">Cancellation Report</option>
+      <option value="supplier_report">Supplier Report</option>
+      <option value="delivery_person_report">Delivery Person</option>
+      <option value="return_order_report">Return Orders</option>
+      <option value="feedback_rating_report">Feedback & Ratings</option>
+      <option value="purchase_report">Purchase Report</option>
+<option value="purchase_return_report">Purchase Return Report</option>
+<option value="assign_order_report">Assign Order</option>
+<option value="notification_report">Notifications</option>
+
+<option value="offer_discount_report">Offer Discount</option>
+<option value="complaint_report">Complaint Report</option>
+<option value="fooditem_report">Food Item Report</option>
+
+<option value="stock_report">Stock Report</option>
+
+
+
     <!-- <option value="delivery_status_report">Delivery Status</option>
     <option value="past_delivery_report">Past Delivery Detail</option>
     <option value="assign_order_report">Assign Order Report</option> -->
@@ -197,26 +214,102 @@
 
 
     // PDF
-    document.getElementById("downloadPdfBtn").addEventListener("click", function(){
 
-        let report = document.getElementById("reportSelector").value;
-        let fromDate = document.getElementById("fromDate").value;
-        let toDate = document.getElementById("toDate").value;
+document.getElementById("downloadPdfBtn").addEventListener("click", function(){
 
-        if(!fromDate || !toDate){
-            alert("Select dates");
-            return;
-        }
+    let report = document.getElementById("reportSelector").value;
+    let fromDate = document.getElementById("fromDate").value;
+    let toDate = document.getElementById("toDate").value;
 
-        if(fromDate > toDate){
-            alert("Invalid date range");
-            return;
-        }
+    if(!fromDate || !toDate){
+        alert("Select dates");
+        return;
+    }
 
-        let type = report.split("_")[0];
-        window.open(`/dashboard/reports/pdf/${type}/?from_date=${fromDate}&to_date=${toDate}`);
+    if(fromDate > toDate){
+        alert("Invalid date range");
+        return;
+    }
 
-    });
+    let pdfUrl = "#";
+
+    switch(report){
+        case "customer_report":
+            pdfUrl = "{% url 'customer_report_pdf' %}";
+            break;
+        case "order_report":
+            pdfUrl = "{% url 'order_report_pdf' %}";
+            break;
+        case "order_history_report":
+            pdfUrl = "{% url 'order_history_pdf' %}";
+            break;
+        case "sales_report":
+            pdfUrl = "{% url 'sales_report_pdf' %}";
+            break;
+        case "item_report":
+            pdfUrl = "{% url 'item_report_pdf' %}";
+            break;
+        case "payment_report":
+            pdfUrl = "{% url 'payment_report_pdf' %}";
+            break;
+        case "cancellation_report":  // <<< ADD THIS
+            pdfUrl = "{% url 'cancellation_report_pdf' %}";
+            break;
+        case "delivery_status_report":
+            pdfUrl = "{% url 'delivery_status_pdf' %}";
+            break;
+        case "supplier_report":
+            pdfUrl = "{% url 'supplier_report_pdf' %}";
+            break;
+        case "delivery_person_report":
+            pdfUrl = "{% url 'delivery_person_report_pdf' %}";
+            break;
+        case "return_order_report":
+            pdfUrl = "{% url 'return_order_report_pdf' %}";
+            break;
+        case "feedback_rating_report":
+            pdfUrl = "{% url 'feedback_rating_report_pdf' %}";
+            break;
+        case "purchase_report":
+            pdfUrl = "{% url 'purchase_report_pdf' %}";
+                break;
+        case "purchase_return_report":
+            pdfUrl = "{% url 'purchase_return_report_pdf' %}";
+            break;
+        case "assign_order_report":
+            pdfUrl = "{% url 'assign_order_pdf' %}";
+            break;
+
+        case "notification_report":
+            pdfUrl = "{% url 'notification_report_pdf' %}";
+            break;
+        case "offer_discount_report":
+           pdfUrl = "{% url 'offer_discount_report_pdf' %}";
+           break;
+        case "complaint_report":
+            pdfUrl = "{% url 'complaint_report_pdf' %}";
+            break;
+        case "fooditem_report":
+            pdfUrl = "{% url 'fooditem_report_pdf'%}";
+            break;
+        case "stock_report":
+            pdfUrl = "{% url 'stock_report_pdf'%}";
+            break;
+
+
+
+
+        
+    }
+
+    // Append date parameters
+    pdfUrl += `?from_date=${fromDate}&to_date=${toDate}`;
+
+    // Open PDF
+    window.open(pdfUrl);
+});
+</script>
+
 
     </script>
 <script>

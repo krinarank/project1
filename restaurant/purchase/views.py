@@ -75,7 +75,7 @@ def edit_supplier(request, supplier_id):
 def delete_supplier(request, supplier_id):
     supplier = get_object_or_404(Supplier, id=supplier_id)
     supplier.delete()
-    messages.error(request, "Supplier deleted successfully")  # red message
+    messages.success(request, "Supplier deleted successfully")  # red message
 
     return redirect('supplier_page')
 
@@ -85,24 +85,26 @@ def delete_supplier(request, supplier_id):
 # ------------------- Ingredient -------------------
 
 
+from django.contrib import messages
+from django.shortcuts import render, redirect
+from .models import Ingredient
+
 def ingredient_page(request):
     ingredients = Ingredient.objects.all()
 
     if request.method == 'POST':
-        # Ingredient.objects.create(
-        #     name=request.POST['name'],
-        #     description=request.POST['description'],
-        #     unit_of_measure=request.POST['unit_of_measure'],
-        #     price_per_unit=request.POST['price_per_unit'],
-        #     available_qty=request.POST['available_qty']
-        # )
-        Ingredient.objects.create(
-                 name=request.POST['name'],
-                 unit_of_measure=request.POST['unit_of_measure'],
-                 
+        name = request.POST['name'].strip()
 
-                 price_per_unit=0,        # 🔒 AUTO
-                available_qty=0         # 🔒 AUTO
+        # 🔒 Duplicate check (case-insensitive)
+        if Ingredient.objects.filter(name__iexact=name).exists():
+            messages.success(request, "This ingredient already exists!")
+            return redirect('ingredient_page')
+
+        Ingredient.objects.create(
+            name=name,
+            unit_of_measure=request.POST['unit_of_measure'],
+            price_per_unit=0,
+            available_qty=0
         )
 
         messages.success(request, "Ingredient added successfully")
@@ -111,7 +113,6 @@ def ingredient_page(request):
     return render(request, 'purchase/ingredient_page.html', {
         'ingredients': ingredients
     })
-
 
 def edit_ingredient(request,id):
     ingredient = get_object_or_404(Ingredient, id=id)
@@ -132,7 +133,7 @@ def edit_ingredient(request,id):
 def delete_ingredient(request,id):
     ingredient = get_object_or_404(Ingredient, id=id)
     ingredient.delete()
-    messages.error(request, "Ingredient deleted successfully")
+    messages.success(request, "Ingredient deleted successfully")
     return redirect('ingredient_page')
 
 # ------------------- Purchase -------------------
@@ -303,7 +304,7 @@ def purchase_delete(request, purchase_id):
         ing.save()
 
     purchase.delete()
-    messages.error(request, "Purchase deleted and stock adjusted!")
+    messages.success(request, "Purchase deleted and stock adjusted!")
     return redirect('purchase_add')
 
 # @transaction.atomic
@@ -689,7 +690,7 @@ def prepared_item_delete(request, item_id):
     # Delete prepared item
     prepared_item.delete()
 
-    messages.error(request, "Prepared item deleted and stock adjusted!")
+    messages.success(request, "Prepared item deleted and stock adjusted!")
     return redirect('prepared_item_add')
 
 from decimal import Decimal
@@ -779,3 +780,4 @@ def preparing_order(request, prepared_item_id, order_qty):
     messages.success(request, f"Prepared item updated successfully! {order_qty} unit(s) processed.")
     return redirect('order_list')
 
+    

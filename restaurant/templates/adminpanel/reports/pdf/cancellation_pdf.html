@@ -2,18 +2,57 @@
 <html>
 <head>
 <style>
-body{font-family:Helvetica;font-size:11px}
-table{width:100%;border-collapse:collapse}
-th,td{border:1px solid black;padding:5px}
-th{background:#333;color:white}
-h2{text-align:center}
+
+body { font-family: Helvetica, Arial, sans-serif; font-size: 11px; }
+table { width:100%; border-collapse:collapse; }
+th, td { border:1px solid black; padding:5px; }
+th { background:#333; color:white; }
+h2 { text-align:center; }
+
+/* Header Box */ 
+.header-box { width: 100%; border: 2px solid #000; border-collapse: collapse; margin: 0 0 8px 0; }
+.header-box td { border: none; padding: 6px; text-align: center; line-height: 1.1; } 
+.header-box div { margin: 0; }
+
+/* Page layout */
+@page {
+    size: A4;
+    margin-top: 60px;
+    margin-bottom: 50px;
+    margin-left: 40px;
+    margin-right: 40px;
+
+    @frame footer_frame {
+        -pdf-frame-content: footer_content;
+        left:10px;
+        width: 515px;
+        top: 1090px;
+        height: 30px;
+    }
+}
+
+#footer_content {
+    font-size: 10px;
+    width: 100%;
+    text-align: right;
+    padding-right: 10px;
+}
 </style>
 </head>
 <body>
 
-<h2>Cancellation Report</h2>
-<p>From {{ from_date }} To {{ to_date }}</p>
-
+<!-- ================= HEADER ================= -->
+<table class="header-box"> 
+<tr> 
+<td> 
+    <div style="font-size:18px; font-weight:bold;">Leela Restaurant</div> 
+    <div style="font-size:11px;">Dehgam Road, Ahmedabad</div> 
+    <div style="font-size:11px;">📞 +91 9876543210 | ✉️ leelarestaurant.official@gmail.com</div>
+    <div style="font-size:14px; font-weight:bold; margin-top:4px;">CANCELLATION REPORT</div> 
+    <div style="font-size:10px;">  Generated On: {{ date }}</div> 
+</td>
+</tr>
+</table>
 <table>
 <tr>
 <th>ID</th><th>Customer</th><th>Total</th><th>Date</th>
@@ -29,5 +68,8 @@ h2{text-align:center}
 {% endfor %}
 
 </table>
+<div id="footer_content">
+    Generated on {{ date|date:"Y-m-d" }} | Page <pdf:pagenumber/> of <pdf:pagecount/>
+</div>
 </body>
 </html>
